@@ -131,6 +131,7 @@ class AppTheme {
         textTheme: textTheme,
         colorScheme: const ColorScheme.dark(
           primary: _primary,
+          onPrimary: Colors.white,
           error: Color(0xFFEF5350),
           surface: Color(0xFF1E1E1E),
           surfaceContainer: Color(0xFF1A1A1A),
@@ -186,6 +187,7 @@ class AppTheme {
         textTheme: textTheme,
         colorScheme: const ColorScheme.light(
           primary: _primary,
+          onPrimary: Colors.white,
           error: Color(0xFFD32F2F),
           surface: Colors.white,
           surfaceContainer: Color(0xFFEAEAF0),

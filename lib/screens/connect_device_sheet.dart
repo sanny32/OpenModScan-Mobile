@@ -188,11 +188,12 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: cs.primary,
                       foregroundColor: cs.onPrimary,
+                      textStyle: tt.titleMedium,
                       minimumSize: const Size(double.infinity, 52),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: Text('Connect', style: tt.titleMedium),
+                    child: const Text('Connect'),
                   ),
                   const SizedBox(height: 16),
                 ],
