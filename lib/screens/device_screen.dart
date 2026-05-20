@@ -64,6 +64,7 @@ class DeviceScreen extends StatelessWidget {
                   title: l10n.readRegisters,
                   subtitle: l10n.readRegistersSubtitle,
                   color: cs.primary,
+                  enabled: device.connected,
                   onTap: () {},
                 ),
               ),
@@ -74,44 +75,56 @@ class DeviceScreen extends StatelessWidget {
                   title: l10n.writeValue,
                   subtitle: l10n.writeValueSubtitle,
                   color: appColors.writeActionColor,
+                  enabled: device.connected,
                   onTap: () {},
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(l10n.lastValues, style: tt.titleMedium),
-              TextButton(
-                onPressed: () {},
-                child: Text(l10n.viewAll),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          ...mockRegisters.take(5).map((r) => _LastValueRow(entry: r)),
+          if (device.connected) ...[
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(l10n.lastValues, style: tt.titleMedium),
+                TextButton(
+                  onPressed: () {},
+                  child: Text(l10n.viewAll),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            ...mockRegisters.take(5).map((r) => _LastValueRow(entry: r)),
+          ],
           const SizedBox(height: 12),
           Card(
             child: ListTile(
+              enabled: device.connected,
               leading: Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: appColors.openLogColor.withAlpha(26),
+                  color: (device.connected
+                          ? appColors.openLogColor
+                          : cs.onSurfaceVariant)
+                      .withAlpha(26),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(Icons.list_alt,
-                    color: appColors.openLogColor, size: 24),
+                    color: device.connected
+                        ? appColors.openLogColor
+                        : cs.onSurfaceVariant,
+                    size: 24),
               ),
               title: Text(l10n.openLog,
-                  style:
-                      tt.titleSmall!.copyWith(color: appColors.openLogColor)),
+                  style: tt.titleSmall!.copyWith(
+                      color: device.connected
+                          ? appColors.openLogColor
+                          : cs.onSurfaceVariant)),
               subtitle: Text(l10n.openLogSubtitle,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
               trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-              onTap: () {},
+              onTap: device.connected ? () {} : null,
             ),
           ),
         ],
@@ -162,7 +175,11 @@ class _PlcCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Icon(Icons.wifi, color: appColors.connectedColor, size: 22),
+                Icon(Icons.wifi,
+                    color: device.connected
+                        ? appColors.connectedColor
+                        : cs.onSurfaceVariant,
+                    size: 22),
                 const SizedBox(height: 4),
                 Text(l10n.unitId(device.unitId),
                     style:
@@ -181,6 +198,7 @@ class _ActionCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final Color color;
+  final bool enabled;
   final VoidCallback onTap;
 
   const _ActionCard({
@@ -189,25 +207,27 @@ class _ActionCard extends StatelessWidget {
     required this.subtitle,
     required this.color,
     required this.onTap,
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final effectiveColor = enabled ? color : cs.onSurfaceVariant;
     return Card(
       child: InkWell(
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              Icon(icon, color: color, size: 38),
+              Icon(icon, color: effectiveColor, size: 38),
               const SizedBox(height: 8),
               Text(title,
-                  style: tt.bodyLarge!
-                      .copyWith(color: color, fontWeight: FontWeight.bold),
+                  style: tt.bodyLarge!.copyWith(
+                      color: effectiveColor, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center),
               const SizedBox(height: 4),
               Text(subtitle,
