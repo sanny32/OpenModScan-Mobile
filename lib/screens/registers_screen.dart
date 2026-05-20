@@ -7,6 +7,29 @@ import '../theme/app_theme.dart';
 import '../widgets/connection_info_bar.dart';
 import '../widgets/connection_status_chip.dart';
 
+enum _MenuAction { selectDevice, addRegs, selectRegsList, removeRegs }
+
+class _ListConfig {
+  String name;
+  String regType = '4xxxx';
+  int addrMode = 0;
+  bool autoRefresh = true;
+  final TextEditingController startAddrCtrl;
+  final TextEditingController countCtrl;
+
+  _ListConfig({
+    required this.name,
+    String startAddr = '40001',
+    String count = '20',
+  })  : startAddrCtrl = TextEditingController(text: startAddr),
+        countCtrl = TextEditingController(text: count);
+
+  void dispose() {
+    startAddrCtrl.dispose();
+    countCtrl.dispose();
+  }
+}
+
 class RegistersScreen extends StatefulWidget {
   const RegistersScreen({super.key});
 
@@ -17,14 +40,9 @@ class RegistersScreen extends StatefulWidget {
 class _RegistersScreenState extends State<RegistersScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  String _regType = '4xxxx';
-  int _addrMode = 0;
-  bool _autoRefresh = true;
+  final List<_ListConfig> _lists = [_ListConfig(name: 'List 1')];
+  int _activeList = 0;
   String _deviceName = mockDevice.name;
-
-  final _startAddrCtrl = TextEditingController(text: '40001');
-  final _countCtrl = TextEditingController(text: '20');
-
 
   @override
   void initState() {
@@ -35,9 +53,133 @@ class _RegistersScreenState extends State<RegistersScreen>
   @override
   void dispose() {
     _tabController.dispose();
-    _startAddrCtrl.dispose();
-    _countCtrl.dispose();
+    for (final list in _lists) {
+      list.dispose();
+    }
     super.dispose();
+  }
+
+  void _handleMenu(_MenuAction action) {
+    switch (action) {
+      case _MenuAction.selectDevice:
+        _showSelectDeviceDialog();
+      case _MenuAction.addRegs:
+        _addRegs();
+      case _MenuAction.selectRegsList:
+        _showSelectListDialog();
+      case _MenuAction.removeRegs:
+        _removeActiveRegs();
+    }
+  }
+
+  Future<void> _addRegs() async {
+    final defaultName = 'List ${_lists.length + 1}';
+    final ctrl = TextEditingController(text: defaultName);
+
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.l10n.menuAddRegs),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          decoration: InputDecoration(hintText: context.l10n.dialogListNameHint),
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(context.l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: Text(context.l10n.save),
+          ),
+        ],
+      ),
+    );
+
+    if (name != null && name.isNotEmpty) {
+      setState(() {
+        _lists.add(_ListConfig(name: name));
+        _activeList = _lists.length - 1;
+      });
+    }
+  }
+
+  void _removeActiveRegs() {
+    if (_lists.length <= 1) return;
+    setState(() {
+      _lists[_activeList].dispose();
+      _lists.removeAt(_activeList);
+      if (_activeList >= _lists.length) {
+        _activeList = _lists.length - 1;
+      }
+    });
+  }
+
+  Future<void> _showSelectDeviceDialog() async {
+    final l10n = context.l10n;
+    final cs = Theme.of(context).colorScheme;
+    final connected = mockDevices.where((d) => d.connected).toList();
+
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(l10n.menuSelectDevice),
+        children: connected
+            .map(
+              (d) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(ctx, d.name),
+                child: Row(
+                  children: [
+                    Icon(Icons.memory, size: 20, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(d.name)),
+                    if (d.name == _deviceName)
+                      Icon(Icons.check, size: 18, color: cs.primary),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+
+    if (selected != null) {
+      setState(() => _deviceName = selected);
+    }
+  }
+
+  Future<void> _showSelectListDialog() async {
+    final l10n = context.l10n;
+    final cs = Theme.of(context).colorScheme;
+
+    final selected = await showDialog<int>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(l10n.menuSelectRegsList),
+        children: List.generate(
+          _lists.length,
+          (i) => SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, i),
+            child: Row(
+              children: [
+                Icon(Icons.list, size: 20, color: cs.onSurfaceVariant),
+                const SizedBox(width: 12),
+                Expanded(child: Text(_lists[i].name)),
+                if (i == _activeList)
+                  Icon(Icons.check, size: 18, color: cs.primary),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (selected != null) {
+      setState(() => _activeList = selected);
+    }
   }
 
   @override
@@ -45,6 +187,7 @@ class _RegistersScreenState extends State<RegistersScreen>
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
+    final active = _lists[_activeList];
 
     return Scaffold(
       appBar: AppBar(
@@ -58,28 +201,54 @@ class _RegistersScreenState extends State<RegistersScreen>
           ],
         ),
         actions: [
-          PopupMenuButton<String>(
+          PopupMenuButton<_MenuAction>(
             icon: const Icon(Icons.more_vert),
-            onSelected: (name) => setState(() => _deviceName = name),
-            itemBuilder: (context) => mockDevices
-                .where((d) => d.connected)
-                .map(
-                  (d) => PopupMenuItem<String>(
-                    value: d.name,
-                    child: Row(
-                      children: [
-                        Icon(Icons.memory, size: 18, color: cs.onSurfaceVariant),
-                        const SizedBox(width: 10),
-                        Text(d.name),
-                        if (d.name == _deviceName) ...[
-                          const Spacer(),
-                          Icon(Icons.check, size: 16, color: cs.primary),
-                        ],
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
+            onSelected: _handleMenu,
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: _MenuAction.selectDevice,
+                child: Row(
+                  children: [
+                    Icon(Icons.devices, size: 18, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 10),
+                    Text(l10n.menuSelectDevice),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                value: _MenuAction.addRegs,
+                child: Row(
+                  children: [
+                    Icon(Icons.add, size: 18, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 10),
+                    Text(l10n.menuAddRegs),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                enabled: _lists.length > 1,
+                value: _MenuAction.selectRegsList,
+                child: Row(
+                  children: [
+                    Icon(Icons.list, size: 18, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 10),
+                    Text(l10n.menuSelectRegsList),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                enabled: _lists.length > 1,
+                value: _MenuAction.removeRegs,
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline, size: 18, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 10),
+                    Text(l10n.menuRemoveRegs),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -98,21 +267,23 @@ class _RegistersScreenState extends State<RegistersScreen>
               controller: _tabController,
               children: [
                 _RegistersTab(
-                  regType: _regType,
-                  onRegTypeChanged: (v) => setState(() => _regType = v),
-                  addrMode: _addrMode,
-                  onAddrModeChanged: (v) => setState(() => _addrMode = v),
-                  autoRefresh: _autoRefresh,
-                  onAutoRefreshChanged: (v) => setState(() => _autoRefresh = v),
-                  startAddrCtrl: _startAddrCtrl,
-                  countCtrl: _countCtrl,
+                  regType: active.regType,
+                  onRegTypeChanged: (v) => setState(() => active.regType = v),
+                  addrMode: active.addrMode,
+                  onAddrModeChanged: (v) => setState(() => active.addrMode = v),
+                  autoRefresh: active.autoRefresh,
+                  onAutoRefreshChanged: (v) =>
+                      setState(() => active.autoRefresh = v),
+                  startAddrCtrl: active.startAddrCtrl,
+                  countCtrl: active.countCtrl,
                 ),
                 Center(
                   child: Text(
                     l10n.tabCoils,
                     style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                   ),
                 ),
               ],
@@ -123,6 +294,7 @@ class _RegistersScreenState extends State<RegistersScreen>
     );
   }
 }
+
 
 class _RegistersTab extends StatelessWidget {
   final String regType;
@@ -492,4 +664,3 @@ class _RegisterRow extends StatelessWidget {
     );
   }
 }
-

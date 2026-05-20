@@ -210,5 +210,20 @@
   "@labelNotes": {},
 
   "notesHint": "Add any notes about this connection",
-  "@notesHint": {}
+  "@notesHint": {},
+
+  "menuSelectDevice": "Select Device",
+  "@menuSelectDevice": {},
+
+  "menuAddRegs": "Add Regs",
+  "@menuAddRegs": {},
+
+  "menuSelectRegsList": "Select Regs List",
+  "@menuSelectRegsList": {},
+
+  "menuRemoveRegs": "Remove Regs",
+  "@menuRemoveRegs": {},
+
+  "dialogListNameHint": "List name",
+  "@dialogListNameHint": {}
 }
