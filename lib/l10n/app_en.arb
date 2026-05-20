@@ -13,6 +13,9 @@
   "navLog": "Log",
   "@navLog": {},
 
+  "navMore": "More",
+  "@navMore": {},
+
   "statusConnected": "Connected",
   "@statusConnected": {},
 
@@ -225,5 +228,111 @@
   "@menuRemoveRegs": {},
 
   "dialogListNameHint": "List name",
-  "@dialogListNameHint": {}
+  "@dialogListNameHint": {},
+
+  "settingsTitle": "Settings",
+  "@settingsTitle": {},
+
+  "settingsSectionConnection": "Connection",
+  "@settingsSectionConnection": {},
+
+  "settingsDefaultConnectionType": "Default connection type",
+  "@settingsDefaultConnectionType": {},
+
+  "settingsDefaultTimeout": "Default timeout",
+  "@settingsDefaultTimeout": {},
+
+  "settingsReconnectDelay": "Reconnect delay",
+  "@settingsReconnectDelay": {},
+
+  "settingsDefaultUnitId": "Default Unit ID (Slave ID)",
+  "@settingsDefaultUnitId": {},
+
+  "settingsSectionReadWrite": "Read / Write",
+  "@settingsSectionReadWrite": {},
+
+  "settingsDefaultReadQty": "Default read quantity",
+  "@settingsDefaultReadQty": {},
+
+  "settingsConfirmBeforeWrite": "Confirm before write",
+  "@settingsConfirmBeforeWrite": {},
+
+  "settingsShowLastValues": "Show last values after read",
+  "@settingsShowLastValues": {},
+
+  "settingsSectionLog": "Log",
+  "@settingsSectionLog": {},
+
+  "settingsLogLevel": "Log level",
+  "@settingsLogLevel": {},
+
+  "settingsSaveLogToFile": "Save log to file",
+  "@settingsSaveLogToFile": {},
+
+  "settingsClearLogOnDisconnect": "Clear log on disconnect",
+  "@settingsClearLogOnDisconnect": {},
+
+  "settingsMaxLogEntries": "Max log entries",
+  "@settingsMaxLogEntries": {},
+
+  "settingsSectionAppearance": "Appearance",
+  "@settingsSectionAppearance": {},
+
+  "settingsTheme": "Theme",
+  "@settingsTheme": {},
+
+  "settingsLanguage": "Language",
+  "@settingsLanguage": {},
+
+  "settingsSectionOther": "Other",
+  "@settingsSectionOther": {},
+
+  "settingsBackupRestore": "Backup & Restore",
+  "@settingsBackupRestore": {},
+
+  "settingsResetDefaults": "Reset to defaults",
+  "@settingsResetDefaults": {},
+
+  "settingsResetConfirmMessage": "All settings will be reset to their default values.",
+  "@settingsResetConfirmMessage": {},
+
+  "settingsValueMs": "{value} ms",
+  "@settingsValueMs": {
+    "placeholders": {
+      "value": {"type": "int"}
+    }
+  },
+
+  "aboutTitle": "About",
+  "@aboutTitle": {},
+
+  "aboutApplication": "Application",
+  "@aboutApplication": {},
+
+  "aboutVersion": "Version",
+  "@aboutVersion": {},
+
+  "aboutBuildDate": "Build date",
+  "@aboutBuildDate": {},
+
+  "aboutLicense": "License",
+  "@aboutLicense": {},
+
+  "aboutWebsite": "Website",
+  "@aboutWebsite": {},
+
+  "aboutEmail": "Email",
+  "@aboutEmail": {},
+
+  "aboutDocumentation": "Documentation",
+  "@aboutDocumentation": {},
+
+  "aboutReportIssue": "Report an issue",
+  "@aboutReportIssue": {},
+
+  "aboutCopyright": "© 2025 OpenModScan\nAll rights reserved.",
+  "@aboutCopyright": {},
+
+  "aboutLicenseMit": "MIT License",
+  "@aboutLicenseMit": {}
 }
