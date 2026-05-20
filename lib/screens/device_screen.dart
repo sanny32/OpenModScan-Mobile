@@ -27,7 +27,7 @@ class DeviceScreen extends StatelessWidget {
               ),
               TextSpan(
                 text: l10n.appBarNameSuffix,
-                style: tt.titleLarge!.copyWith(color: cs.primary),
+                style: tt.titleLarge!.copyWith(color: appColors.brandGreen),
               ),
             ],
           ),

@@ -13,6 +13,7 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color disconnectedColor;
   final Color openLogColor;
   final Color writeActionColor;
+  final Color brandGreen;
 
   const AppColors({
     required this.valueColor,
@@ -25,6 +26,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.disconnectedColor,
     required this.openLogColor,
     required this.writeActionColor,
+    required this.brandGreen,
   });
 
   static const dark = AppColors(
@@ -38,6 +40,7 @@ class AppColors extends ThemeExtension<AppColors> {
     disconnectedColor: Color(0xFFEF5350),
     openLogColor: Color(0xFFCE93D8),
     writeActionColor: Color(0xFF66BB6A),
+    brandGreen: Color(0xFF3DDC3D),
   );
 
   static const light = AppColors(
@@ -51,6 +54,7 @@ class AppColors extends ThemeExtension<AppColors> {
     disconnectedColor: Color(0xFFD32F2F),
     openLogColor: Color(0xFF7B1FA2),
     writeActionColor: Color(0xFF2E7D32),
+    brandGreen: Color(0xFF259025),
   );
 
   @override
@@ -65,6 +69,7 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? disconnectedColor,
     Color? openLogColor,
     Color? writeActionColor,
+    Color? brandGreen,
   }) =>
       AppColors(
         valueColor: valueColor ?? this.valueColor,
@@ -77,6 +82,7 @@ class AppColors extends ThemeExtension<AppColors> {
         disconnectedColor: disconnectedColor ?? this.disconnectedColor,
         openLogColor: openLogColor ?? this.openLogColor,
         writeActionColor: writeActionColor ?? this.writeActionColor,
+        brandGreen: brandGreen ?? this.brandGreen,
       );
 
   @override
@@ -95,6 +101,7 @@ class AppColors extends ThemeExtension<AppColors> {
       openLogColor: Color.lerp(openLogColor, other.openLogColor, t)!,
       writeActionColor:
           Color.lerp(writeActionColor, other.writeActionColor, t)!,
+      brandGreen: Color.lerp(brandGreen, other.brandGreen, t)!,
     );
   }
 }
