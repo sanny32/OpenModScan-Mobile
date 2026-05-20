@@ -30,3 +30,11 @@ const mockDevice = DeviceInfo(
   unitId: 1,
   connected: true,
 );
+
+const mockDevices = [
+  mockDevice,
+  DeviceInfo(name: 'Water Pump Station', host: '192.168.0.20', port: 502, protocol: ProtocolType.modbusTcp, unitId: 1),
+  DeviceInfo(name: 'HVAC Controller',    host: '192.168.0.30', port: 502, protocol: ProtocolType.modbusTcp, unitId: 1),
+  DeviceInfo(name: 'Energy Meter',       host: '192.168.0.40', port: 502, protocol: ProtocolType.modbusTcp, unitId: 1),
+  DeviceInfo(name: 'Boiler Control',     host: '10.0.0.15',    port: 502, protocol: ProtocolType.modbusTcp, unitId: 2),
+];

@@ -19,9 +19,11 @@ class _RegistersScreenState extends State<RegistersScreen>
   String _regType = '4xxxx';
   int _addrMode = 0;
   bool _autoRefresh = true;
+  String _deviceName = mockDevice.name;
 
   final _startAddrCtrl = TextEditingController(text: '40001');
   final _countCtrl = TextEditingController(text: '20');
+
 
   @override
   void initState() {
@@ -39,7 +41,7 @@ class _RegistersScreenState extends State<RegistersScreen>
 
   @override
   Widget build(BuildContext context) {
-    const device = mockDevice;
+    final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -48,18 +50,40 @@ class _RegistersScreenState extends State<RegistersScreen>
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(device.name, style: tt.titleMedium),
+            Text(_deviceName, style: tt.titleMedium),
             const SizedBox(height: 2),
-            ConnectionStatusChip(connected: device.connected),
+            ConnectionStatusChip(connected: mockDevice.connected),
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (name) => setState(() => _deviceName = name),
+            itemBuilder: (context) => mockDevices
+                .where((d) => d.connected)
+                .map(
+                  (d) => PopupMenuItem<String>(
+                    value: d.name,
+                    child: Row(
+                      children: [
+                        Icon(Icons.memory, size: 18, color: cs.onSurfaceVariant),
+                        const SizedBox(width: 10),
+                        Text(d.name),
+                        if (d.name == _deviceName) ...[
+                          const Spacer(),
+                          Icon(Icons.check, size: 16, color: cs.primary),
+                        ],
+                      ],
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
         ],
       ),
       body: Column(
         children: [
-          ConnectionInfoBar(device: device),
+          ConnectionInfoBar(device: mockDevice),
           TabBar(
             controller: _tabController,
             tabs: const [
@@ -465,3 +489,4 @@ class _RegisterRow extends StatelessWidget {
     );
   }
 }
+
