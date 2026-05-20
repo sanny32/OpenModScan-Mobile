@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
+import 'screens/devices_screen.dart';
 import 'screens/log_screen.dart';
 import 'screens/registers_screen.dart';
 import 'theme/app_theme.dart';
@@ -34,7 +34,7 @@ class _AppShellState extends State<AppShell> {
   int _index = 0;
 
   static const _screens = [
-    HomeScreen(),
+    DevicesScreen(),
     RegistersScreen(),
     LogScreen(),
   ];
