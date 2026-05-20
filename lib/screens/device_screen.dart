@@ -15,11 +15,13 @@ class DeviceScreen extends StatefulWidget {
 
 class _DeviceScreenState extends State<DeviceScreen> {
   late String _notes;
+  late bool _connected;
 
   @override
   void initState() {
     super.initState();
     _notes = widget.device.notes;
+    _connected = widget.device.connected;
   }
 
   void _editNotes() {
@@ -82,21 +84,21 @@ class _DeviceScreenState extends State<DeviceScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          ConnectionStatusChip(connected: device.connected),
+          ConnectionStatusChip(connected: _connected),
           const SizedBox(height: 12),
-          _PlcCard(device: device),
+          _PlcCard(device: device, connected: _connected),
           const SizedBox(height: 12),
           OutlinedButton(
-            onPressed: () {},
+            onPressed: () => setState(() => _connected = !_connected),
             style: OutlinedButton.styleFrom(
               side: BorderSide(
-                  color: device.connected ? cs.error : cs.primary),
-              foregroundColor: device.connected ? cs.error : cs.primary,
+                  color: _connected ? cs.error : cs.primary),
+              foregroundColor: _connected ? cs.error : cs.primary,
               minimumSize: const Size(double.infinity, 48),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
             ),
-            child: Text(device.connected ? l10n.disconnect : l10n.connect),
+            child: Text(_connected ? l10n.disconnect : l10n.connect),
           ),
           const SizedBox(height: 16),
           Row(
@@ -107,7 +109,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                   title: l10n.readRegisters,
                   subtitle: l10n.readRegistersSubtitle,
                   color: cs.primary,
-                  enabled: device.connected,
+                  enabled: _connected,
                   onTap: () {},
                 ),
               ),
@@ -118,13 +120,13 @@ class _DeviceScreenState extends State<DeviceScreen> {
                   title: l10n.writeValue,
                   subtitle: l10n.writeValueSubtitle,
                   color: appColors.writeActionColor,
-                  enabled: device.connected,
+                  enabled: _connected,
                   onTap: () {},
                 ),
               ),
             ],
           ),
-          if (device.connected) ...[
+          if (_connected) ...[
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -142,32 +144,32 @@ class _DeviceScreenState extends State<DeviceScreen> {
           const SizedBox(height: 12),
           Card(
             child: ListTile(
-              enabled: device.connected,
+              enabled: _connected,
               leading: Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: (device.connected
+                  color: (_connected
                           ? appColors.openLogColor
                           : cs.onSurfaceVariant)
                       .withAlpha(26),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(Icons.list_alt,
-                    color: device.connected
+                    color: _connected
                         ? appColors.openLogColor
                         : cs.onSurfaceVariant,
                     size: 24),
               ),
               title: Text(l10n.openLog,
                   style: tt.titleSmall!.copyWith(
-                      color: device.connected
+                      color: _connected
                           ? appColors.openLogColor
                           : cs.onSurfaceVariant)),
               subtitle: Text(l10n.openLogSubtitle,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
               trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-              onTap: device.connected ? () {} : null,
+              onTap: _connected ? () {} : null,
             ),
           ),
           const SizedBox(height: 12),
@@ -212,7 +214,8 @@ class _DeviceScreenState extends State<DeviceScreen> {
 
 class _PlcCard extends StatelessWidget {
   final DeviceInfo device;
-  const _PlcCard({required this.device});
+  final bool connected;
+  const _PlcCard({required this.device, required this.connected});
 
   @override
   Widget build(BuildContext context) {
@@ -253,7 +256,7 @@ class _PlcCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Icon(Icons.wifi,
-                    color: device.connected
+                    color: connected
                         ? appColors.connectedColor
                         : cs.onSurfaceVariant,
                     size: 22),
