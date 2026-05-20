@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/device_info.dart';
 import '../models/register_entry.dart';
 import '../theme/app_theme.dart';
@@ -19,6 +20,9 @@ class _RegistersScreenState extends State<RegistersScreen>
   int _addrMode = 0;
   bool _autoRefresh = true;
 
+  final _startAddrCtrl = TextEditingController(text: '40001');
+  final _countCtrl = TextEditingController(text: '20');
+
   @override
   void initState() {
     super.initState();
@@ -28,6 +32,8 @@ class _RegistersScreenState extends State<RegistersScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _startAddrCtrl.dispose();
+    _countCtrl.dispose();
     super.dispose();
   }
 
@@ -72,6 +78,8 @@ class _RegistersScreenState extends State<RegistersScreen>
                   onAddrModeChanged: (v) => setState(() => _addrMode = v),
                   autoRefresh: _autoRefresh,
                   onAutoRefreshChanged: (v) => setState(() => _autoRefresh = v),
+                  startAddrCtrl: _startAddrCtrl,
+                  countCtrl: _countCtrl,
                 ),
                 Center(
                   child: Text(
@@ -97,6 +105,8 @@ class _RegistersTab extends StatelessWidget {
   final ValueChanged<int> onAddrModeChanged;
   final bool autoRefresh;
   final ValueChanged<bool> onAutoRefreshChanged;
+  final TextEditingController startAddrCtrl;
+  final TextEditingController countCtrl;
 
   const _RegistersTab({
     required this.regType,
@@ -105,6 +115,8 @@ class _RegistersTab extends StatelessWidget {
     required this.onAddrModeChanged,
     required this.autoRefresh,
     required this.onAutoRefreshChanged,
+    required this.startAddrCtrl,
+    required this.countCtrl,
   });
 
   @override
@@ -156,18 +168,55 @@ class _RegistersTab extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
           child: Row(
             children: [
               Text(
-                'Quantity: ',
-                style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
+                'Start',
+                style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
+              const SizedBox(width: 6),
+              SizedBox(
+                width: 72,
+                child: TextField(
+                  controller: startAddrCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  style: tt.bodyMedium,
+                  textAlign: TextAlign.center,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 8,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               Text(
-                '20',
-                style: tt.bodyMedium!.copyWith(
-                  color: cs.primary,
-                  fontWeight: FontWeight.bold,
+                'Count',
+                style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+              ),
+              const SizedBox(width: 6),
+              SizedBox(
+                width: 44,
+                child: TextField(
+                  controller: countCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    _MaxCountFormatter(),
+                  ],
+                  style: tt.bodyMedium,
+                  textAlign: TextAlign.center,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 8,
+                    ),
+                  ),
                 ),
               ),
               const Spacer(),
@@ -252,6 +301,19 @@ class _RegistersTab extends StatelessWidget {
   }
 }
 
+class _MaxCountFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) return newValue;
+    final n = int.tryParse(newValue.text);
+    if (n == null || n > 125) return oldValue;
+    return newValue;
+  }
+}
+
 class _RegTypeDropdown extends StatelessWidget {
   final String value;
   final ValueChanged<String> onChanged;
@@ -264,28 +326,28 @@ class _RegTypeDropdown extends StatelessWidget {
     return SizedBox(
       height: 36,
       child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          isDense: true,
-          isExpanded: true,
-          dropdownColor: cs.surfaceContainerHighest,
-          style: tt.bodyMedium!.copyWith(color: cs.onSurface),
-          items: const [
-            DropdownMenuItem(value: '4xxxx', child: Text('4xxxx')),
-            DropdownMenuItem(value: '3xxxx', child: Text('3xxxx')),
-          ],
-          onChanged: (v) {
-            if (v != null) onChanged(v);
-          },
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
-      ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: value,
+            isDense: true,
+            isExpanded: true,
+            dropdownColor: cs.surfaceContainerHighest,
+            style: tt.bodyMedium!.copyWith(color: cs.onSurface),
+            items: const [
+              DropdownMenuItem(value: '4xxxx', child: Text('4xxxx')),
+              DropdownMenuItem(value: '3xxxx', child: Text('3xxxx')),
+            ],
+            onChanged: (v) {
+              if (v != null) onChanged(v);
+            },
+          ),
+        ),
       ),
     );
   }
