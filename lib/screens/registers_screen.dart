@@ -261,9 +261,9 @@ class _RegistersTab extends StatelessWidget {
                 ),
               ),
               SizedBox(
-                width: 56,
+                width: 80,
                 child: Text(
-                  'Quality',
+                  'Comment',
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                 ),
               ),
@@ -451,14 +451,11 @@ class _RegisterRow extends StatelessWidget {
               ),
             ),
             SizedBox(
-              width: 56,
-              child: Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: appColors.qualityGood,
-                  shape: BoxShape.circle,
-                ),
+              width: 80,
+              child: Text(
+                entry.comment ?? '',
+                style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             Icon(Icons.chevron_right, color: cs.onSurfaceVariant, size: 20),
