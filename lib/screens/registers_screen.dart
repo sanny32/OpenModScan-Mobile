@@ -261,7 +261,9 @@ class _RegTypeDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    return Container(
+    return SizedBox(
+      height: 36,
+      child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
@@ -271,6 +273,7 @@ class _RegTypeDropdown extends StatelessWidget {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
+          isDense: true,
           isExpanded: true,
           dropdownColor: cs.surfaceContainerHighest,
           style: tt.bodyMedium!.copyWith(color: cs.onSurface),
@@ -282,6 +285,7 @@ class _RegTypeDropdown extends StatelessWidget {
             if (v != null) onChanged(v);
           },
         ),
+      ),
       ),
     );
   }
