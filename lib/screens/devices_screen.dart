@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'connect_device_sheet.dart';
+import 'device_screen.dart';
 
 class _SavedDevice {
   final String name;
@@ -96,8 +97,15 @@ class _DevicesScreenState extends State<DevicesScreen> {
                 padding: const EdgeInsets.only(bottom: 72),
                 children: [
                   _sectionHeader(context, 'Saved connections'),
-                  ..._filtered
-                      .map((d) => _DeviceCard(device: d, onTap: () {})),
+                  ..._filtered.map((d) => _DeviceCard(
+                        device: d,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const DeviceScreen(),
+                          ),
+                        ),
+                      )),
                   _sectionHeader(context, 'Discovered devices'),
                   _DiscoveredCard(
                     address: '192.168.0.50:502',

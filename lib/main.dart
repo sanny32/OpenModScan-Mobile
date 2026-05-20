@@ -34,11 +34,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _index = 0;
 
-  static const _screens = [
-    DevicesScreen(),
-    RegistersScreen(),
-    LogScreen(),
-  ];
+  static const _screens = [DevicesScreen(), RegistersScreen(), LogScreen()];
 
   @override
   Widget build(BuildContext context) {
@@ -48,9 +44,18 @@ class _AppShellState extends State<AppShell> {
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.grid_on), label: 'Registers'),
-          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Log'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.devices),
+            label: 'Devices',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.grid_on),
+            label: 'Registers',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list_alt),
+            label: 'Log',
+          ),
         ],
       ),
     );

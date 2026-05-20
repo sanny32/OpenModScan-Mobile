@@ -4,8 +4,8 @@ import '../models/register_entry.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection_status_chip.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class DeviceScreen extends StatelessWidget {
+  const DeviceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +103,8 @@ class HomeScreen extends StatelessWidget {
                     color: appColors.openLogColor, size: 24),
               ),
               title: Text('Open Log',
-                  style: tt.titleSmall!.copyWith(color: appColors.openLogColor)),
+                  style:
+                      tt.titleSmall!.copyWith(color: appColors.openLogColor)),
               subtitle: Text('View communication log',
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
               trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
@@ -160,8 +161,8 @@ class _PlcCard extends StatelessWidget {
                 Icon(Icons.wifi, color: appColors.connectedColor, size: 22),
                 const SizedBox(height: 4),
                 Text('ID: ${device.unitId}',
-                    style: tt.bodySmall!
-                        .copyWith(color: cs.onSurfaceVariant)),
+                    style:
+                        tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
               ],
             ),
           ],
@@ -206,8 +207,7 @@ class _ActionCard extends StatelessWidget {
                   textAlign: TextAlign.center),
               const SizedBox(height: 4),
               Text(subtitle,
-                  style: tt.labelSmall!
-                      .copyWith(color: cs.onSurfaceVariant),
+                  style: tt.labelSmall!.copyWith(color: cs.onSurfaceVariant),
                   textAlign: TextAlign.center),
             ],
           ),
@@ -238,8 +238,7 @@ class _LastValueRow extends StatelessWidget {
           Expanded(
             child: Text(entry.value,
                 style: tt.bodyMedium!.copyWith(
-                    color: appColors.valueColor,
-                    fontWeight: FontWeight.bold)),
+                    color: appColors.valueColor, fontWeight: FontWeight.bold)),
           ),
           Text(entry.typeName,
               style: tt.bodyMedium!.copyWith(color: appColors.typeColor)),
