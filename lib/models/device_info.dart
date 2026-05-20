@@ -7,6 +7,7 @@ class DeviceInfo {
   final ProtocolType protocol;
   final int unitId;
   final bool connected;
+  final bool lastUsed;
 
   const DeviceInfo({
     required this.name,
@@ -15,6 +16,7 @@ class DeviceInfo {
     required this.protocol,
     required this.unitId,
     this.connected = false,
+    this.lastUsed = false,
   });
 
   String get address => '$host:$port';
@@ -29,6 +31,7 @@ const mockDevice = DeviceInfo(
   protocol: ProtocolType.modbusTcp,
   unitId: 1,
   connected: true,
+  lastUsed: true,
 );
 
 const mockDevices = [

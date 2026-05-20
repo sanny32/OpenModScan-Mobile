@@ -6,11 +6,11 @@ import '../theme/app_theme.dart';
 import '../widgets/connection_status_chip.dart';
 
 class DeviceScreen extends StatelessWidget {
-  const DeviceScreen({super.key});
+  final DeviceInfo device;
+  const DeviceScreen({super.key, required this.device});
 
   @override
   Widget build(BuildContext context) {
-    const device = mockDevice;
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>()!;
@@ -46,13 +46,14 @@ class DeviceScreen extends StatelessWidget {
           OutlinedButton(
             onPressed: () {},
             style: OutlinedButton.styleFrom(
-              side: BorderSide(color: cs.error),
-              foregroundColor: cs.error,
+              side: BorderSide(
+                  color: device.connected ? cs.error : cs.primary),
+              foregroundColor: device.connected ? cs.error : cs.primary,
               minimumSize: const Size(double.infinity, 48),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
             ),
-            child: Text(l10n.disconnect),
+            child: Text(device.connected ? l10n.disconnect : l10n.connect),
           ),
           const SizedBox(height: 16),
           Row(

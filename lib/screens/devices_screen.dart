@@ -1,34 +1,9 @@
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
+import '../models/device_info.dart';
 import '../theme/app_theme.dart';
 import 'connect_device_sheet.dart';
 import 'device_screen.dart';
-
-class _SavedDevice {
-  final String name;
-  final String address;
-  final String protocol;
-  final int unitId;
-  final bool connected;
-  final bool lastUsed;
-
-  const _SavedDevice({
-    required this.name,
-    required this.address,
-    required this.protocol,
-    required this.unitId,
-    this.connected = false,
-    this.lastUsed = false,
-  });
-}
-
-const _mockSaved = [
-  _SavedDevice(name: 'PLC #1', address: '192.168.0.10:502', protocol: 'Modbus TCP', unitId: 1, connected: true, lastUsed: true),
-  _SavedDevice(name: 'Water Pump Station', address: '192.168.0.20:502', protocol: 'Modbus TCP', unitId: 1),
-  _SavedDevice(name: 'HVAC Controller', address: '192.168.0.30:502', protocol: 'Modbus TCP', unitId: 1),
-  _SavedDevice(name: 'Energy Meter', address: '192.168.0.40:502', protocol: 'Modbus TCP', unitId: 1),
-  _SavedDevice(name: 'Boiler Control', address: '10.0.0.15:502', protocol: 'Modbus TCP', unitId: 2),
-];
 
 class DevicesScreen extends StatefulWidget {
   const DevicesScreen({super.key});
@@ -40,7 +15,7 @@ class DevicesScreen extends StatefulWidget {
 class _DevicesScreenState extends State<DevicesScreen> {
   String _search = '';
 
-  List<_SavedDevice> get _filtered => _mockSaved
+  List<DeviceInfo> get _filtered => mockDevices
       .where((d) =>
           _search.isEmpty ||
           d.name.toLowerCase().contains(_search.toLowerCase()) ||
@@ -104,7 +79,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const DeviceScreen(),
+                            builder: (_) => DeviceScreen(device: d),
                           ),
                         ),
                       )),
@@ -137,7 +112,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
 }
 
 class _DeviceCard extends StatelessWidget {
-  final _SavedDevice device;
+  final DeviceInfo device;
   final VoidCallback onTap;
   const _DeviceCard({required this.device, required this.onTap});
 
@@ -197,7 +172,7 @@ class _DeviceCard extends StatelessWidget {
                         style: tt.bodyMedium!
                             .copyWith(color: cs.onSurfaceVariant)),
                     Text(
-                      l10n.protocolAndUnitId(device.protocol, device.unitId),
+                      l10n.protocolAndUnitId(device.protocolName, device.unitId),
                       style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                     ),
                   ],
