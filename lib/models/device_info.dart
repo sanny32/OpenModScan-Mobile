@@ -1,4 +1,4 @@
-enum ProtocolType { modbusTcp }
+enum ProtocolType { modbusTcp, modbusRtuIp }
 
 class DeviceInfo {
   final String name;
@@ -8,6 +8,7 @@ class DeviceInfo {
   final int unitId;
   final bool connected;
   final bool lastUsed;
+  final String notes;
 
   const DeviceInfo({
     required this.name,
@@ -17,6 +18,7 @@ class DeviceInfo {
     required this.unitId,
     this.connected = false,
     this.lastUsed = false,
+    this.notes = '',
   });
 
   String get address => '$host:$port';
@@ -36,8 +38,32 @@ const mockDevice = DeviceInfo(
 
 const mockDevices = [
   mockDevice,
-  DeviceInfo(name: 'Water Pump Station', host: '192.168.0.20', port: 502, protocol: ProtocolType.modbusTcp, unitId: 1),
-  DeviceInfo(name: 'HVAC Controller',    host: '192.168.0.30', port: 502, protocol: ProtocolType.modbusTcp, unitId: 1),
-  DeviceInfo(name: 'Energy Meter',       host: '192.168.0.40', port: 502, protocol: ProtocolType.modbusTcp, unitId: 1),
-  DeviceInfo(name: 'Boiler Control',     host: '10.0.0.15',    port: 502, protocol: ProtocolType.modbusTcp, unitId: 2),
+  DeviceInfo(
+    name: 'Water Pump Station',
+    host: '192.168.0.20',
+    port: 502,
+    protocol: ProtocolType.modbusTcp,
+    unitId: 1,
+  ),
+  DeviceInfo(
+    name: 'HVAC Controller',
+    host: '192.168.0.30',
+    port: 502,
+    protocol: ProtocolType.modbusTcp,
+    unitId: 1,
+  ),
+  DeviceInfo(
+    name: 'Energy Meter',
+    host: '192.168.0.40',
+    port: 502,
+    protocol: ProtocolType.modbusTcp,
+    unitId: 1,
+  ),
+  DeviceInfo(
+    name: 'Boiler Control',
+    host: '10.0.0.15',
+    port: 502,
+    protocol: ProtocolType.modbusTcp,
+    unitId: 2,
+  ),
 ];

@@ -5,12 +5,55 @@ import '../models/register_entry.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection_status_chip.dart';
 
-class DeviceScreen extends StatelessWidget {
+class DeviceScreen extends StatefulWidget {
   final DeviceInfo device;
   const DeviceScreen({super.key, required this.device});
 
   @override
+  State<DeviceScreen> createState() => _DeviceScreenState();
+}
+
+class _DeviceScreenState extends State<DeviceScreen> {
+  late String _notes;
+
+  @override
+  void initState() {
+    super.initState();
+    _notes = widget.device.notes;
+  }
+
+  void _editNotes() {
+    final ctrl = TextEditingController(text: _notes);
+    final l10n = context.l10n;
+    showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.labelNotes),
+        content: TextField(
+          controller: ctrl,
+          maxLines: 5,
+          autofocus: true,
+          decoration: InputDecoration(hintText: l10n.notesHint),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text),
+            child: Text(l10n.save),
+          ),
+        ],
+      ),
+    ).then((value) {
+      if (value != null) setState(() => _notes = value);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final device = widget.device;
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>()!;
@@ -125,6 +168,40 @@ class DeviceScreen extends StatelessWidget {
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
               trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
               onTap: device.connected ? () {} : null,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l10n.labelNotes,
+                            style: tt.labelMedium!
+                                .copyWith(color: cs.onSurfaceVariant)),
+                        const SizedBox(height: 4),
+                        Text(
+                          _notes.isEmpty ? l10n.notesHint : _notes,
+                          style: tt.bodyMedium!.copyWith(
+                              color: _notes.isEmpty
+                                  ? cs.onSurfaceVariant
+                                  : cs.onSurface),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    color: cs.onSurfaceVariant,
+                    onPressed: _editNotes,
+                  ),
+                ],
+              ),
             ),
           ),
         ],
