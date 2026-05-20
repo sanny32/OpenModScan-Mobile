@@ -35,3 +35,6 @@ doc/api/
 # AI tools
 .claude
 AGENTS.md
+
+# Generated l10n files
+lib/gen/

@@ -19,6 +19,7 @@ class _LogScreenState extends State<LogScreen> {
   _LogFilter _filter = _LogFilter.all;
   bool _autoScroll = true;
   bool _clearOnDisconnect = false;
+  String _deviceName = mockDevice.name;
 
   List<LogEntry> get _filtered {
     switch (_filter) {
@@ -56,7 +57,7 @@ class _LogScreenState extends State<LogScreen> {
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(l10n.navLog, style: tt.titleMedium),
+            Text(_deviceName, style: tt.titleMedium),
             const SizedBox(height: 2),
             ConnectionStatusChip(connected: device.connected),
           ],
@@ -64,8 +65,29 @@ class _LogScreenState extends State<LogScreen> {
         actions: [
           IconButton(
               icon: const Icon(Icons.delete_outline), onPressed: () {}),
-          IconButton(
-              icon: const Icon(Icons.more_vert), onPressed: () {}),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (name) => setState(() => _deviceName = name),
+            itemBuilder: (context) => mockDevices
+                .where((d) => d.connected)
+                .map(
+                  (d) => PopupMenuItem<String>(
+                    value: d.name,
+                    child: Row(
+                      children: [
+                        Icon(Icons.memory, size: 18, color: cs.onSurfaceVariant),
+                        const SizedBox(width: 10),
+                        Text(d.name),
+                        if (d.name == _deviceName) ...[
+                          const Spacer(),
+                          Icon(Icons.check, size: 16, color: cs.primary),
+                        ],
+                      ],
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
         ],
       ),
       body: Column(
