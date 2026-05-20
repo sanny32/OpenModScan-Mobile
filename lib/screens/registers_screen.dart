@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../l10n/l10n.dart';
 import '../models/device_info.dart';
 import '../models/register_entry.dart';
 import '../theme/app_theme.dart';
@@ -43,6 +44,7 @@ class _RegistersScreenState extends State<RegistersScreen>
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
@@ -86,9 +88,9 @@ class _RegistersScreenState extends State<RegistersScreen>
           ConnectionInfoBar(device: mockDevice),
           TabBar(
             controller: _tabController,
-            tabs: const [
-              Tab(text: 'Registers'),
-              Tab(text: 'Coils'),
+            tabs: [
+              Tab(text: l10n.navRegisters),
+              Tab(text: l10n.tabCoils),
             ],
           ),
           Expanded(
@@ -107,7 +109,7 @@ class _RegistersScreenState extends State<RegistersScreen>
                 ),
                 Center(
                   child: Text(
-                    'Coils',
+                    l10n.tabCoils,
                     style: Theme.of(context).textTheme.titleMedium!.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -147,6 +149,7 @@ class _RegistersTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final l10n = context.l10n;
     final dividerColor = Theme.of(context).dividerTheme.color ?? cs.outline;
 
     return Column(
@@ -174,7 +177,7 @@ class _RegistersTab extends StatelessWidget {
               ),
               ElevatedButton.icon(
                 icon: const Icon(Icons.refresh, size: 15),
-                label: const Text('Read'),
+                label: Text(l10n.btnRead),
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: cs.primary,
@@ -196,7 +199,7 @@ class _RegistersTab extends StatelessWidget {
           child: Row(
             children: [
               Text(
-                'Start',
+                l10n.labelStart,
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(width: 6),
@@ -219,7 +222,7 @@ class _RegistersTab extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Text(
-                'Count',
+                l10n.labelCount,
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(width: 6),
@@ -245,7 +248,7 @@ class _RegistersTab extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                'Auto refresh',
+                l10n.labelAutoRefresh,
                 style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
               ),
               Transform.scale(
@@ -267,27 +270,27 @@ class _RegistersTab extends StatelessWidget {
               SizedBox(
                 width: 72,
                 child: Text(
-                  'Address',
+                  l10n.colAddress,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                 ),
               ),
               Expanded(
                 child: Text(
-                  'Value',
+                  l10n.colValue,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                 ),
               ),
               SizedBox(
                 width: 68,
                 child: Text(
-                  'Type',
+                  l10n.colType,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                 ),
               ),
               SizedBox(
                 width: 80,
                 child: Text(
-                  'Comment',
+                  l10n.colComment,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                 ),
               ),
@@ -310,11 +313,11 @@ class _RegistersTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Showing 40001 – 40020',
+                l10n.registersShowing(40001, 40020),
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
               Text(
-                'Last update: 10:42:35',
+                l10n.registersLastUpdate('10:42:35'),
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
             ],
@@ -395,12 +398,12 @@ class _AddrValueToggle extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _Btn(
-            label: 'Address',
+            label: context.l10n.colAddress,
             active: selected == 0,
             onTap: () => onChanged(0),
           ),
           _Btn(
-            label: 'Value',
+            label: context.l10n.colValue,
             active: selected == 1,
             onTap: () => onChanged(1),
           ),

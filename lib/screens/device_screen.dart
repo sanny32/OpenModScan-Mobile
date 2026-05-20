@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import '../models/device_info.dart';
 import '../models/register_entry.dart';
 import '../theme/app_theme.dart';
@@ -13,6 +14,7 @@ class DeviceScreen extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>()!;
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
@@ -20,11 +22,11 @@ class DeviceScreen extends StatelessWidget {
           text: TextSpan(
             children: [
               TextSpan(
-                text: 'OpenModScan',
+                text: l10n.appBarName,
                 style: tt.titleLarge!.copyWith(color: cs.onSurface),
               ),
               TextSpan(
-                text: ' Mobile',
+                text: l10n.appBarNameSuffix,
                 style: tt.titleLarge!.copyWith(color: cs.primary),
               ),
             ],
@@ -50,7 +52,7 @@ class DeviceScreen extends StatelessWidget {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Disconnect'),
+            child: Text(l10n.disconnect),
           ),
           const SizedBox(height: 16),
           Row(
@@ -58,8 +60,8 @@ class DeviceScreen extends StatelessWidget {
               Expanded(
                 child: _ActionCard(
                   icon: Icons.download_outlined,
-                  title: 'Read Registers',
-                  subtitle: 'Read holding/input\nregisters',
+                  title: l10n.readRegisters,
+                  subtitle: l10n.readRegistersSubtitle,
                   color: cs.primary,
                   onTap: () {},
                 ),
@@ -68,8 +70,8 @@ class DeviceScreen extends StatelessWidget {
               Expanded(
                 child: _ActionCard(
                   icon: Icons.upload_outlined,
-                  title: 'Write Value',
-                  subtitle: 'Write single/multiple\nregisters',
+                  title: l10n.writeValue,
+                  subtitle: l10n.writeValueSubtitle,
                   color: appColors.writeActionColor,
                   onTap: () {},
                 ),
@@ -80,10 +82,10 @@ class DeviceScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Last Values', style: tt.titleMedium),
+              Text(l10n.lastValues, style: tt.titleMedium),
               TextButton(
                 onPressed: () {},
-                child: const Text('View All >'),
+                child: Text(l10n.viewAll),
               ),
             ],
           ),
@@ -102,10 +104,10 @@ class DeviceScreen extends StatelessWidget {
                 child: Icon(Icons.list_alt,
                     color: appColors.openLogColor, size: 24),
               ),
-              title: Text('Open Log',
+              title: Text(l10n.openLog,
                   style:
                       tt.titleSmall!.copyWith(color: appColors.openLogColor)),
-              subtitle: Text('View communication log',
+              subtitle: Text(l10n.openLogSubtitle,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
               trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
               onTap: () {},
@@ -126,6 +128,7 @@ class _PlcCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>()!;
+    final l10n = context.l10n;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -160,7 +163,7 @@ class _PlcCard extends StatelessWidget {
               children: [
                 Icon(Icons.wifi, color: appColors.connectedColor, size: 22),
                 const SizedBox(height: 4),
-                Text('ID: ${device.unitId}',
+                Text(l10n.unitId(device.unitId),
                     style:
                         tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
               ],

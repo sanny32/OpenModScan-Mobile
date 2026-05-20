@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 
 class ConnectDeviceSheet extends StatefulWidget {
   const ConnectDeviceSheet({super.key});
@@ -33,6 +34,7 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final l10n = context.l10n;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.95,
@@ -62,16 +64,16 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
+                    child: Text(l10n.cancel),
                   ),
                   Expanded(
-                    child: Text('Connect to device',
+                    child: Text(l10n.connectToDevice,
                         textAlign: TextAlign.center,
                         style: tt.titleMedium),
                   ),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Save'),
+                    child: Text(l10n.save),
                   ),
                 ],
               ),
@@ -82,15 +84,15 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                 controller: scrollController,
                 padding: const EdgeInsets.all(16),
                 children: [
-                  _label(context, 'Connection type'),
+                  _label(context, l10n.connectionType),
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
                         child: _TypeCard(
                           icon: Icons.lan_outlined,
-                          label: 'Modbus TCP',
-                          sub: 'Standard Modbus TCP',
+                          label: l10n.connectTypeTcp,
+                          sub: l10n.connectTypeTcpSub,
                           selected: _connType == 0,
                           onTap: () => setState(() => _connType = 0),
                         ),
@@ -99,8 +101,8 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                       Expanded(
                         child: _TypeCard(
                           icon: Icons.cable_outlined,
-                          label: 'RTU over TCP/IP',
-                          sub: 'Modbus RTU over TCP',
+                          label: l10n.connectTypeRtu,
+                          sub: l10n.connectTypeRtuSub,
                           selected: _connType == 1,
                           onTap: () => setState(() => _connType = 1),
                         ),
@@ -108,7 +110,7 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  _label(context, 'Name'),
+                  _label(context, l10n.labelName),
                   const SizedBox(height: 6),
                   _field(_nameCtrl),
                   const SizedBox(height: 16),
@@ -120,7 +122,7 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _label(context, 'Host / IP address'),
+                            _label(context, l10n.labelHost),
                             const SizedBox(height: 6),
                             _field(_hostCtrl, type: TextInputType.url),
                           ],
@@ -132,7 +134,7 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _label(context, 'Port'),
+                            _label(context, l10n.labelPort),
                             const SizedBox(height: 6),
                             _field(_portCtrl, type: TextInputType.number),
                           ],
@@ -141,7 +143,7 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _label(context, 'Unit ID (Slave ID)'),
+                  _label(context, l10n.labelUnitIdField),
                   const SizedBox(height: 6),
                   _field(_unitCtrl, type: TextInputType.number),
                   const SizedBox(height: 16),
@@ -152,7 +154,7 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _label(context, 'Timeout'),
+                            _label(context, l10n.labelTimeout),
                             const SizedBox(height: 6),
                             _fieldSuffix(_timeoutCtrl, 'ms', context),
                           ],
@@ -163,7 +165,7 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _label(context, 'Reconnect delay'),
+                            _label(context, l10n.labelReconnectDelay),
                             const SizedBox(height: 6),
                             _fieldSuffix(_reconnectCtrl, 'ms', context),
                           ],
@@ -172,14 +174,14 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _label(context, 'Notes (optional)'),
+                  _label(context, l10n.labelNotes),
                   const SizedBox(height: 6),
                   TextField(
                     controller: _notesCtrl,
                     maxLines: 4,
-                    decoration: const InputDecoration(
-                      hintText: 'Add any notes about this connection',
-                      contentPadding: EdgeInsets.all(12),
+                    decoration: InputDecoration(
+                      hintText: l10n.notesHint,
+                      contentPadding: const EdgeInsets.all(12),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -193,7 +195,7 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Connect'),
+                    child: Text(l10n.connect),
                   ),
                   const SizedBox(height: 16),
                 ],

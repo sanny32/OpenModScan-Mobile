@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'l10n/l10n.dart';
 import 'screens/devices_screen.dart';
 import 'screens/log_screen.dart';
 import 'screens/registers_screen.dart';
@@ -18,6 +19,8 @@ class OModScanApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: const AppShell(),
       debugShowCheckedModeBanner: false,
     );
@@ -38,23 +41,24 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       body: IndexedStack(index: _index, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.devices),
-            label: 'Devices',
+            icon: const Icon(Icons.devices),
+            label: l10n.navDevices,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.grid_on),
-            label: 'Registers',
+            icon: const Icon(Icons.grid_on),
+            label: l10n.navRegisters,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt),
-            label: 'Log',
+            icon: const Icon(Icons.list_alt),
+            label: l10n.navLog,
           ),
         ],
       ),

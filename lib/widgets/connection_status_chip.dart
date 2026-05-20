@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_theme.dart';
 
 class ConnectionStatusChip extends StatelessWidget {
@@ -10,6 +11,7 @@ class ConnectionStatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColors>()!;
     final tt = Theme.of(context).textTheme;
+    final l10n = context.l10n;
     final color =
         connected ? appColors.connectedColor : appColors.disconnectedColor;
     return Row(
@@ -22,7 +24,7 @@ class ConnectionStatusChip extends StatelessWidget {
         ),
         const SizedBox(width: 5),
         Text(
-          connected ? 'Connected' : 'Disconnected',
+          connected ? l10n.statusConnected : l10n.statusDisconnected,
           style: tt.bodySmall!.copyWith(color: color),
         ),
       ],

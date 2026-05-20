@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import '../models/device_info.dart';
 
 class ConnectionInfoBar extends StatelessWidget {
@@ -10,6 +11,7 @@ class ConnectionInfoBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final l10n = context.l10n;
 
     return Container(
       color: cs.surfaceContainer,
@@ -26,7 +28,7 @@ class ConnectionInfoBar extends StatelessWidget {
           const SizedBox(width: 10),
           _vDivider(cs.onSurfaceVariant),
           const SizedBox(width: 10),
-          Text('ID: ${device.unitId}', style: tt.bodyMedium),
+          Text(l10n.unitId(device.unitId), style: tt.bodyMedium),
         ],
       ),
     );

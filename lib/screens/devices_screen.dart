@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_theme.dart';
 import 'connect_device_sheet.dart';
 import 'device_screen.dart';
@@ -59,6 +60,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final l10n = context.l10n;
 
     return Scaffold(
       body: SafeArea(
@@ -70,7 +72,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text('Devices', style: tt.headlineMedium),
+                    child: Text(l10n.navDevices, style: tt.headlineMedium),
                   ),
                   IconButton(
                       icon: const Icon(Icons.add), onPressed: _openConnect),
@@ -85,7 +87,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
               child: TextField(
                 onChanged: (v) => setState(() => _search = v),
                 decoration: InputDecoration(
-                  hintText: 'Search devices',
+                  hintText: l10n.devicesSearch,
                   prefixIcon: Icon(Icons.search,
                       color: cs.onSurfaceVariant, size: 20),
                   contentPadding: const EdgeInsets.symmetric(vertical: 0),
@@ -96,7 +98,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
               child: ListView(
                 padding: const EdgeInsets.only(bottom: 72),
                 children: [
-                  _sectionHeader(context, 'Saved connections'),
+                  _sectionHeader(context, l10n.devicesSavedConnections),
                   ..._filtered.map((d) => _DeviceCard(
                         device: d,
                         onTap: () => Navigator.push(
@@ -106,7 +108,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                           ),
                         ),
                       )),
-                  _sectionHeader(context, 'Discovered devices'),
+                  _sectionHeader(context, l10n.devicesDiscoveredDevices),
                   _DiscoveredCard(
                     address: '192.168.0.50:502',
                     protocol: 'Modbus TCP',
@@ -144,6 +146,7 @@ class _DeviceCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>()!;
+    final l10n = context.l10n;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: InkWell(
@@ -183,7 +186,7 @@ class _DeviceCard extends StatelessWidget {
                               color: cs.primary,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: Text('Last used',
+                            child: Text(l10n.devicesLastUsed,
                                 style: tt.labelSmall!
                                     .copyWith(color: cs.onPrimary)),
                           ),
@@ -193,9 +196,10 @@ class _DeviceCard extends StatelessWidget {
                     Text(device.address,
                         style: tt.bodyMedium!
                             .copyWith(color: cs.onSurfaceVariant)),
-                    Text('${device.protocol} • ID: ${device.unitId}',
-                        style: tt.bodySmall!
-                            .copyWith(color: cs.onSurfaceVariant)),
+                    Text(
+                      l10n.protocolAndUnitId(device.protocol, device.unitId),
+                      style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                    ),
                   ],
                 ),
               ),
@@ -226,6 +230,7 @@ class _DiscoveredCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final l10n = context.l10n;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Padding(
@@ -239,9 +244,10 @@ class _DiscoveredCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(address, style: tt.titleSmall),
-                  Text('$protocol • ID: $unitId',
-                      style:
-                          tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
+                  Text(
+                    l10n.protocolAndUnitId(protocol, unitId),
+                    style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                  ),
                 ],
               ),
             ),
@@ -257,7 +263,7 @@ class _DiscoveredCard extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Connect'),
+              child: Text(l10n.devicesConnect),
             ),
           ],
         ),
@@ -273,6 +279,7 @@ class _ScanButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -280,7 +287,7 @@ class _ScanButton extends StatelessWidget {
         top: false,
         child: OutlinedButton.icon(
           icon: const Icon(Icons.wifi_find),
-          label: const Text('Scan network'),
+          label: Text(l10n.devicesScanNetwork),
           onPressed: onTap,
           style: OutlinedButton.styleFrom(
             minimumSize: const Size(double.infinity, 48),

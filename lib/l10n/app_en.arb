@@ -1,0 +1,214 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "OpenModScan Mobile",
+  "@appTitle": {},
+
+  "navDevices": "Devices",
+  "@navDevices": {},
+
+  "navRegisters": "Registers",
+  "@navRegisters": {},
+
+  "navLog": "Log",
+  "@navLog": {},
+
+  "statusConnected": "Connected",
+  "@statusConnected": {},
+
+  "statusDisconnected": "Disconnected",
+  "@statusDisconnected": {},
+
+  "unitId": "ID: {id}",
+  "@unitId": {
+    "placeholders": {
+      "id": {"type": "int"}
+    }
+  },
+
+  "devicesSearch": "Search devices",
+  "@devicesSearch": {},
+
+  "devicesSavedConnections": "Saved connections",
+  "@devicesSavedConnections": {},
+
+  "devicesDiscoveredDevices": "Discovered devices",
+  "@devicesDiscoveredDevices": {},
+
+  "devicesLastUsed": "Last used",
+  "@devicesLastUsed": {},
+
+  "devicesConnect": "Connect",
+  "@devicesConnect": {},
+
+  "devicesScanNetwork": "Scan network",
+  "@devicesScanNetwork": {},
+
+  "protocolAndUnitId": "{protocol} • ID: {unitId}",
+  "@protocolAndUnitId": {
+    "placeholders": {
+      "protocol": {"type": "String"},
+      "unitId": {"type": "int"}
+    }
+  },
+
+  "appBarName": "OpenModScan",
+  "@appBarName": {},
+
+  "appBarNameSuffix": " Mobile",
+  "@appBarNameSuffix": {},
+
+  "disconnect": "Disconnect",
+  "@disconnect": {},
+
+  "readRegisters": "Read Registers",
+  "@readRegisters": {},
+
+  "readRegistersSubtitle": "Read holding/input\nregisters",
+  "@readRegistersSubtitle": {},
+
+  "writeValue": "Write Value",
+  "@writeValue": {},
+
+  "writeValueSubtitle": "Write single/multiple\nregisters",
+  "@writeValueSubtitle": {},
+
+  "lastValues": "Last Values",
+  "@lastValues": {},
+
+  "viewAll": "View All >",
+  "@viewAll": {},
+
+  "openLog": "Open Log",
+  "@openLog": {},
+
+  "openLogSubtitle": "View communication log",
+  "@openLogSubtitle": {},
+
+  "tabCoils": "Coils",
+  "@tabCoils": {},
+
+  "colAddress": "Address",
+  "@colAddress": {},
+
+  "colValue": "Value",
+  "@colValue": {},
+
+  "colType": "Type",
+  "@colType": {},
+
+  "colComment": "Comment",
+  "@colComment": {},
+
+  "btnRead": "Read",
+  "@btnRead": {},
+
+  "labelStart": "Start",
+  "@labelStart": {},
+
+  "labelCount": "Count",
+  "@labelCount": {},
+
+  "labelAutoRefresh": "Auto refresh",
+  "@labelAutoRefresh": {},
+
+  "registersShowing": "Showing {start} – {end}",
+  "@registersShowing": {
+    "placeholders": {
+      "start": {"type": "int"},
+      "end": {"type": "int"}
+    }
+  },
+
+  "registersLastUpdate": "Last update: {time}",
+  "@registersLastUpdate": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+
+  "filterAll": "All",
+  "@filterAll": {},
+
+  "filterTx": "TX",
+  "@filterTx": {},
+
+  "filterRx": "RX",
+  "@filterRx": {},
+
+  "filterErrors": "Errors",
+  "@filterErrors": {},
+
+  "labelAutoScroll": "Auto scroll",
+  "@labelAutoScroll": {},
+
+  "colTime": "Time",
+  "@colTime": {},
+
+  "colDirection": "Direction",
+  "@colDirection": {},
+
+  "colFunction": "Function",
+  "@colFunction": {},
+
+  "logMessages": "Messages: {count}",
+  "@logMessages": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "logClearOnDisconnect": "Clear on disconnect",
+  "@logClearOnDisconnect": {},
+
+  "connectToDevice": "Connect to device",
+  "@connectToDevice": {},
+
+  "cancel": "Cancel",
+  "@cancel": {},
+
+  "save": "Save",
+  "@save": {},
+
+  "connect": "Connect",
+  "@connect": {},
+
+  "connectionType": "Connection type",
+  "@connectionType": {},
+
+  "connectTypeTcp": "Modbus TCP",
+  "@connectTypeTcp": {},
+
+  "connectTypeTcpSub": "Standard Modbus TCP",
+  "@connectTypeTcpSub": {},
+
+  "connectTypeRtu": "RTU over TCP/IP",
+  "@connectTypeRtu": {},
+
+  "connectTypeRtuSub": "Modbus RTU over TCP",
+  "@connectTypeRtuSub": {},
+
+  "labelName": "Name",
+  "@labelName": {},
+
+  "labelHost": "Host / IP address",
+  "@labelHost": {},
+
+  "labelPort": "Port",
+  "@labelPort": {},
+
+  "labelUnitIdField": "Unit ID (Slave ID)",
+  "@labelUnitIdField": {},
+
+  "labelTimeout": "Timeout",
+  "@labelTimeout": {},
+
+  "labelReconnectDelay": "Reconnect delay",
+  "@labelReconnectDelay": {},
+
+  "labelNotes": "Notes (optional)",
+  "@labelNotes": {},
+
+  "notesHint": "Add any notes about this connection",
+  "@notesHint": {}
+}

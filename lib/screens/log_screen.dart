@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import '../models/device_info.dart';
 import '../models/log_entry.dart';
 import '../theme/app_theme.dart';
@@ -45,6 +46,7 @@ class _LogScreenState extends State<LogScreen> {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>()!;
+    final l10n = context.l10n;
     final dividerColor =
         Theme.of(context).dividerTheme.color ?? cs.outline;
 
@@ -54,7 +56,7 @@ class _LogScreenState extends State<LogScreen> {
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Log', style: tt.titleMedium),
+            Text(l10n.navLog, style: tt.titleMedium),
             const SizedBox(height: 2),
             ConnectionStatusChip(connected: device.connected),
           ],
@@ -70,41 +72,37 @@ class _LogScreenState extends State<LogScreen> {
         children: [
           ConnectionInfoBar(device: device),
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             child: Row(
               children: [
                 _FilterBtn(
-                    label: 'All',
+                    label: l10n.filterAll,
                     selected: _filter == _LogFilter.all,
-                    onTap: () =>
-                        setState(() => _filter = _LogFilter.all)),
+                    onTap: () => setState(() => _filter = _LogFilter.all)),
                 const SizedBox(width: 6),
                 _FilterBtn(
-                    label: 'TX',
+                    label: l10n.filterTx,
                     icon: Icons.arrow_upward,
                     color: appColors.txColor,
                     selected: _filter == _LogFilter.tx,
-                    onTap: () =>
-                        setState(() => _filter = _LogFilter.tx)),
+                    onTap: () => setState(() => _filter = _LogFilter.tx)),
                 const SizedBox(width: 6),
                 _FilterBtn(
-                    label: 'RX',
+                    label: l10n.filterRx,
                     icon: Icons.arrow_downward,
                     color: appColors.rxColor,
                     selected: _filter == _LogFilter.rx,
-                    onTap: () =>
-                        setState(() => _filter = _LogFilter.rx)),
+                    onTap: () => setState(() => _filter = _LogFilter.rx)),
                 const SizedBox(width: 6),
                 _FilterBtn(
-                    label: 'Errors',
+                    label: l10n.filterErrors,
                     icon: Icons.warning_amber_outlined,
                     color: appColors.warningColor,
                     selected: _filter == _LogFilter.errors,
                     onTap: () =>
                         setState(() => _filter = _LogFilter.errors)),
                 const Spacer(),
-                Text('Auto scroll',
+                Text(l10n.labelAutoScroll,
                     style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
                 Transform.scale(
                   scale: 0.8,
@@ -118,22 +116,21 @@ class _LogScreenState extends State<LogScreen> {
           ),
           Container(
             color: cs.surfaceContainer,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Row(
               children: [
                 SizedBox(
                     width: 90,
-                    child: Text('Time',
+                    child: Text(l10n.colTime,
                         style: tt.bodySmall!
                             .copyWith(color: cs.onSurfaceVariant))),
                 SizedBox(
                     width: 58,
-                    child: Text('Direction',
+                    child: Text(l10n.colDirection,
                         style: tt.bodySmall!
                             .copyWith(color: cs.onSurfaceVariant))),
                 Expanded(
-                    child: Text('Function',
+                    child: Text(l10n.colFunction,
                         style: tt.bodySmall!
                             .copyWith(color: cs.onSurfaceVariant))),
               ],
@@ -150,16 +147,15 @@ class _LogScreenState extends State<LogScreen> {
           ),
           Container(
             color: cs.surfaceContainer,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Messages: 128',
+                Text(l10n.logMessages(128),
                     style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
                 Row(
                   children: [
-                    Text('Clear on disconnect',
+                    Text(l10n.logClearOnDisconnect,
                         style: tt.bodySmall!
                             .copyWith(color: cs.onSurfaceVariant)),
                     Transform.scale(
@@ -204,8 +200,7 @@ class _FilterBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: selected ? effectiveColor : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
@@ -240,6 +235,7 @@ class _LogRow extends StatelessWidget {
     final appColors = Theme.of(context).extension<AppColors>()!;
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final l10n = context.l10n;
     final isError = entry.type == LogEntryType.error;
     final isTx = entry.direction == LogDirection.tx;
 
@@ -272,7 +268,7 @@ class _LogRow extends StatelessWidget {
                 : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(isTx ? 'TX' : 'RX',
+                      Text(isTx ? l10n.filterTx : l10n.filterRx,
                           style: tt.bodySmall!.copyWith(
                               color: dirColor,
                               fontWeight: FontWeight.bold)),
