@@ -56,60 +56,49 @@ class _DevicesScreenState extends State<DevicesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
     return Scaffold(
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 4, 0),
               child: Row(
                 children: [
-                  const Expanded(
-                    child: Text('Devices',
-                        style: TextStyle(
-                            fontSize: 28, fontWeight: FontWeight.bold)),
+                  Expanded(
+                    child: Text('Devices', style: tt.headlineMedium),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: _openConnect,
-                  ),
+                      icon: const Icon(Icons.add), onPressed: _openConnect),
                   IconButton(
-                    icon: const Icon(Icons.more_horiz),
-                    onPressed: () {},
-                  ),
+                      icon: const Icon(Icons.more_horiz),
+                      onPressed: () {}),
                 ],
               ),
             ),
-            // Search
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: TextField(
                 onChanged: (v) => setState(() => _search = v),
                 decoration: InputDecoration(
                   hintText: 'Search devices',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  prefixIcon:
-                      const Icon(Icons.search, color: Colors.grey, size: 20),
-                  filled: true,
-                  fillColor: AppTheme.surfaceVariant,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
+                  prefixIcon: Icon(Icons.search,
+                      color: cs.onSurfaceVariant, size: 20),
                   contentPadding: const EdgeInsets.symmetric(vertical: 0),
                 ),
               ),
             ),
-            // List
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.only(bottom: 72),
                 children: [
-                  _sectionHeader('Saved connections'),
-                  ..._filtered.map((d) => _DeviceCard(device: d, onTap: () {})),
-                  _sectionHeader('Discovered devices'),
+                  _sectionHeader(context, 'Saved connections'),
+                  ..._filtered
+                      .map((d) => _DeviceCard(device: d, onTap: () {})),
+                  _sectionHeader(context, 'Discovered devices'),
                   _DiscoveredCard(
                     address: '192.168.0.50:502',
                     protocol: 'Modbus TCP',
@@ -126,14 +115,15 @@ class _DevicesScreenState extends State<DevicesScreen> {
     );
   }
 
-  Widget _sectionHeader(String title) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
-        child: Text(title,
-            style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 13,
-                fontWeight: FontWeight.w600)),
-      );
+  Widget _sectionHeader(BuildContext context, String title) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+      child: Text(title,
+          style: tt.labelLarge!.copyWith(color: cs.onSurfaceVariant)),
+    );
+  }
 }
 
 class _DeviceCard extends StatelessWidget {
@@ -143,6 +133,9 @@ class _DeviceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: InkWell(
@@ -158,12 +151,12 @@ class _DeviceCard extends StatelessWidget {
                 margin: const EdgeInsets.only(right: 10),
                 decoration: BoxDecoration(
                   color: device.connected
-                      ? AppTheme.qualityGood
-                      : Colors.grey.shade700,
+                      ? appColors.connectedColor
+                      : cs.onSurfaceVariant,
                   shape: BoxShape.circle,
                 ),
               ),
-              const Icon(Icons.memory, color: Color(0xFF1976D2), size: 28),
+              Icon(Icons.memory, color: cs.primary, size: 28),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -172,36 +165,34 @@ class _DeviceCard extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(device.name,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 15)),
+                          child: Text(device.name, style: tt.titleSmall),
                         ),
                         if (device.lastUsed)
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1976D2),
+                              color: cs.primary,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text('Last used',
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 11)),
+                            child: Text('Last used',
+                                style: tt.labelSmall!
+                                    .copyWith(color: cs.onPrimary)),
                           ),
                       ],
                     ),
                     const SizedBox(height: 2),
                     Text(device.address,
-                        style:
-                            const TextStyle(color: Colors.grey, fontSize: 13)),
+                        style: tt.bodyMedium!
+                            .copyWith(color: cs.onSurfaceVariant)),
                     Text('${device.protocol} • ID: ${device.unitId}',
-                        style:
-                            const TextStyle(color: Colors.grey, fontSize: 12)),
+                        style: tt.bodySmall!
+                            .copyWith(color: cs.onSurfaceVariant)),
                   ],
                 ),
               ),
               const SizedBox(width: 6),
-              const Icon(Icons.chevron_right, color: Colors.grey),
+              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
             ],
           ),
         ),
@@ -225,34 +216,34 @@ class _DiscoveredCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
-            const Icon(Icons.wifi, color: Color(0xFF1976D2), size: 28),
+            Icon(Icons.wifi, color: cs.primary, size: 28),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(address,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text(address, style: tt.titleSmall),
                   Text('$protocol • ID: $unitId',
                       style:
-                          const TextStyle(color: Colors.grey, fontSize: 12)),
+                          tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
                 ],
               ),
             ),
             OutlinedButton(
               onPressed: onConnect,
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFF1976D2)),
-                foregroundColor: const Color(0xFF1976D2),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                side: BorderSide(color: cs.primary),
+                foregroundColor: cs.primary,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 8),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 shape: RoundedRectangleBorder(
@@ -273,8 +264,9 @@ class _ScanButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
-      color: AppTheme.background,
+      color: Theme.of(context).scaffoldBackgroundColor,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: SafeArea(
         top: false,
@@ -284,10 +276,10 @@ class _ScanButton extends StatelessWidget {
           onPressed: onTap,
           style: OutlinedButton.styleFrom(
             minimumSize: const Size(double.infinity, 48),
-            side: const BorderSide(color: Color(0xFF1976D2)),
-            foregroundColor: const Color(0xFF1976D2),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            side: BorderSide(color: cs.primary),
+            foregroundColor: cs.primary,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
           ),
         ),
       ),

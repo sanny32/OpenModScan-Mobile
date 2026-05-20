@@ -10,25 +10,22 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const device = mockDevice;
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final appColors = Theme.of(context).extension<AppColors>()!;
 
     return Scaffold(
       appBar: AppBar(
         title: RichText(
-          text: const TextSpan(
+          text: TextSpan(
             children: [
               TextSpan(
                 text: 'OpenModScan',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold),
+                style: tt.titleLarge!.copyWith(color: cs.onSurface),
               ),
               TextSpan(
                 text: ' Mobile',
-                style: TextStyle(
-                    color: Color(0xFF1976D2),
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold),
+                style: tt.titleLarge!.copyWith(color: cs.primary),
               ),
             ],
           ),
@@ -47,8 +44,8 @@ class HomeScreen extends StatelessWidget {
           OutlinedButton(
             onPressed: () {},
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.red),
-              foregroundColor: Colors.red,
+              side: BorderSide(color: cs.error),
+              foregroundColor: cs.error,
               minimumSize: const Size(double.infinity, 48),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
@@ -63,7 +60,7 @@ class HomeScreen extends StatelessWidget {
                   icon: Icons.download_outlined,
                   title: 'Read Registers',
                   subtitle: 'Read holding/input\nregisters',
-                  color: const Color(0xFF1976D2),
+                  color: cs.primary,
                   onTap: () {},
                 ),
               ),
@@ -73,7 +70,7 @@ class HomeScreen extends StatelessWidget {
                   icon: Icons.upload_outlined,
                   title: 'Write Value',
                   subtitle: 'Write single/multiple\nregisters',
-                  color: const Color(0xFF4CAF50),
+                  color: appColors.writeActionColor,
                   onTap: () {},
                 ),
               ),
@@ -83,20 +80,15 @@ class HomeScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Last Values',
-                  style:
-                      TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text('Last Values', style: tt.titleMedium),
               TextButton(
                 onPressed: () {},
-                child: const Text('View All >',
-                    style: TextStyle(color: Color(0xFF1976D2))),
+                child: const Text('View All >'),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          ...mockRegisters
-              .take(5)
-              .map((r) => _LastValueRow(entry: r)),
+          ...mockRegisters.take(5).map((r) => _LastValueRow(entry: r)),
           const SizedBox(height: 12),
           Card(
             child: ListTile(
@@ -104,18 +96,17 @@ class HomeScreen extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.purple.withAlpha(26),
+                  color: appColors.openLogColor.withAlpha(26),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child:
-                    const Icon(Icons.list_alt, color: Colors.purple, size: 24),
+                child: Icon(Icons.list_alt,
+                    color: appColors.openLogColor, size: 24),
               ),
-              title: const Text('Open Log',
-                  style: TextStyle(
-                      color: Colors.purple, fontWeight: FontWeight.bold)),
-              subtitle: const Text('View communication log',
-                  style: TextStyle(color: Colors.grey, fontSize: 12)),
-              trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+              title: Text('Open Log',
+                  style: tt.titleSmall!.copyWith(color: appColors.openLogColor)),
+              subtitle: Text('View communication log',
+                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
+              trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
               onTap: () {},
             ),
           ),
@@ -131,6 +122,9 @@ class _PlcCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -140,37 +134,34 @@ class _PlcCard extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: const Color(0xFF1976D2).withAlpha(26),
+                color: cs.primary.withAlpha(26),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.memory, color: Color(0xFF1976D2), size: 30),
+              child: Icon(Icons.memory, color: cs.primary, size: 30),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(device.name,
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(device.name, style: tt.titleMedium),
                   const SizedBox(height: 2),
                   Text(device.address,
-                      style:
-                          const TextStyle(color: Colors.grey, fontSize: 13)),
+                      style: tt.bodyMedium!
+                          .copyWith(color: cs.onSurfaceVariant)),
                   Text(device.protocolName,
-                      style: const TextStyle(
-                          color: Color(0xFF1976D2), fontSize: 12)),
+                      style: tt.bodySmall!.copyWith(color: cs.primary)),
                 ],
               ),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Icon(Icons.wifi, color: Color(0xFF4CAF50), size: 22),
+                Icon(Icons.wifi, color: appColors.connectedColor, size: 22),
                 const SizedBox(height: 4),
                 Text('ID: ${device.unitId}',
-                    style:
-                        const TextStyle(color: Colors.grey, fontSize: 12)),
+                    style: tt.bodySmall!
+                        .copyWith(color: cs.onSurfaceVariant)),
               ],
             ),
           ],
@@ -197,6 +188,8 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     return Card(
       child: InkWell(
         onTap: onTap,
@@ -208,15 +201,13 @@ class _ActionCard extends StatelessWidget {
               Icon(icon, color: color, size: 38),
               const SizedBox(height: 8),
               Text(title,
-                  style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14),
+                  style: tt.bodyLarge!
+                      .copyWith(color: color, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center),
               const SizedBox(height: 4),
               Text(subtitle,
-                  style:
-                      const TextStyle(color: Colors.grey, fontSize: 11),
+                  style: tt.labelSmall!
+                      .copyWith(color: cs.onSurfaceVariant),
                   textAlign: TextAlign.center),
             ],
           ),
@@ -232,6 +223,9 @@ class _LastValueRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -239,19 +233,16 @@ class _LastValueRow extends StatelessWidget {
           SizedBox(
             width: 60,
             child: Text('${entry.address}',
-                style:
-                    const TextStyle(color: Colors.white, fontSize: 13)),
+                style: tt.bodyMedium!.copyWith(color: cs.onSurface)),
           ),
           Expanded(
             child: Text(entry.value,
-                style: const TextStyle(
-                    color: AppTheme.valueColor,
-                    fontSize: 13,
+                style: tt.bodyMedium!.copyWith(
+                    color: appColors.valueColor,
                     fontWeight: FontWeight.bold)),
           ),
           Text(entry.typeName,
-              style:
-                  const TextStyle(color: AppTheme.typeColor, fontSize: 13)),
+              style: tt.bodyMedium!.copyWith(color: appColors.typeColor)),
         ],
       ),
     );

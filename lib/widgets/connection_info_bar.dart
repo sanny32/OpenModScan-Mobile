@@ -8,30 +8,30 @@ class ConnectionInfoBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
     return Container(
-      color: const Color(0xFF1A1A1A),
+      color: cs.surfaceContainer,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          const Icon(Icons.dns_outlined, size: 16, color: Colors.grey),
+          Icon(Icons.dns_outlined, size: 16, color: cs.onSurfaceVariant),
           const SizedBox(width: 6),
-          Text(device.address,
-              style: const TextStyle(color: Colors.white, fontSize: 13)),
+          Text(device.address, style: tt.bodyMedium),
           const SizedBox(width: 10),
-          _vDivider(),
+          _vDivider(cs.onSurfaceVariant),
           const SizedBox(width: 10),
-          Text(device.protocolName,
-              style: const TextStyle(color: Colors.white, fontSize: 13)),
+          Text(device.protocolName, style: tt.bodyMedium),
           const SizedBox(width: 10),
-          _vDivider(),
+          _vDivider(cs.onSurfaceVariant),
           const SizedBox(width: 10),
-          Text('ID: ${device.unitId}',
-              style: const TextStyle(color: Colors.white, fontSize: 13)),
+          Text('ID: ${device.unitId}', style: tt.bodyMedium),
         ],
       ),
     );
   }
 
-  Widget _vDivider() =>
-      Container(width: 1, height: 14, color: Colors.grey.shade700);
+  Widget _vDivider(Color color) =>
+      Container(width: 1, height: 14, color: color);
 }

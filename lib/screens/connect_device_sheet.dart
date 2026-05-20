@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
 
 class ConnectDeviceSheet extends StatefulWidget {
   const ConnectDeviceSheet({super.key});
@@ -32,28 +31,30 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
     return DraggableScrollableSheet(
       initialChildSize: 0.95,
       minChildSize: 0.6,
       maxChildSize: 0.95,
       builder: (_, scrollController) => Container(
-        decoration: const BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(16)),
         ),
         child: Column(
           children: [
-            // Drag handle
             Container(
               margin: const EdgeInsets.only(top: 8, bottom: 4),
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade600,
+                color: cs.onSurfaceVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            // Header bar
             Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -63,11 +64,10 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Cancel'),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text('Connect to device',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
+                        style: tt.titleMedium),
                   ),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
@@ -77,13 +77,12 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
               ),
             ),
             const Divider(height: 1),
-            // Scrollable body
             Expanded(
               child: ListView(
                 controller: scrollController,
                 padding: const EdgeInsets.all(16),
                 children: [
-                  _label('Connection type'),
+                  _label(context, 'Connection type'),
                   const SizedBox(height: 8),
                   Row(
                     children: [
@@ -109,7 +108,7 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  _label('Name'),
+                  _label(context, 'Name'),
                   const SizedBox(height: 6),
                   _field(_nameCtrl),
                   const SizedBox(height: 16),
@@ -121,10 +120,9 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _label('Host / IP address'),
+                            _label(context, 'Host / IP address'),
                             const SizedBox(height: 6),
-                            _field(_hostCtrl,
-                                keyboardType: TextInputType.url),
+                            _field(_hostCtrl, type: TextInputType.url),
                           ],
                         ),
                       ),
@@ -134,19 +132,18 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _label('Port'),
+                            _label(context, 'Port'),
                             const SizedBox(height: 6),
-                            _field(_portCtrl,
-                                keyboardType: TextInputType.number),
+                            _field(_portCtrl, type: TextInputType.number),
                           ],
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _label('Unit ID (Slave ID)'),
+                  _label(context, 'Unit ID (Slave ID)'),
                   const SizedBox(height: 6),
-                  _field(_unitCtrl, keyboardType: TextInputType.number),
+                  _field(_unitCtrl, type: TextInputType.number),
                   const SizedBox(height: 16),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,9 +152,9 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _label('Timeout'),
+                            _label(context, 'Timeout'),
                             const SizedBox(height: 6),
-                            _fieldSuffix(_timeoutCtrl, 'ms'),
+                            _fieldSuffix(_timeoutCtrl, 'ms', context),
                           ],
                         ),
                       ),
@@ -166,31 +163,36 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _label('Reconnect delay'),
+                            _label(context, 'Reconnect delay'),
                             const SizedBox(height: 6),
-                            _fieldSuffix(_reconnectCtrl, 'ms'),
+                            _fieldSuffix(_reconnectCtrl, 'ms', context),
                           ],
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _label('Notes (optional)'),
+                  _label(context, 'Notes (optional)'),
                   const SizedBox(height: 6),
-                  _textArea(_notesCtrl),
+                  TextField(
+                    controller: _notesCtrl,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      hintText: 'Add any notes about this connection',
+                      contentPadding: EdgeInsets.all(12),
+                    ),
+                  ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1976D2),
-                      foregroundColor: Colors.white,
+                      backgroundColor: cs.primary,
+                      foregroundColor: cs.onPrimary,
                       minimumSize: const Size(double.infinity, 52),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Connect',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: Text('Connect', style: tt.titleMedium),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -202,63 +204,38 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
     );
   }
 
-  Widget _label(String text) =>
-      Text(text, style: const TextStyle(color: Colors.grey, fontSize: 13));
-
-  Widget _field(TextEditingController ctrl,
-      {TextInputType? keyboardType}) {
-    return TextField(
-      controller: ctrl,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: AppTheme.surfaceVariant,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      ),
-    );
+  Widget _label(BuildContext context, String t) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Text(t,
+        style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant));
   }
 
-  Widget _fieldSuffix(TextEditingController ctrl, String suffix) {
-    return TextField(
-      controller: ctrl,
-      keyboardType: TextInputType.number,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: AppTheme.surfaceVariant,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
+  Widget _field(TextEditingController c, {TextInputType? type}) =>
+      TextField(
+        controller: c,
+        keyboardType: type,
+        decoration: const InputDecoration(
+          contentPadding:
+              EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        suffixText: suffix,
-        suffixStyle: const TextStyle(color: Colors.grey),
-      ),
-    );
-  }
+      );
 
-  Widget _textArea(TextEditingController ctrl) {
-    return TextField(
-      controller: ctrl,
-      maxLines: 4,
-      decoration: InputDecoration(
-        hintText: 'Add any notes about this connection',
-        hintStyle: const TextStyle(color: Colors.grey),
-        filled: true,
-        fillColor: AppTheme.surfaceVariant,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
+  Widget _fieldSuffix(
+          TextEditingController c, String suffix, BuildContext context) =>
+      TextField(
+        controller: c,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          suffixText: suffix,
+          suffixStyle: Theme.of(context)
+              .textTheme
+              .bodyMedium!
+              .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
-        contentPadding: const EdgeInsets.all(12),
-      ),
-    );
-  }
+      );
 }
 
 class _TypeCard extends StatelessWidget {
@@ -278,16 +255,17 @@ class _TypeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = const Color(0xFF1976D2);
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceVariant,
+          color: cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected ? color : Colors.grey.shade800,
+            color: selected ? cs.primary : cs.outline,
             width: selected ? 2 : 1,
           ),
         ),
@@ -302,27 +280,26 @@ class _TypeCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: selected ? color : Colors.grey,
+                    color: selected ? cs.primary : cs.onSurfaceVariant,
                     width: 2,
                   ),
-                  color: selected ? color : Colors.transparent,
+                  color: selected ? cs.primary : Colors.transparent,
                 ),
                 child: selected
-                    ? const Icon(Icons.circle, size: 8, color: Colors.white)
+                    ? Icon(Icons.circle, size: 8, color: cs.onPrimary)
                     : null,
               ),
             ),
             const SizedBox(height: 4),
-            Icon(icon, size: 34, color: color),
+            Icon(icon, size: 34, color: cs.primary),
             const SizedBox(height: 8),
             Text(label,
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 13),
+                style: tt.labelLarge!.copyWith(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center),
             const SizedBox(height: 2),
             Text(sub,
                 style:
-                    const TextStyle(color: Colors.grey, fontSize: 11),
+                    tt.labelSmall!.copyWith(color: cs.onSurfaceVariant),
                 textAlign: TextAlign.center),
           ],
         ),

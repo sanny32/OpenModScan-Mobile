@@ -42,6 +42,11 @@ class _LogScreenState extends State<LogScreen> {
   Widget build(BuildContext context) {
     const device = mockDevice;
     final entries = _filtered;
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final appColors = Theme.of(context).extension<AppColors>()!;
+    final dividerColor =
+        Theme.of(context).dividerTheme.color ?? cs.outline;
 
     return Scaffold(
       appBar: AppBar(
@@ -49,9 +54,7 @@ class _LogScreenState extends State<LogScreen> {
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Log',
-                style:
-                    TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('Log', style: tt.titleMedium),
             const SizedBox(height: 2),
             ConnectionStatusChip(connected: device.connected),
           ],
@@ -66,40 +69,43 @@ class _LogScreenState extends State<LogScreen> {
       body: Column(
         children: [
           ConnectionInfoBar(device: device),
-          // Filter bar
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             child: Row(
               children: [
                 _FilterBtn(
                     label: 'All',
                     selected: _filter == _LogFilter.all,
-                    onTap: () => setState(() => _filter = _LogFilter.all)),
+                    onTap: () =>
+                        setState(() => _filter = _LogFilter.all)),
                 const SizedBox(width: 6),
                 _FilterBtn(
                     label: 'TX',
                     icon: Icons.arrow_upward,
-                    color: AppTheme.txColor,
+                    color: appColors.txColor,
                     selected: _filter == _LogFilter.tx,
-                    onTap: () => setState(() => _filter = _LogFilter.tx)),
+                    onTap: () =>
+                        setState(() => _filter = _LogFilter.tx)),
                 const SizedBox(width: 6),
                 _FilterBtn(
                     label: 'RX',
                     icon: Icons.arrow_downward,
-                    color: AppTheme.rxColor,
+                    color: appColors.rxColor,
                     selected: _filter == _LogFilter.rx,
-                    onTap: () => setState(() => _filter = _LogFilter.rx)),
+                    onTap: () =>
+                        setState(() => _filter = _LogFilter.rx)),
                 const SizedBox(width: 6),
                 _FilterBtn(
                     label: 'Errors',
                     icon: Icons.warning_amber_outlined,
-                    color: Colors.orange,
+                    color: appColors.warningColor,
                     selected: _filter == _LogFilter.errors,
                     onTap: () =>
                         setState(() => _filter = _LogFilter.errors)),
                 const Spacer(),
-                const Text('Auto scroll',
-                    style: TextStyle(color: Colors.grey, fontSize: 12)),
+                Text('Auto scroll',
+                    style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
                 Transform.scale(
                   scale: 0.8,
                   child: Switch(
@@ -110,54 +116,52 @@ class _LogScreenState extends State<LogScreen> {
               ],
             ),
           ),
-          // Column headers
           Container(
-            color: const Color(0xFF1A1A1A),
+            color: cs.surfaceContainer,
             padding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: const Row(
+            child: Row(
               children: [
                 SizedBox(
                     width: 90,
                     child: Text('Time',
-                        style:
-                            TextStyle(color: Colors.grey, fontSize: 12))),
+                        style: tt.bodySmall!
+                            .copyWith(color: cs.onSurfaceVariant))),
                 SizedBox(
                     width: 58,
                     child: Text('Direction',
-                        style:
-                            TextStyle(color: Colors.grey, fontSize: 12))),
+                        style: tt.bodySmall!
+                            .copyWith(color: cs.onSurfaceVariant))),
                 Expanded(
                     child: Text('Function',
-                        style:
-                            TextStyle(color: Colors.grey, fontSize: 12))),
+                        style: tt.bodySmall!
+                            .copyWith(color: cs.onSurfaceVariant))),
               ],
             ),
           ),
-          const Divider(height: 1),
-          // Log entries
+          Divider(height: 1, color: dividerColor),
           Expanded(
             child: ListView.separated(
               itemCount: entries.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
+              separatorBuilder: (_, _) =>
+                  Divider(height: 1, color: dividerColor),
               itemBuilder: (context, i) => _LogRow(entry: entries[i]),
             ),
           ),
-          // Footer
           Container(
-            color: const Color(0xFF1A1A1A),
+            color: cs.surfaceContainer,
             padding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Messages: 128',
-                    style: TextStyle(color: Colors.grey, fontSize: 12)),
+                Text('Messages: 128',
+                    style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
                 Row(
                   children: [
-                    const Text('Clear on disconnect',
-                        style:
-                            TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text('Clear on disconnect',
+                        style: tt.bodySmall!
+                            .copyWith(color: cs.onSurfaceVariant)),
                     Transform.scale(
                       scale: 0.75,
                       child: Switch(
@@ -180,29 +184,33 @@ class _LogScreenState extends State<LogScreen> {
 class _FilterBtn extends StatelessWidget {
   final String label;
   final IconData? icon;
-  final Color color;
+  final Color? color;
   final bool selected;
   final VoidCallback onTap;
 
   const _FilterBtn({
     required this.label,
     this.icon,
-    this.color = const Color(0xFF1976D2),
+    this.color,
     required this.selected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final effectiveColor = color ?? cs.primary;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? color : const Color(0xFF252525),
+          color: selected ? effectiveColor : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-              color: selected ? color : Colors.grey.shade800),
+              color: selected ? effectiveColor : cs.outline),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -210,13 +218,12 @@ class _FilterBtn extends StatelessWidget {
             if (icon != null) ...[
               Icon(icon,
                   size: 13,
-                  color: selected ? Colors.white : Colors.grey),
+                  color: selected ? cs.onPrimary : cs.onSurfaceVariant),
               const SizedBox(width: 3),
             ],
             Text(label,
-                style: TextStyle(
-                    color: selected ? Colors.white : Colors.grey,
-                    fontSize: 13)),
+                style: tt.bodyMedium!.copyWith(
+                    color: selected ? cs.onPrimary : cs.onSurfaceVariant)),
           ],
         ),
       ),
@@ -228,21 +235,25 @@ class _LogRow extends StatelessWidget {
   final LogEntry entry;
   const _LogRow({required this.entry});
 
-  Color get _funcColor {
-    if (entry.type == LogEntryType.error) return AppTheme.errorColor;
-    if (entry.direction == LogDirection.tx) return AppTheme.txColor;
-    return AppTheme.rxColor;
-  }
-
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     final isError = entry.type == LogEntryType.error;
     final isTx = entry.direction == LogDirection.tx;
+
     final dirColor = isError
-        ? AppTheme.errorColor
+        ? cs.error
         : isTx
-            ? AppTheme.txColor
-            : AppTheme.rxColor;
+            ? appColors.txColor
+            : appColors.rxColor;
+
+    final funcColor = isError
+        ? cs.error
+        : isTx
+            ? appColors.txColor
+            : appColors.rxColor;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -252,8 +263,7 @@ class _LogRow extends StatelessWidget {
           SizedBox(
             width: 90,
             child: Text(entry.time,
-                style:
-                    const TextStyle(color: Colors.grey, fontSize: 11)),
+                style: tt.labelSmall!.copyWith(color: cs.onSurfaceVariant)),
           ),
           SizedBox(
             width: 58,
@@ -263,9 +273,8 @@ class _LogRow extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(isTx ? 'TX' : 'RX',
-                          style: TextStyle(
+                          style: tt.bodySmall!.copyWith(
                               color: dirColor,
-                              fontSize: 12,
                               fontWeight: FontWeight.bold)),
                       Icon(
                           isTx
@@ -281,15 +290,12 @@ class _LogRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(entry.function,
-                    style: TextStyle(
-                        color: _funcColor,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold)),
+                    style: tt.bodyMedium!.copyWith(
+                        color: funcColor, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
                 Text(entry.data,
-                    style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 11,
+                    style: tt.labelSmall!.copyWith(
+                        color: cs.onSurfaceVariant,
                         fontFamily: 'monospace')),
               ],
             ),
