@@ -15,7 +15,7 @@ class RegistersScreen extends StatefulWidget {
 class _RegistersScreenState extends State<RegistersScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  String _regType = 'Holding Registers (4xxxx)';
+  String _regType = '4xxxx';
   int _addrMode = 0;
   bool _autoRefresh = true;
 
@@ -56,7 +56,10 @@ class _RegistersScreenState extends State<RegistersScreen>
           ConnectionInfoBar(device: device),
           TabBar(
             controller: _tabController,
-            tabs: const [Tab(text: 'Registers'), Tab(text: 'Coils')],
+            tabs: const [
+              Tab(text: 'Registers'),
+              Tab(text: 'Coils'),
+            ],
           ),
           Expanded(
             child: TabBarView(
@@ -68,18 +71,15 @@ class _RegistersScreenState extends State<RegistersScreen>
                   addrMode: _addrMode,
                   onAddrModeChanged: (v) => setState(() => _addrMode = v),
                   autoRefresh: _autoRefresh,
-                  onAutoRefreshChanged: (v) =>
-                      setState(() => _autoRefresh = v),
+                  onAutoRefreshChanged: (v) => setState(() => _autoRefresh = v),
                 ),
                 Center(
-                  child: Text('Coils',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium!
-                          .copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant)),
+                  child: Text(
+                    'Coils',
+                    style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -120,17 +120,21 @@ class _RegistersTab extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                  child: _RegTypeDropdown(
-                      value: regType, onChanged: onRegTypeChanged)),
+                child: _RegTypeDropdown(
+                  value: regType,
+                  onChanged: onRegTypeChanged,
+                ),
+              ),
               const SizedBox(width: 8),
               _AddrValueToggle(
-                  selected: addrMode, onChanged: onAddrModeChanged),
+                selected: addrMode,
+                onChanged: onAddrModeChanged,
+              ),
               IconButton(
                 icon: const Icon(Icons.filter_list, size: 20),
                 onPressed: () {},
                 padding: EdgeInsets.zero,
-                constraints:
-                    const BoxConstraints(minWidth: 36, minHeight: 36),
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               ),
               ElevatedButton.icon(
                 icon: const Icon(Icons.refresh, size: 15),
@@ -141,7 +145,9 @@ class _RegistersTab extends StatelessWidget {
                   foregroundColor: cs.onPrimary,
                   textStyle: tt.bodyMedium,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
@@ -153,18 +159,28 @@ class _RegistersTab extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
           child: Row(
             children: [
-              Text('Quantity: ',
-                  style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant)),
-              Text('20',
-                  style: tt.bodyMedium!.copyWith(
-                      color: cs.primary, fontWeight: FontWeight.bold)),
+              Text(
+                'Quantity: ',
+                style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
+              ),
+              Text(
+                '20',
+                style: tt.bodyMedium!.copyWith(
+                  color: cs.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const Spacer(),
-              Text('Auto refresh',
-                  style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant)),
+              Text(
+                'Auto refresh',
+                style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
+              ),
               Transform.scale(
                 scale: 0.8,
                 child: Switch(
-                    value: autoRefresh, onChanged: onAutoRefreshChanged),
+                  value: autoRefresh,
+                  onChanged: onAutoRefreshChanged,
+                ),
               ),
               Text('1.0 s', style: tt.bodyMedium),
             ],
@@ -172,29 +188,36 @@ class _RegistersTab extends StatelessWidget {
         ),
         Container(
           color: cs.surfaceContainer,
-          padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
               SizedBox(
-                  width: 72,
-                  child: Text('Address',
-                      style: tt.bodySmall!
-                          .copyWith(color: cs.onSurfaceVariant))),
+                width: 72,
+                child: Text(
+                  'Address',
+                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ),
               Expanded(
-                  child: Text('Value',
-                      style: tt.bodySmall!
-                          .copyWith(color: cs.onSurfaceVariant))),
+                child: Text(
+                  'Value',
+                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ),
               SizedBox(
-                  width: 68,
-                  child: Text('Type',
-                      style: tt.bodySmall!
-                          .copyWith(color: cs.onSurfaceVariant))),
+                width: 68,
+                child: Text(
+                  'Type',
+                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ),
               SizedBox(
-                  width: 56,
-                  child: Text('Quality',
-                      style: tt.bodySmall!
-                          .copyWith(color: cs.onSurfaceVariant))),
+                width: 56,
+                child: Text(
+                  'Quality',
+                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ),
               const SizedBox(width: 24),
             ],
           ),
@@ -203,23 +226,24 @@ class _RegistersTab extends StatelessWidget {
         Expanded(
           child: ListView.separated(
             itemCount: mockRegisters.length,
-            separatorBuilder: (_, _) =>
-                Divider(height: 1, color: dividerColor),
-            itemBuilder: (context, i) =>
-                _RegisterRow(entry: mockRegisters[i]),
+            separatorBuilder: (_, _) => Divider(height: 1, color: dividerColor),
+            itemBuilder: (context, i) => _RegisterRow(entry: mockRegisters[i]),
           ),
         ),
         Container(
           color: cs.surfaceContainer,
-          padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Showing 40001 – 40020',
-                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
-              Text('Last update: 10:42:35',
-                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
+              Text(
+                'Showing 40001 – 40020',
+                style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+              ),
+              Text(
+                'Last update: 10:42:35',
+                style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+              ),
             ],
           ),
         ),
@@ -251,12 +275,8 @@ class _RegTypeDropdown extends StatelessWidget {
           dropdownColor: cs.surfaceContainerHighest,
           style: tt.bodyMedium!.copyWith(color: cs.onSurface),
           items: const [
-            DropdownMenuItem(
-                value: 'Holding Registers (4xxxx)',
-                child: Text('Holding Registers (4xxxx)')),
-            DropdownMenuItem(
-                value: 'Input Registers (3xxxx)',
-                child: Text('Input Registers (3xxxx)')),
+            DropdownMenuItem(value: '4xxxx', child: Text('4xxxx')),
+            DropdownMenuItem(value: '3xxxx', child: Text('3xxxx')),
           ],
           onChanged: (v) {
             if (v != null) onChanged(v);
@@ -270,8 +290,7 @@ class _RegTypeDropdown extends StatelessWidget {
 class _AddrValueToggle extends StatelessWidget {
   final int selected;
   final ValueChanged<int> onChanged;
-  const _AddrValueToggle(
-      {required this.selected, required this.onChanged});
+  const _AddrValueToggle({required this.selected, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -285,10 +304,16 @@ class _AddrValueToggle extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _Btn(label: 'Address', active: selected == 0,
-              onTap: () => onChanged(0)),
-          _Btn(label: 'Value', active: selected == 1,
-              onTap: () => onChanged(1)),
+          _Btn(
+            label: 'Address',
+            active: selected == 0,
+            onTap: () => onChanged(0),
+          ),
+          _Btn(
+            label: 'Value',
+            active: selected == 1,
+            onTap: () => onChanged(1),
+          ),
         ],
       ),
     );
@@ -299,8 +324,7 @@ class _Btn extends StatelessWidget {
   final String label;
   final bool active;
   final VoidCallback onTap;
-  const _Btn(
-      {required this.label, required this.active, required this.onTap});
+  const _Btn({required this.label, required this.active, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -309,15 +333,17 @@ class _Btn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: active ? cs.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
         ),
-        child: Text(label,
-            style: tt.bodySmall!.copyWith(
-                color: active ? cs.onPrimary : cs.onSurfaceVariant)),
+        child: Text(
+          label,
+          style: tt.bodySmall!.copyWith(
+            color: active ? cs.onPrimary : cs.onSurfaceVariant,
+          ),
+        ),
       ),
     );
   }
@@ -335,8 +361,7 @@ class _RegisterRow extends StatelessWidget {
     return InkWell(
       onTap: () {},
       child: Padding(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         child: Row(
           children: [
             SizedBox(
@@ -344,15 +369,20 @@ class _RegisterRow extends StatelessWidget {
               child: Text('${entry.address}', style: tt.bodyLarge),
             ),
             Expanded(
-              child: Text(entry.value,
-                  style: tt.bodyLarge!.copyWith(
-                      color: appColors.valueColor,
-                      fontWeight: FontWeight.bold)),
+              child: Text(
+                entry.value,
+                style: tt.bodyLarge!.copyWith(
+                  color: appColors.valueColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             SizedBox(
               width: 68,
-              child: Text(entry.typeName,
-                  style: tt.bodyMedium!.copyWith(color: appColors.typeColor)),
+              child: Text(
+                entry.typeName,
+                style: tt.bodyMedium!.copyWith(color: appColors.typeColor),
+              ),
             ),
             SizedBox(
               width: 56,
@@ -360,12 +390,12 @@ class _RegisterRow extends StatelessWidget {
                 width: 10,
                 height: 10,
                 decoration: BoxDecoration(
-                    color: appColors.qualityGood,
-                    shape: BoxShape.circle),
+                  color: appColors.qualityGood,
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
-            Icon(Icons.chevron_right,
-                color: cs.onSurfaceVariant, size: 20),
+            Icon(Icons.chevron_right, color: cs.onSurfaceVariant, size: 20),
           ],
         ),
       ),
