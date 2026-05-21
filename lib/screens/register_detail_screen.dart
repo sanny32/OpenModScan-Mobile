@@ -3,11 +3,10 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../l10n/l10n.dart';
+import '../models/app_settings.dart';
 import '../models/register_entry.dart';
 import '../theme/app_theme.dart';
 
-const _kRegisterOrders = ['MSRF', 'LSRF'];
-const _kByteOrders = ['Direct', 'Swapped'];
 final _detailRegisterTypes = kRegisterTypes.where((t) => t != 'Bool').toList();
 
 Color _typeColor(BuildContext context, String type) {
@@ -121,16 +120,23 @@ class RegisterDetailScreen extends StatefulWidget {
 class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
   late String _selectedType;
   late TextEditingController _commentCtrl;
-  String _registerOrder = _kRegisterOrders.first;
-  String _byteOrder = _kByteOrders.first;
+  late String _registerOrder;
+  late String _byteOrder;
   bool _hasChanges = false;
 
   @override
   void initState() {
     super.initState();
+    final settings = AppSettings.instance;
     _selectedType = _detailRegisterTypes.contains(widget.entry.typeName)
         ? widget.entry.typeName
         : _detailRegisterTypes.first;
+    _registerOrder = AppSettings.registerOrders.contains(settings.registerOrder)
+        ? settings.registerOrder
+        : AppSettings.registerOrders.first;
+    _byteOrder = AppSettings.byteOrders.contains(settings.byteOrder)
+        ? settings.byteOrder
+        : AppSettings.byteOrders.first;
     _commentCtrl = TextEditingController(text: widget.entry.comment ?? '');
     _commentCtrl.addListener(_onTextChanged);
   }
@@ -351,7 +357,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                   _LayoutChoiceSection(
                     label: l10n.labelRegisterOrder,
                     icon: Icons.swap_vert_rounded,
-                    options: _kRegisterOrders,
+                    options: AppSettings.registerOrders,
                     value: _registerOrder,
                     onSelected: selectRegisterOrder,
                   ),
@@ -359,7 +365,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                   _LayoutChoiceSection(
                     label: l10n.labelByteOrder,
                     icon: Icons.swap_horiz_rounded,
-                    options: _kByteOrders,
+                    options: AppSettings.byteOrders,
                     value: _byteOrder,
                     onSelected: selectByteOrder,
                   ),

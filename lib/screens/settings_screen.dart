@@ -58,6 +58,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: '${_s.defaultReadQty}',
               ),
               _divider(),
+              _navTile(
+                icon: Icons.swap_vert_rounded,
+                label: l10n.labelRegisterOrder,
+                value: _s.registerOrder,
+                onTap: () => _showChoiceSheet(
+                  title: l10n.labelRegisterOrder,
+                  options: AppSettings.registerOrders,
+                  selected: _s.registerOrder,
+                  onSelected: (value) =>
+                      setState(() => _s.registerOrder = value),
+                ),
+              ),
+              _divider(),
+              _navTile(
+                icon: Icons.swap_horiz_rounded,
+                label: l10n.labelByteOrder,
+                value: _s.byteOrder,
+                onTap: () => _showChoiceSheet(
+                  title: l10n.labelByteOrder,
+                  options: AppSettings.byteOrders,
+                  selected: _s.byteOrder,
+                  onSelected: (value) => setState(() => _s.byteOrder = value),
+                ),
+              ),
+              _divider(),
               _toggleTile(
                 icon: Icons.edit_outlined,
                 label: l10n.settingsConfirmBeforeWrite,
@@ -76,7 +101,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _section(
             label: l10n.settingsSectionLog,
             children: [
-              _divider(),
               _toggleTile(
                 icon: Icons.save_outlined,
                 label: l10n.settingsSaveLogToFile,
@@ -213,6 +237,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: Text(label),
       value: value,
       onChanged: onChanged,
+    );
+  }
+
+  Future<void> _showChoiceSheet({
+    required String title,
+    required List<String> options,
+    required String selected,
+    required ValueChanged<String> onSelected,
+  }) async {
+    final cs = Theme.of(context).colorScheme;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ),
+            for (final option in options)
+              ListTile(
+                title: Text(option),
+                trailing: option == selected
+                    ? Icon(Icons.check, color: cs.primary)
+                    : null,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  onSelected(option);
+                },
+              ),
+          ],
+        ),
+      ),
     );
   }
 
