@@ -10,6 +10,7 @@ import '../theme/app_theme.dart';
 import '../widgets/connection_info_bar.dart';
 import '../widgets/connection_status_chip.dart';
 import 'register_detail_screen.dart';
+import 'status_detail_screen.dart';
 
 enum _MenuAction { selectDevice, addRegs, selectRegsList, removeRegs }
 
@@ -543,37 +544,6 @@ class _RegistersTab extends StatelessWidget {
   }
 }
 
-const _mockCoils = [
-  _BitEntry(address: 0, value: true, comment: 'Motor Start'),
-  _BitEntry(address: 1, value: false, comment: 'Motor Stop'),
-  _BitEntry(address: 2, value: true, comment: 'Pump Enable'),
-  _BitEntry(address: 3, value: false, comment: 'Alarm Reset'),
-  _BitEntry(address: 4, value: true, comment: 'System Ready'),
-  _BitEntry(address: 5, value: true, comment: 'Valve Open'),
-  _BitEntry(address: 6, value: false, comment: 'Valve Close'),
-  _BitEntry(address: 7, value: true, comment: 'Heater Enable'),
-  _BitEntry(address: 8, value: true, comment: 'Fan Enable'),
-  _BitEntry(address: 9, value: false, comment: 'Reserved'),
-];
-
-class _BitEntry {
-  final int address;
-  final bool value;
-  final String comment;
-
-  const _BitEntry({
-    required this.address,
-    required this.value,
-    required this.comment,
-  });
-
-  _BitEntry copyWith({bool? value}) => _BitEntry(
-    address: address,
-    value: value ?? this.value,
-    comment: comment,
-  );
-}
-
 String _bitRangeLabel(AppLocalizations l10n, int start, int end) {
   final raw = l10n.registersShowing(start, end);
   final startText = '$start';
@@ -619,14 +589,14 @@ class _CoilsTab extends StatefulWidget {
 }
 
 class _CoilsTabState extends State<_CoilsTab> {
-  late List<_BitEntry> _items;
+  late List<BitEntry> _items;
 
   bool get _canWrite => widget.coilType == '0xxxx';
 
   @override
   void initState() {
     super.initState();
-    _items = List.of(_mockCoils);
+    _items = List.of(mockStatusEntries);
   }
 
   @override
@@ -749,10 +719,7 @@ class _CoilsTabState extends State<_CoilsTab> {
                   onChanged: widget.onAutoRefreshChanged,
                 ),
               ),
-              Text(
-                '1.0 s',
-                style: tt.bodyMedium!.copyWith(color: cs.primary),
-              ),
+              Text('1.0 s', style: tt.bodyMedium!.copyWith(color: cs.primary)),
             ],
           ),
         ),
@@ -825,7 +792,7 @@ class _CoilsTabState extends State<_CoilsTab> {
 }
 
 class _BitRow extends StatelessWidget {
-  final _BitEntry entry;
+  final BitEntry entry;
   final int displayAddress;
   final bool canWrite;
   final ValueChanged<bool>? onChanged;
@@ -843,7 +810,17 @@ class _BitRow extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
 
     return InkWell(
-      onTap: () {},
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => StatusDetailScreen(
+            address: displayAddress,
+            initialValue: entry.value,
+            comment: entry.comment,
+            canWrite: canWrite,
+          ),
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         child: Row(
@@ -928,8 +905,8 @@ class _RegTypeDropdown extends StatelessWidget {
             dropdownColor: cs.surfaceContainerHighest,
             style: tt.bodyMedium!.copyWith(color: cs.onSurface),
             items: const [
-              DropdownMenuItem(value: '4xxxx', child: Text('4xxxx')),
-              DropdownMenuItem(value: '3xxxx', child: Text('3xxxx')),
+              DropdownMenuItem(value: '4xxxx', child: Text('Holding (4xxxx)')),
+              DropdownMenuItem(value: '3xxxx', child: Text('Input (3xxxx)')),
             ],
             onChanged: (v) {
               if (v != null) onChanged(v);
@@ -968,10 +945,7 @@ class _CoilTypeDropdown extends StatelessWidget {
             style: tt.bodyMedium!.copyWith(color: cs.onSurface),
             items: const [
               DropdownMenuItem(value: '0xxxx', child: Text('Coils (0xxxx)')),
-              DropdownMenuItem(
-                value: '1xxxx',
-                child: Text('Discrete (1xxxx)'),
-              ),
+              DropdownMenuItem(value: '1xxxx', child: Text('Discrete (1xxxx)')),
             ],
             onChanged: (v) {
               if (v != null) onChanged(v);
@@ -1045,7 +1019,7 @@ class _Btn extends StatelessWidget {
   }
 }
 
-// Диалог записи значения в регистр (тап по строке)
+// Register write dialog opened from a row tap.
 Future<void> _showWriteRegisterDialog(
   BuildContext context,
   RegisterEntry entry,

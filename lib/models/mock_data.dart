@@ -55,6 +55,37 @@ const mockRegisters = [
   RegisterEntry(address: 40010, value: '65535',                         typeName: 'UInt16',                       timestamp: '10:42:31', date: '21.05.2024'),
 ];
 
+class BitEntry {
+  final int address;
+  final bool value;
+  final String comment;
+
+  const BitEntry({
+    required this.address,
+    required this.value,
+    required this.comment,
+  });
+
+  BitEntry copyWith({bool? value}) => BitEntry(
+    address: address,
+    value: value ?? this.value,
+    comment: comment,
+  );
+}
+
+const mockStatusEntries = [
+  BitEntry(address: 0, value: true, comment: 'Motor Start'),
+  BitEntry(address: 1, value: false, comment: 'Motor Stop'),
+  BitEntry(address: 2, value: true, comment: 'Pump Enable'),
+  BitEntry(address: 3, value: false, comment: 'Alarm Reset'),
+  BitEntry(address: 4, value: true, comment: 'System Ready'),
+  BitEntry(address: 5, value: true, comment: 'Valve Open'),
+  BitEntry(address: 6, value: false, comment: 'Valve Close'),
+  BitEntry(address: 7, value: true, comment: 'Heater Enable'),
+  BitEntry(address: 8, value: true, comment: 'Fan Enable'),
+  BitEntry(address: 9, value: false, comment: 'Reserved'),
+];
+
 const mockLogEntries = [
   LogEntry(
     time: '10:42:31.234',
