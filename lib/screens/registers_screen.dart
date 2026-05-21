@@ -9,6 +9,7 @@ import '../services/device_repository.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection_info_bar.dart';
 import '../widgets/connection_status_chip.dart';
+import 'register_detail_screen.dart';
 
 enum _MenuAction { selectDevice, addRegs, selectRegsList, removeRegs }
 
@@ -637,10 +638,12 @@ class _Btn extends StatelessWidget {
   }
 }
 
+// Диалог записи значения в регистр (тап по строке)
 Future<void> _showWriteRegisterDialog(
     BuildContext context, RegisterEntry entry) async {
   final l10n = context.l10n;
   final cs = Theme.of(context).colorScheme;
+  final tt = Theme.of(context).textTheme;
   final ctrl = TextEditingController(text: entry.value);
   String? error;
 
@@ -655,57 +658,26 @@ Future<void> _showWriteRegisterDialog(
           children: [
             Row(
               children: [
-                Text(
-                  '${l10n.colAddress}: ',
-                  style: Theme.of(ctx).textTheme.bodyMedium!.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                ),
-                Text(
-                  '${entry.address}',
-                  style: Theme.of(ctx)
-                      .textTheme
-                      .bodyMedium!
-                      .copyWith(fontWeight: FontWeight.bold),
-                ),
+                Text('${l10n.colAddress}: ',
+                    style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant)),
+                Text('${entry.address}',
+                    style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 4),
             Row(
               children: [
-                Text(
-                  '${l10n.colValue}: ',
-                  style: Theme.of(ctx).textTheme.bodyMedium!.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                ),
-                Text(
-                  entry.value,
-                  style: Theme.of(ctx).textTheme.bodyMedium!.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
+                Text('${l10n.colValue}: ',
+                    style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant)),
+                Text(entry.value,
+                    style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold)),
+                if (entry.previousValue != null) ...[
+                  const SizedBox(width: 8),
+                  Text('← ${entry.previousValue}',
+                      style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
+                ],
               ],
             ),
-            if (entry.previousValue != null) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Text(
-                    '${l10n.labelPreviousValue}: ',
-                    style: Theme.of(ctx).textTheme.bodySmall!.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                  ),
-                  Text(
-                    entry.previousValue!,
-                    style: Theme.of(ctx).textTheme.bodySmall!.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                  ),
-                ],
-              ),
-            ],
             const SizedBox(height: 16),
             TextField(
               controller: ctrl,
@@ -715,11 +687,21 @@ Future<void> _showWriteRegisterDialog(
               decoration: InputDecoration(
                 labelText: l10n.labelNewValue,
                 errorText: error,
+                border: const OutlineInputBorder(),
+                isDense: true,
               ),
               onChanged: (_) {
                 if (error != null) setInnerState(() => error = null);
               },
-              onSubmitted: (_) => _doWrite(ctx, ctrl, l10n, setInnerState, (e) => error = e),
+              onSubmitted: (_) {
+                final raw = int.tryParse(ctrl.text);
+                if (raw == null || raw < 0 || raw > 65535) {
+                  setInnerState(() => error = l10n.writeValueRange);
+                  return;
+                }
+                // TODO: perform actual Modbus write
+                Navigator.pop(ctx);
+              },
             ),
           ],
         ),
@@ -729,30 +711,21 @@ Future<void> _showWriteRegisterDialog(
             child: Text(l10n.cancel),
           ),
           TextButton(
-            onPressed: () =>
-                _doWrite(ctx, ctrl, l10n, setInnerState, (e) => error = e),
+            onPressed: () {
+              final raw = int.tryParse(ctrl.text);
+              if (raw == null || raw < 0 || raw > 65535) {
+                setInnerState(() => error = l10n.writeValueRange);
+                return;
+              }
+              // TODO: perform actual Modbus write
+              Navigator.pop(ctx);
+            },
             child: Text(l10n.btnWrite),
           ),
         ],
       ),
     ),
   );
-}
-
-void _doWrite(
-  BuildContext ctx,
-  TextEditingController ctrl,
-  dynamic l10n,
-  StateSetter setInnerState,
-  void Function(String?) setError,
-) {
-  final raw = int.tryParse(ctrl.text);
-  if (raw == null || raw < 0 || raw > 65535) {
-    setInnerState(() => setError(l10n.writeValueRange));
-    return;
-  }
-  // TODO: perform actual Modbus write
-  Navigator.pop(ctx);
 }
 
 class _RegisterRow extends StatelessWidget {
@@ -765,7 +738,12 @@ class _RegisterRow extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>()!;
     return InkWell(
-      onTap: () => _showWriteRegisterDialog(context, entry),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => RegisterDetailScreen(entry: entry),
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         child: Row(
@@ -775,25 +753,29 @@ class _RegisterRow extends StatelessWidget {
               child: Text('${entry.address}', style: tt.bodyLarge),
             ),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    entry.value,
-                    style: tt.bodyLarge!.copyWith(
-                      color: appColors.valueColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (entry.previousValue != null)
+              child: InkWell(
+                onTap: () => _showWriteRegisterDialog(context, entry),
+                borderRadius: BorderRadius.circular(4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Text(
-                      entry.previousValue!,
-                      style: tt.bodySmall!.copyWith(
-                        color: cs.onSurfaceVariant,
+                      entry.value,
+                      style: tt.bodyLarge!.copyWith(
+                        color: appColors.valueColor,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                ],
+                    if (entry.previousValue != null)
+                      Text(
+                        entry.previousValue!,
+                        style: tt.bodySmall!.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
             SizedBox(

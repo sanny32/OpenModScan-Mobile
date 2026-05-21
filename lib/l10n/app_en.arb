@@ -227,6 +227,12 @@
   "labelPreviousValue": "Previous value",
   "@labelPreviousValue": {},
 
+  "labelInterpretations": "Interpretations",
+  "@labelInterpretations": {},
+
+  "labelProperties": "Properties",
+  "@labelProperties": {},
+
   "writeRegisterTitle": "Write Register",
   "@writeRegisterTitle": {},
 

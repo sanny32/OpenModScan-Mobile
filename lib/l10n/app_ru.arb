@@ -69,6 +69,8 @@
   "labelNotes": "Заметки (необязательно)",
   "notesHint": "Добавьте заметки о подключении",
   "labelPreviousValue": "Предыдущее значение",
+  "labelInterpretations": "Интерпретации",
+  "labelProperties": "Свойства",
   "writeRegisterTitle": "Запись регистра",
   "btnWrite": "Записать",
   "labelNewValue": "Новое значение",
