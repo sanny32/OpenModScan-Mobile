@@ -120,10 +120,13 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                       style: tt.titleMedium,
                     ),
                   ),
-                  TextButton(
-                    onPressed: _submit,
-                    child: Text(_isEdit ? l10n.save : l10n.save),
-                  ),
+                  if (!_isEdit)
+                    TextButton(
+                      onPressed: _submit,
+                      child: Text(l10n.save),
+                    )
+                  else
+                    const SizedBox(width: 72),
                 ],
               ),
             ),
