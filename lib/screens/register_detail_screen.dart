@@ -99,6 +99,11 @@ String _formatFloat(double f) {
   return f.toStringAsPrecision(7).replaceAll(RegExp(r'\.?0+$'), '');
 }
 
+String _displayTimestamp(String timestamp) {
+  if (RegExp(r'\.\d+$').hasMatch(timestamp)) return timestamp;
+  return '$timestamp.000';
+}
+
 class RegisterDetailScreen extends StatefulWidget {
   final RegisterEntry entry;
   const RegisterDetailScreen({super.key, required this.entry});
@@ -393,7 +398,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _OutlinedCard(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -404,7 +409,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                         'CURRENT VALUE',
                         style: tt.titleSmall!.copyWith(
                           color: cs.onSurfaceVariant,
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -412,64 +417,78 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                       if (entry.timestamp != null)
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              Icons.schedule_rounded,
-                              size: 18,
-                              color: cs.onSurfaceVariant,
+                            Padding(
+                              padding: const EdgeInsets.only(top: 1),
+                              child: Icon(
+                                Icons.schedule_rounded,
+                                size: 18,
+                                color: cs.onSurfaceVariant,
+                              ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 5),
                             Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  entry.timestamp!,
-                                  style: tt.bodyLarge!.copyWith(
-                                    color: cs.onSurfaceVariant,
-                                    fontSize: 14,
-                                    fontFeatures: const [
-                                      FontFeature.tabularFigures(),
-                                    ],
-                                  ),
-                                ),
                                 if (entry.date != null)
                                   Text(
                                     entry.date!,
+                                    maxLines: 1,
+                                    softWrap: false,
                                     style: tt.bodyLarge!.copyWith(
                                       color: cs.onSurfaceVariant,
-                                      fontSize: 13,
-                                      height: 1.45,
+                                      fontSize: 12,
+                                      height: 1,
                                       fontFeatures: const [
                                         FontFeature.tabularFigures(),
                                       ],
                                     ),
                                   ),
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    top: entry.date != null ? 5 : 0,
+                                  ),
+                                  child: Text(
+                                    _displayTimestamp(entry.timestamp!),
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    style: tt.bodyLarge!.copyWith(
+                                      color: cs.onSurfaceVariant,
+                                      fontSize: 13,
+                                      height: 1,
+                                      fontFeatures: const [
+                                        FontFeature.tabularFigures(),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ],
                         ),
                     ],
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
                   Text(
                     entry.value,
                     style: tt.displaySmall?.copyWith(
                       color: appColors.valueColor,
-                      fontSize: 46,
+                      fontSize: 42,
                       height: 0.95,
                       fontWeight: FontWeight.bold,
                       fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
                   if (entry.previousValue != null) ...[
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     Divider(height: 1, thickness: 1.2, color: cs.outline),
-                    const SizedBox(height: 11),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Icon(
                           Icons.arrow_back_rounded,
-                          size: 21,
+                          size: 19,
                           color: cs.onSurfaceVariant,
                         ),
                         const SizedBox(width: 14),
@@ -479,7 +498,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                             overflow: TextOverflow.ellipsis,
                             style: tt.bodyLarge!.copyWith(
                               color: cs.onSurfaceVariant,
-                              fontSize: 14,
+                              fontSize: 13,
                             ),
                           ),
                         ),
@@ -488,7 +507,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                           entry.previousValue!,
                           style: tt.bodyMedium!.copyWith(
                             color: cs.onSurfaceVariant,
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
                             fontFeatures: const [FontFeature.tabularFigures()],
                           ),
