@@ -25,8 +25,8 @@ class _ListConfig {
     required this.name,
     String startAddr = '40001',
     String count = '20',
-  })  : startAddrCtrl = TextEditingController(text: startAddr),
-        countCtrl = TextEditingController(text: count);
+  }) : startAddrCtrl = TextEditingController(text: startAddr),
+       countCtrl = TextEditingController(text: count);
 
   void dispose() {
     startAddrCtrl.dispose();
@@ -103,7 +103,9 @@ class _RegistersScreenState extends State<RegistersScreen>
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          decoration: InputDecoration(hintText: context.l10n.dialogListNameHint),
+          decoration: InputDecoration(
+            hintText: context.l10n.dialogListNameHint,
+          ),
           onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
         ),
         actions: [
@@ -220,8 +222,10 @@ class _RegistersScreenState extends State<RegistersScreen>
             Text(_deviceName, style: tt.titleMedium),
             const SizedBox(height: 2),
             ConnectionStatusChip(
-                connected: _selectedDevice != null &&
-                    ConnectionManager.instance.isConnected(_selectedDevice!)),
+              connected:
+                  _selectedDevice != null &&
+                  ConnectionManager.instance.isConnected(_selectedDevice!),
+            ),
           ],
         ),
         actions: [
@@ -266,7 +270,11 @@ class _RegistersScreenState extends State<RegistersScreen>
                 value: _MenuAction.removeRegs,
                 child: Row(
                   children: [
-                    Icon(Icons.delete_outline, size: 18, color: cs.onSurfaceVariant),
+                    Icon(
+                      Icons.delete_outline,
+                      size: 18,
+                      color: cs.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 10),
                     Text(l10n.menuRemoveRegs),
                   ],
@@ -278,7 +286,8 @@ class _RegistersScreenState extends State<RegistersScreen>
       ),
       body: Column(
         children: [
-          if (_selectedDevice != null) ConnectionInfoBar(device: _selectedDevice!),
+          if (_selectedDevice != null)
+            ConnectionInfoBar(device: _selectedDevice!),
           TabBar(
             controller: _tabController,
             tabs: [
@@ -305,9 +314,8 @@ class _RegistersScreenState extends State<RegistersScreen>
                   child: Text(
                     l10n.tabCoils,
                     style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
@@ -318,7 +326,6 @@ class _RegistersScreenState extends State<RegistersScreen>
     );
   }
 }
-
 
 class _RegistersTab extends StatelessWidget {
   final String regType;
@@ -499,7 +506,10 @@ class _RegistersTab extends StatelessWidget {
           child: ListView.separated(
             itemCount: mockRegisters.length,
             separatorBuilder: (_, _) => Divider(height: 1, color: dividerColor),
-            itemBuilder: (context, i) => _RegisterRow(entry: mockRegisters[i]),
+            itemBuilder: (context, i) => _RegisterRow(
+              entry: mockRegisters[i],
+              canWrite: regType == '4xxxx',
+            ),
           ),
         ),
         Container(
@@ -640,7 +650,9 @@ class _Btn extends StatelessWidget {
 
 // Диалог записи значения в регистр (тап по строке)
 Future<void> _showWriteRegisterDialog(
-    BuildContext context, RegisterEntry entry) async {
+  BuildContext context,
+  RegisterEntry entry,
+) async {
   final l10n = context.l10n;
   final cs = Theme.of(context).colorScheme;
   final tt = Theme.of(context).textTheme;
@@ -658,23 +670,33 @@ Future<void> _showWriteRegisterDialog(
           children: [
             Row(
               children: [
-                Text('${l10n.colAddress}: ',
-                    style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant)),
-                Text('${entry.address}',
-                    style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  '${l10n.colAddress}: ',
+                  style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
+                ),
+                Text(
+                  '${entry.address}',
+                  style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
+                ),
               ],
             ),
             const SizedBox(height: 4),
             Row(
               children: [
-                Text('${l10n.colValue}: ',
-                    style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant)),
-                Text(entry.value,
-                    style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  '${l10n.colValue}: ',
+                  style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
+                ),
+                Text(
+                  entry.value,
+                  style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
+                ),
                 if (entry.previousValue != null) ...[
                   const SizedBox(width: 8),
-                  Text('← ${entry.previousValue}',
-                      style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
+                  Text(
+                    '← ${entry.previousValue}',
+                    style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                  ),
                 ],
               ],
             ),
@@ -730,7 +752,9 @@ Future<void> _showWriteRegisterDialog(
 
 class _RegisterRow extends StatelessWidget {
   final RegisterEntry entry;
-  const _RegisterRow({required this.entry});
+  final bool canWrite;
+
+  const _RegisterRow({required this.entry, required this.canWrite});
 
   @override
   Widget build(BuildContext context) {
@@ -741,7 +765,8 @@ class _RegisterRow extends StatelessWidget {
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => RegisterDetailScreen(entry: entry),
+          builder: (_) =>
+              RegisterDetailScreen(entry: entry, canWrite: canWrite),
         ),
       ),
       child: Padding(
@@ -754,7 +779,9 @@ class _RegisterRow extends StatelessWidget {
             ),
             Expanded(
               child: InkWell(
-                onTap: () => _showWriteRegisterDialog(context, entry),
+                onTap: canWrite
+                    ? () => _showWriteRegisterDialog(context, entry)
+                    : null,
                 borderRadius: BorderRadius.circular(4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

@@ -106,7 +106,13 @@ String _displayTimestamp(String timestamp) {
 
 class RegisterDetailScreen extends StatefulWidget {
   final RegisterEntry entry;
-  const RegisterDetailScreen({super.key, required this.entry});
+  final bool canWrite;
+
+  const RegisterDetailScreen({
+    super.key,
+    required this.entry,
+    this.canWrite = true,
+  });
 
   @override
   State<RegisterDetailScreen> createState() => _RegisterDetailScreenState();
@@ -668,18 +674,25 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showWriteDialog,
-        backgroundColor: cs.primary,
-        foregroundColor: cs.onPrimary,
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        icon: const Icon(Icons.edit_outlined),
-        label: Text(
-          l10n.writeValue,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-        ),
-      ),
+      floatingActionButton: widget.canWrite
+          ? FloatingActionButton.extended(
+              onPressed: _showWriteDialog,
+              backgroundColor: cs.primary,
+              foregroundColor: cs.onPrimary,
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              icon: const Icon(Icons.edit_outlined),
+              label: Text(
+                l10n.writeValue,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            )
+          : null,
     );
   }
 }
