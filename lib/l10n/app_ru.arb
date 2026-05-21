@@ -12,6 +12,8 @@
   "devicesSearch": "Поиск устройств",
   "devicesSavedConnections": "Сохранённые подключения",
   "devicesDiscoveredDevices": "Найденные устройства",
+  "devicesClearDiscovered": "Очистить",
+  "devicesScanStop": "Остановить сканирование",
   "devicesLastUsed": "Последнее использование",
   "devicesConnect": "Подключить",
   "devicesScanNetwork": "Сканировать сеть",

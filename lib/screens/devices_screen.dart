@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/device_info.dart';
+import '../models/discovered_device.dart';
 import '../models/mock_data.dart';
 import '../services/connection_manager.dart';
 import '../services/device_repository.dart';
+import '../services/device_scanner.dart';
 import '../theme/app_theme.dart';
 import 'device_form_sheet.dart';
 import 'device_screen.dart';
@@ -20,21 +22,25 @@ class _DevicesScreenState extends State<DevicesScreen> {
   bool _loading = true;
   late List<DeviceInfo> _devices;
 
+  DeviceScanner get _scanner => DeviceScanner.instance;
+
   @override
   void initState() {
     super.initState();
     _devices = [];
     _loadDevices();
-    ConnectionManager.instance.clients.addListener(_onConnectionChanged);
+    ConnectionManager.instance.clients.addListener(_rebuild);
+    DeviceScanner.instance.addListener(_rebuild);
   }
 
-  void _onConnectionChanged() {
+  void _rebuild() {
     if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    ConnectionManager.instance.clients.removeListener(_onConnectionChanged);
+    ConnectionManager.instance.clients.removeListener(_rebuild);
+    DeviceScanner.instance.removeListener(_rebuild);
     super.dispose();
   }
 
@@ -175,17 +181,36 @@ class _DevicesScreenState extends State<DevicesScreen> {
                                 ),
                               )),
                           _sectionHeader(
-                              context, l10n.devicesDiscoveredDevices),
-                          _DiscoveredCard(
-                            address: '192.168.0.50:502',
-                            protocol: 'Modbus TCP',
-                            unitId: 1,
-                            onConnect: _openConnect,
+                            context,
+                            l10n.devicesDiscoveredDevices,
+                            trailing: _scanner.discoveredDevices.isEmpty
+                                ? null
+                                : TextButton(
+                                    onPressed: _scanner.discoveredDevices.clear,
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size.zero,
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: Text(l10n.devicesClearDiscovered),
+                                  ),
                           ),
+                          ..._scanner.discoveredDevices.devices.map((d) =>
+                              _DiscoveredCard(
+                                device: d,
+                                onConnect: _openConnect,
+                              )),
                         ],
                       ),
               ),
-              _ScanButton(onTap: () {}),
+              _ScanButton(
+                state: _scanner.state,
+                onTap: () => _scanner.startScan(
+                  const ScanParameters(subnet: '192.168.0'),
+                ),
+                onStop: _scanner.stopScan,
+              ),
             ],
           ),
         ),
@@ -193,13 +218,21 @@ class _DevicesScreenState extends State<DevicesScreen> {
     );
   }
 
-  Widget _sectionHeader(BuildContext context, String title) {
+  Widget _sectionHeader(BuildContext context, String title,
+      {Widget? trailing}) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
-      child: Text(title,
-          style: tt.labelLarge!.copyWith(color: cs.onSurfaceVariant)),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(title,
+                style: tt.labelLarge!.copyWith(color: cs.onSurfaceVariant)),
+          ),
+          ?trailing,
+        ],
+      ),
     );
   }
 }
@@ -266,17 +299,10 @@ class _DeviceCard extends StatelessWidget {
 }
 
 class _DiscoveredCard extends StatelessWidget {
-  final String address;
-  final String protocol;
-  final int unitId;
+  final DiscoveredDevice device;
   final VoidCallback onConnect;
 
-  const _DiscoveredCard({
-    required this.address,
-    required this.protocol,
-    required this.unitId,
-    required this.onConnect,
-  });
+  const _DiscoveredCard({required this.device, required this.onConnect});
 
   @override
   Widget build(BuildContext context) {
@@ -295,9 +321,9 @@ class _DiscoveredCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(address, style: tt.titleSmall),
+                  Text(device.address, style: tt.titleSmall),
                   Text(
-                    l10n.protocolAndUnitId(protocol, unitId),
+                    l10n.protocolAndUnitId(device.protocolName, device.unitId),
                     style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                   ),
                 ],
@@ -325,26 +351,42 @@ class _DiscoveredCard extends StatelessWidget {
 }
 
 class _ScanButton extends StatelessWidget {
+  final ScannerState state;
   final VoidCallback onTap;
-  const _ScanButton({required this.onTap});
+  final VoidCallback onStop;
+
+  const _ScanButton({
+    required this.state,
+    required this.onTap,
+    required this.onStop,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final l10n = context.l10n;
+    final scanning = state == ScannerState.scanning;
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: SafeArea(
         top: false,
         child: OutlinedButton.icon(
-          icon: const Icon(Icons.wifi_find),
-          label: Text(l10n.devicesScanNetwork),
-          onPressed: onTap,
+          icon: scanning
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.wifi_find),
+          label: Text(
+              scanning ? l10n.devicesScanStop : l10n.devicesScanNetwork),
+          onPressed: scanning ? onStop : onTap,
           style: OutlinedButton.styleFrom(
             minimumSize: const Size(double.infinity, 48),
             side: BorderSide(color: cs.primary),
             foregroundColor: cs.primary,
+            textStyle: Theme.of(context).textTheme.labelLarge,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12)),
           ),

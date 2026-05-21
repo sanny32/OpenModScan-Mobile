@@ -38,6 +38,12 @@
   "devicesDiscoveredDevices": "Discovered devices",
   "@devicesDiscoveredDevices": {},
 
+  "devicesClearDiscovered": "Clear",
+  "@devicesClearDiscovered": {},
+
+  "devicesScanStop": "Stop scanning",
+  "@devicesScanStop": {},
+
   "devicesLastUsed": "Last used",
   "@devicesLastUsed": {},
 
