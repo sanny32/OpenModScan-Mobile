@@ -409,17 +409,19 @@ class _RegistersScreenState extends State<RegistersScreen>
                   ],
                 ),
               ),
-              PopupMenuItem(
-                value: _MenuAction.setAllTypes,
-                child: Row(
-                  children: [
-                    Icon(Icons.style_outlined, size: 18, color: cs.onSurfaceVariant),
-                    const SizedBox(width: 10),
-                    Text(l10n.menuSetAllTypes),
-                  ],
+              if (_tabController.index == 0) ...[
+                PopupMenuItem(
+                  value: _MenuAction.setAllTypes,
+                  child: Row(
+                    children: [
+                      Icon(Icons.style_outlined, size: 18, color: cs.onSurfaceVariant),
+                      const SizedBox(width: 10),
+                      Text(l10n.menuSetAllTypes),
+                    ],
+                  ),
                 ),
-              ),
-              const PopupMenuDivider(),
+                const PopupMenuDivider(),
+              ],
               PopupMenuItem(
                 enabled: _lists.length > 1,
                 value: _MenuAction.removeRegs,
