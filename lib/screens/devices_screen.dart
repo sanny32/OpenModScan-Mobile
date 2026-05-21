@@ -60,7 +60,9 @@ class _DevicesScreenState extends State<DevicesScreen> {
     setState(() => _devices.remove(device));
     DeviceRepository.instance.save(_devices);
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
       SnackBar(
         content: Text(context.l10n.deviceDeleted),
         action: SnackBarAction(
@@ -80,11 +82,12 @@ class _DevicesScreenState extends State<DevicesScreen> {
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return ScaffoldMessenger(
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 4, 0),
               child: Row(
@@ -116,7 +119,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : ListView(
-                padding: const EdgeInsets.only(bottom: 72),
+                padding: const EdgeInsets.only(bottom: 8),
                 children: [
                   _sectionHeader(context, l10n.devicesSavedConnections),
                   ..._filtered.map((d) => Dismissible(
@@ -162,10 +165,11 @@ class _DevicesScreenState extends State<DevicesScreen> {
                 ],
               ),
             ),
-          ],
+          _ScanButton(onTap: () {}),
+            ],
+          ),
         ),
       ),
-      bottomSheet: _ScanButton(onTap: () {}),
     );
   }
 
