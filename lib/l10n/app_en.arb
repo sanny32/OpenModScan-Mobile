@@ -224,6 +224,21 @@
   "notesHint": "Add any notes about this connection",
   "@notesHint": {},
 
+  "labelPreviousValue": "Previous value",
+  "@labelPreviousValue": {},
+
+  "writeRegisterTitle": "Write Register",
+  "@writeRegisterTitle": {},
+
+  "btnWrite": "Write",
+  "@btnWrite": {},
+
+  "labelNewValue": "New value",
+  "@labelNewValue": {},
+
+  "writeValueRange": "Value must be 0 – 65535",
+  "@writeValueRange": {},
+
   "menuSelectDevice": "Select Device",
   "@menuSelectDevice": {},
 
