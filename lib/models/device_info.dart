@@ -54,6 +54,30 @@ class DeviceInfo {
   String get address => '$host:$port';
 
   String get protocolName => 'Modbus TCP';
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'host': host,
+        'port': port,
+        'protocol': protocol.name,
+        'unitId': unitId,
+        'timeout': timeout,
+        'reconnectDelay': reconnectDelay,
+        'notes': notes,
+      };
+
+  factory DeviceInfo.fromJson(Map<String, dynamic> json) => DeviceInfo(
+        name: json['name'] as String,
+        host: json['host'] as String,
+        port: json['port'] as int,
+        protocol: ProtocolType.values.firstWhere(
+            (e) => e.name == json['protocol'],
+            orElse: () => ProtocolType.modbusTcp),
+        unitId: json['unitId'] as int,
+        timeout: json['timeout'] as int,
+        reconnectDelay: json['reconnectDelay'] as int,
+        notes: (json['notes'] as String?) ?? '',
+      );
 }
 
 const mockDevice = DeviceInfo(

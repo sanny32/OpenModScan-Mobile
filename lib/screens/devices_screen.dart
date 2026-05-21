@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/device_info.dart';
+import '../services/device_repository.dart';
 import '../theme/app_theme.dart';
 import 'device_form_sheet.dart';
 import 'device_screen.dart';
@@ -14,12 +15,24 @@ class DevicesScreen extends StatefulWidget {
 
 class _DevicesScreenState extends State<DevicesScreen> {
   String _search = '';
+  bool _loading = true;
   late List<DeviceInfo> _devices;
 
   @override
   void initState() {
     super.initState();
-    _devices = List.of(mockDevices);
+    _devices = [];
+    _loadDevices();
+  }
+
+  Future<void> _loadDevices() async {
+    final saved = await DeviceRepository.instance.load();
+    if (mounted) {
+      setState(() {
+        _devices = saved.isEmpty ? List.of(mockDevices) : saved;
+        _loading = false;
+      });
+    }
   }
 
   List<DeviceInfo> get _filtered => _devices
@@ -29,25 +42,33 @@ class _DevicesScreenState extends State<DevicesScreen> {
           d.address.contains(_search))
       .toList();
 
-  void _openConnect() {
-    showModalBottomSheet(
+  void _openConnect() async {
+    final device = await showModalBottomSheet<DeviceInfo>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const DeviceFormSheet(),
     );
+    if (device != null && mounted) {
+      setState(() => _devices.add(device));
+      DeviceRepository.instance.save(_devices);
+    }
   }
 
   void _deleteDevice(DeviceInfo device) {
     final index = _devices.indexOf(device);
     setState(() => _devices.remove(device));
+    DeviceRepository.instance.save(_devices);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(context.l10n.deviceDeleted),
         action: SnackBarAction(
           label: context.l10n.undo,
-          onPressed: () => setState(() => _devices.insert(index, device)),
+          onPressed: () {
+            setState(() => _devices.insert(index, device));
+            DeviceRepository.instance.save(_devices);
+          },
         ),
       ),
     );
@@ -92,7 +113,9 @@ class _DevicesScreenState extends State<DevicesScreen> {
               ),
             ),
             Expanded(
-              child: ListView(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView(
                 padding: const EdgeInsets.only(bottom: 72),
                 children: [
                   _sectionHeader(context, l10n.devicesSavedConnections),
@@ -114,12 +137,19 @@ class _DevicesScreenState extends State<DevicesScreen> {
                         ),
                         child: _DeviceCard(
                           device: d,
-                          onTap: () => Navigator.push(
+                          onTap: () => Navigator.push<DeviceInfo>(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => DeviceScreen(device: d),
-                            ),
-                          ),
+                                builder: (_) => DeviceScreen(device: d)),
+                          ).then((updated) {
+                            if (updated != null) {
+                              final idx = _devices.indexOf(d);
+                              if (idx != -1) {
+                                setState(() => _devices[idx] = updated);
+                                DeviceRepository.instance.save(_devices);
+                              }
+                            }
+                          }),
                         ),
                       )),
                   _sectionHeader(context, l10n.devicesDiscoveredDevices),

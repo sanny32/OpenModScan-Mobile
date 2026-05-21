@@ -7,6 +7,7 @@ import 'screens/settings_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const OModScanApp());
 }
 
