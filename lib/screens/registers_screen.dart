@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../l10n/l10n.dart';
 import '../models/device_info.dart';
 import '../models/mock_data.dart';
+import '../models/app_settings.dart';
 import '../models/register_entry.dart';
 import '../services/connection_manager.dart';
 import '../services/device_repository.dart';
@@ -1173,11 +1174,20 @@ class _RegisterRow extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(
-              width: 68,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: TypeBadge(type: entry.typeName),
+            ValueListenableBuilder<bool>(
+              valueListenable: AppSettings.instance.showTypeBadgesNotifier,
+              builder: (_, showBadges, _) => SizedBox(
+                width: 68,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: showBadges
+                      ? TypeBadge(type: entry.typeName)
+                      : Text(
+                          entry.typeName,
+                          style: tt.bodyMedium!
+                              .copyWith(color: appColors.typeColor),
+                        ),
+                ),
               ),
             ),
             SizedBox(

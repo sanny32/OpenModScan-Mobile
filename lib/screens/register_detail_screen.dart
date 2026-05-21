@@ -86,7 +86,10 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
         : AppSettings.byteOrders.first;
     _commentCtrl = TextEditingController(text: widget.entry.comment ?? '');
     _commentCtrl.addListener(_onTextChanged);
+    AppSettings.instance.showTypeBadgesNotifier.addListener(_onBadgeSettingChanged);
   }
+
+  void _onBadgeSettingChanged() => setState(() {});
 
   void _onTextChanged() {
     if (!_hasChanges) setState(() => _hasChanges = true);
@@ -96,6 +99,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
   void dispose() {
     _commentCtrl.removeListener(_onTextChanged);
     _commentCtrl.dispose();
+    AppSettings.instance.showTypeBadgesNotifier.removeListener(_onBadgeSettingChanged);
     super.dispose();
   }
 
@@ -522,8 +526,10 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                             .map(
                               (t) => Row(
                                 children: [
-                                  TypeBadge(type: t),
-                                  const SizedBox(width: 12),
+                                  if (AppSettings.instance.showTypeBadges) ...[
+                                    TypeBadge(type: t),
+                                    const SizedBox(width: 12),
+                                  ],
                                   Expanded(
                                     child: _TypeNameText(
                                       type: t,
@@ -541,8 +547,10 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                                 value: t,
                                 child: Row(
                                   children: [
-                                    TypeBadge(type: t),
-                                    const SizedBox(width: 12),
+                                    if (AppSettings.instance.showTypeBadges) ...[
+                                      TypeBadge(type: t),
+                                      const SizedBox(width: 12),
+                                    ],
                                     Expanded(child: Text(_typeDescription(t))),
                                   ],
                                 ),
@@ -957,8 +965,15 @@ class _InterpretationRow extends StatelessWidget {
                           : cs.onSurfaceVariant.withValues(alpha: 0.85),
                     ),
                     const SizedBox(width: 12),
-                    TypeBadge(type: interpretation.typeName),
-                    const SizedBox(width: 12),
+                    ValueListenableBuilder<bool>(
+                      valueListenable: AppSettings.instance.showTypeBadgesNotifier,
+                      builder: (_, showBadges, _) => showBadges
+                          ? Row(mainAxisSize: MainAxisSize.min, children: [
+                              TypeBadge(type: interpretation.typeName),
+                              const SizedBox(width: 12),
+                            ])
+                          : const SizedBox.shrink(),
+                    ),
                     Expanded(
                       child: _TypeNameText(
                         type: interpretation.typeName,

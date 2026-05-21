@@ -290,7 +290,7 @@
   "settingsDefaultUnitId": "Default Unit ID (Slave ID)",
   "@settingsDefaultUnitId": {},
 
-  "settingsSectionReadWrite": "Read / Write",
+  "settingsSectionReadWrite": "Registers",
   "@settingsSectionReadWrite": {},
 
   "settingsDefaultReadQty": "Default read quantity",
@@ -301,6 +301,9 @@
 
   "settingsShowLastValues": "Show last values after read",
   "@settingsShowLastValues": {},
+
+  "settingsShowTypeBadges": "Show type badges",
+  "@settingsShowTypeBadges": {},
 
   "settingsSectionLog": "Log",
   "@settingsSectionLog": {},

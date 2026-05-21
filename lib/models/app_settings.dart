@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class AppSettings {
   static final AppSettings instance = AppSettings._();
   AppSettings._();
@@ -24,6 +26,10 @@ class AppSettings {
   String theme = 'System';
   String language = 'English';
 
+  final showTypeBadgesNotifier = ValueNotifier<bool>(false);
+  bool get showTypeBadges => showTypeBadgesNotifier.value;
+  set showTypeBadges(bool v) => showTypeBadgesNotifier.value = v;
+
   void resetToDefaults() {
     connectionType = 'Modbus TCP';
     timeout = 1000;
@@ -36,6 +42,7 @@ class AppSettings {
     byteOrder = byteOrders.first;
     confirmBeforeWrite = true;
     showLastValues = true;
+    showTypeBadges = false;
     saveLogToFile = false;
     clearLogOnDisconnect = false;
     maxLogEntries = 1000;

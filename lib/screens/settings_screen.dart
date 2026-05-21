@@ -124,6 +124,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: _s.showLastValues,
                 onChanged: (v) => setState(() => _s.showLastValues = v),
               ),
+              _divider(),
+              _toggleTile(
+                icon: Icons.label_outline,
+                label: l10n.settingsShowTypeBadges,
+                value: _s.showTypeBadges,
+                onChanged: (v) => setState(() => _s.showTypeBadges = v),
+              ),
             ],
           ),
           _section(
