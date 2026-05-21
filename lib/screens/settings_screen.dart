@@ -43,6 +43,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _divider(),
               _navTile(
+                icon: Icons.warning_amber_outlined,
+                label: 'Read failure attempts',
+                value: '${_s.readFailureAttempts}',
+                onTap: () => _showChoiceSheet(
+                  title: 'Read failure attempts',
+                  options: AppSettings.readFailureAttemptOptions
+                      .map((value) => '$value')
+                      .toList(),
+                  selected: '${_s.readFailureAttempts}',
+                  onSelected: (value) => setState(
+                    () => _s.readFailureAttempts = int.parse(value),
+                  ),
+                ),
+              ),
+              _divider(),
+              _navTile(
                 icon: Icons.tag,
                 label: l10n.settingsDefaultUnitId,
                 value: '${_s.defaultUnitId}',
