@@ -1,13 +1,27 @@
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/device_info.dart';
-import '../models/mock_data.dart';
-import '../models/register_entry.dart';
+
+import '../models/register_list.dart';
 import '../services/connection_manager.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection_status_chip.dart';
+import '../services/app_navigation.dart';
 import 'device_form_sheet.dart';
 import 'log_screen.dart';
+
+int _regTypeOffset(String t) => switch (t) {
+  '4xxxx' => 40000,
+  '3xxxx' => 30000,
+  '1xxxx' => 10000,
+  _ => 0,
+};
+
+String _regTypeLabel(String t) => switch (t) {
+  '4xxxx' => 'Holding (4xxxx)',
+  '3xxxx' => 'Input (3xxxx)',
+  _ => t,
+};
 
 class DeviceScreen extends StatefulWidget {
   final DeviceInfo device;
@@ -154,7 +168,10 @@ class _DeviceScreenState extends State<DeviceScreen> {
                     subtitle: l10n.readRegistersSubtitle,
                     color: cs.primary,
                     enabled: _connected,
-                    onTap: () {},
+                    onTap: () {
+                      AppNavigationService.instance.goToRegisters(_device.name);
+                      Navigator.pop(context, _device);
+                    },
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -170,21 +187,32 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 ),
               ],
             ),
-            if (_connected) ...[
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(l10n.lastValues, style: tt.titleMedium),
-                  TextButton(
-                    onPressed: () {},
-                    child: Text(l10n.viewAll),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(l10n.sectionRegisterLists, style: tt.titleMedium),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (_device.registerLists.isEmpty)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 20),
+                  child: Center(
+                    child: Text(
+                      l10n.noRegisterLists,
+                      style: tt.bodyMedium!
+                          .copyWith(color: cs.onSurfaceVariant),
+                    ),
                   ),
-                ],
+                ),
+              )
+            else
+              ..._device.registerLists.map(
+                (list) => _RegisterListTile(list: list),
               ),
-              const SizedBox(height: 4),
-              ...mockRegisters.take(5).map((r) => _LastValueRow(entry: r)),
-            ],
             const SizedBox(height: 12),
             Card(
               child: ListTile(
@@ -373,33 +401,29 @@ class _ActionCard extends StatelessWidget {
   }
 }
 
-class _LastValueRow extends StatelessWidget {
-  final RegisterEntry entry;
-  const _LastValueRow({required this.entry});
+class _RegisterListTile extends StatelessWidget {
+  final RegisterList list;
+  const _RegisterListTile({required this.list});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final appColors = Theme.of(context).extension<AppColors>()!;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 60,
-            child: Text('${entry.address}',
-                style: tt.bodyMedium!.copyWith(color: cs.onSurface)),
-          ),
-          Expanded(
-            child: Text(entry.value,
-                style: tt.bodyMedium!.copyWith(
-                    color: appColors.valueColor, fontWeight: FontWeight.bold)),
-          ),
-          Text(entry.typeName,
-              style: tt.bodyMedium!.copyWith(color: appColors.typeColor)),
-        ],
+    final offset = _regTypeOffset(list.regType);
+    final start = offset + list.startAddress;
+    final end = start + list.count - 1;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      child: ListTile(
+        leading: Icon(Icons.table_rows_outlined, color: cs.primary),
+        title: Text(list.name, style: tt.titleSmall),
+        subtitle: Text(
+          '${_regTypeLabel(list.regType)} · $start – $end',
+          style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+        ),
+        trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
       ),
     );
   }
 }
+

@@ -4,6 +4,7 @@ import 'screens/devices_screen.dart';
 import 'screens/log_screen.dart';
 import 'screens/registers_screen.dart';
 import 'screens/settings_screen.dart';
+import 'services/app_navigation.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -47,13 +48,31 @@ class _AppShellState extends State<AppShell> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    AppNavigationService.instance.tabIndex.addListener(_onTabChange);
+  }
+
+  void _onTabChange() {
+    setState(() => _index = AppNavigationService.instance.tabIndex.value);
+  }
+
+  @override
+  void dispose() {
+    AppNavigationService.instance.tabIndex.removeListener(_onTabChange);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Scaffold(
       body: IndexedStack(index: _index, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
-        onTap: (i) => setState(() => _index = i),
+        onTap: (i) {
+          AppNavigationService.instance.tabIndex.value = i;
+        },
         items: [
           BottomNavigationBarItem(
             icon: const Icon(Icons.devices_outlined),

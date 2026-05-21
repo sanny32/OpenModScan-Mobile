@@ -6,6 +6,7 @@ import '../models/mock_data.dart';
 import '../models/app_settings.dart';
 import '../models/register_entry.dart';
 import '../models/register_list.dart';
+import '../services/app_navigation.dart';
 import '../services/connection_manager.dart';
 import '../services/device_repository.dart';
 import '../theme/app_theme.dart';
@@ -117,14 +118,29 @@ class _RegistersScreenState extends State<RegistersScreen>
     _lists = _buildListsFromDevice();
     DeviceRepository.instance.devices.addListener(_onChanged);
     ConnectionManager.instance.clients.addListener(_onChanged);
+    AppNavigationService.instance.pendingDevice.addListener(_onPendingDevice);
   }
 
   void _onChanged() {
     if (mounted) setState(() {});
   }
 
+  void _onPendingDevice() {
+    final name = AppNavigationService.instance.pendingDevice.value;
+    if (name == null || !mounted) return;
+    AppNavigationService.instance.pendingDevice.value = null;
+    if (name == _deviceName) return;
+    for (final l in _lists) { l.dispose(); }
+    setState(() {
+      _deviceName = name;
+      _activeList = 0;
+      _lists = _buildListsFromDevice();
+    });
+  }
+
   @override
   void dispose() {
+    AppNavigationService.instance.pendingDevice.removeListener(_onPendingDevice);
     DeviceRepository.instance.devices.removeListener(_onChanged);
     ConnectionManager.instance.clients.removeListener(_onChanged);
     _tabController.dispose();

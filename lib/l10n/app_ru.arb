@@ -79,6 +79,9 @@
   "btnWrite": "Записать",
   "labelNewValue": "Новое значение",
   "writeValueRange": "Значение должно быть от 0 до 65535",
+  "sectionRegisterLists": "Списки регистров",
+  "noRegisterLists": "Списки регистров не настроены",
+
   "menuSelectDevice": "Выбрать устройство",
   "menuAddRegs": "Новый список",
   "menuSelectRegsList": "Сменить список",

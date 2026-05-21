@@ -257,6 +257,12 @@
   "writeValueRange": "Value must be 0 – 65535",
   "@writeValueRange": {},
 
+  "sectionRegisterLists": "Register Lists",
+  "@sectionRegisterLists": {},
+
+  "noRegisterLists": "No register lists configured",
+  "@noRegisterLists": {},
+
   "menuSelectDevice": "Select Device",
   "@menuSelectDevice": {},
 
