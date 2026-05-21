@@ -272,6 +272,9 @@
   "dialogListNameHint": "List name",
   "@dialogListNameHint": {},
 
+  "menuSetAllTypes": "Set type for all",
+  "@menuSetAllTypes": {},
+
   "settingsTitle": "Settings",
   "@settingsTitle": {},
 

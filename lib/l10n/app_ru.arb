@@ -84,6 +84,7 @@
   "menuSelectRegsList": "Сменить список",
   "menuRemoveRegs": "Удалить список",
   "dialogListNameHint": "Имя списка",
+  "menuSetAllTypes": "Установить тип для всех",
   "settingsTitle": "Настройки",
   "settingsSectionConnection": "Соединение",
   "settingsDefaultConnectionType": "Тип подключения по умолчанию",

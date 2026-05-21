@@ -16,7 +16,7 @@ import '../widgets/type_badge.dart';
 import 'register_detail_screen.dart';
 import 'status_detail_screen.dart';
 
-enum _MenuAction { selectDevice, addRegs, selectRegsList, removeRegs }
+enum _MenuAction { selectDevice, addRegs, selectRegsList, removeRegs, setAllTypes }
 
 class _ListConfig {
   final RegisterList data;
@@ -144,6 +144,8 @@ class _RegistersScreenState extends State<RegistersScreen>
         _showSelectListDialog();
       case _MenuAction.removeRegs:
         _removeActiveRegs();
+      case _MenuAction.setAllTypes:
+        _showSetAllTypesDialog();
     }
   }
 
@@ -292,6 +294,62 @@ class _RegistersScreenState extends State<RegistersScreen>
     }
   }
 
+  Future<void> _showSetAllTypesDialog() async {
+    final l10n = context.l10n;
+    final cs = Theme.of(context).colorScheme;
+
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(l10n.menuSetAllTypes),
+        children: kRegisterTypes.map((t) => SimpleDialogOption(
+          onPressed: () => Navigator.pop(ctx, t),
+          child: Row(
+            children: [
+              ValueListenableBuilder<bool>(
+                valueListenable: AppSettings.instance.showTypeBadgesNotifier,
+                builder: (_, showBadges, _) => showBadges
+                    ? Row(mainAxisSize: MainAxisSize.min, children: [
+                        TypeBadge(type: t),
+                        const SizedBox(width: 10),
+                      ])
+                    : const SizedBox.shrink(),
+              ),
+              Expanded(
+                child: Text(t, style: TextStyle(color: cs.onSurface)),
+              ),
+            ],
+          ),
+        )).toList(),
+      ),
+    );
+
+    if (selected != null) _onSetAllTypes(selected);
+  }
+
+  void _onSetAllTypes(String typeName) {
+    final config = _lists[_activeList];
+    final list = config.data;
+    final offset = _regTypeOffset(config.regType);
+    final startAddr = offset + list.startAddress;
+
+    for (var i = 0; i < list.count; i++) {
+      final addr = startAddr + i;
+      final idx = list.entries.indexWhere((e) => e.address == addr);
+      if (idx >= 0) {
+        list.entries[idx] = RegisterConfig(
+          address: addr,
+          typeName: typeName,
+          comment: list.entries[idx].comment,
+        );
+      } else {
+        list.entries.add(RegisterConfig(address: addr, typeName: typeName));
+      }
+    }
+    setState(() {});
+    _saveDevice();
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -351,6 +409,17 @@ class _RegistersScreenState extends State<RegistersScreen>
                   ],
                 ),
               ),
+              PopupMenuItem(
+                value: _MenuAction.setAllTypes,
+                child: Row(
+                  children: [
+                    Icon(Icons.style_outlined, size: 18, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 10),
+                    Text(l10n.menuSetAllTypes),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
               PopupMenuItem(
                 enabled: _lists.length > 1,
                 value: _MenuAction.removeRegs,
