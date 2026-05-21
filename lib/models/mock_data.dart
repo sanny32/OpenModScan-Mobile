@@ -43,16 +43,16 @@ const mockDevices = [
 ];
 
 const mockRegisters = [
-  RegisterEntry(address: 40001, value: '123',   previousValue: '120',   typeName: 'UInt16', comment: 'Temp °C',   timestamp: '10:42:35'),
-  RegisterEntry(address: 40002, value: '45.6',  previousValue: '44.1',  typeName: 'Float',  comment: 'Voltage',   timestamp: '10:42:35'),
-  RegisterEntry(address: 40003, value: '78.9',                          typeName: 'Float',                        timestamp: '10:42:35'),
-  RegisterEntry(address: 40004, value: '1',     previousValue: '0',     typeName: 'Bool',   comment: 'Running',   timestamp: '10:42:34'),
-  RegisterEntry(address: 40005, value: '1000',                          typeName: 'UInt32',                       timestamp: '10:42:34'),
-  RegisterEntry(address: 40006, value: '-12.34',previousValue: '-11.00',typeName: 'Float',  comment: 'Current',   timestamp: '10:42:33'),
-  RegisterEntry(address: 40007, value: '32767',                         typeName: 'Int16',                        timestamp: '10:42:33'),
-  RegisterEntry(address: 40008, value: '0',     previousValue: '1',     typeName: 'UInt16', comment: 'Status',    timestamp: '10:42:32'),
-  RegisterEntry(address: 40009, value: '25.0',  previousValue: '24.5',  typeName: 'Float',  comment: 'Pressure',  timestamp: '10:42:32'),
-  RegisterEntry(address: 40010, value: '65535',                         typeName: 'UInt16',                       timestamp: '10:42:31'),
+  RegisterEntry(address: 40001, value: '123',   previousValue: '120',   typeName: 'UInt16',  comment: 'Temp °C',  timestamp: '10:42:35', date: '21.05.2024'),
+  RegisterEntry(address: 40002, value: '45',    previousValue: '44',    typeName: 'Float32', comment: 'Voltage',  timestamp: '10:42:35', date: '21.05.2024'),
+  RegisterEntry(address: 40003, value: '789',                           typeName: 'Float32',                      timestamp: '10:42:35', date: '21.05.2024'),
+  RegisterEntry(address: 40004, value: '1',     previousValue: '0',     typeName: 'Bool',    comment: 'Running',  timestamp: '10:42:34', date: '21.05.2024'),
+  RegisterEntry(address: 40005, value: '1000',                          typeName: 'UInt32',                       timestamp: '10:42:34', date: '21.05.2024'),
+  RegisterEntry(address: 40006, value: '50000', previousValue: '49000', typeName: 'Float32', comment: 'Current',  timestamp: '10:42:33', date: '21.05.2024'),
+  RegisterEntry(address: 40007, value: '32767',                         typeName: 'Int16',                        timestamp: '10:42:33', date: '21.05.2024'),
+  RegisterEntry(address: 40008, value: '0',     previousValue: '1',     typeName: 'UInt16',  comment: 'Status',   timestamp: '10:42:32', date: '21.05.2024'),
+  RegisterEntry(address: 40009, value: '250',   previousValue: '245',   typeName: 'Float32', comment: 'Pressure', timestamp: '10:42:32', date: '21.05.2024'),
+  RegisterEntry(address: 40010, value: '65535',                         typeName: 'UInt16',                       timestamp: '10:42:31', date: '21.05.2024'),
 ];
 
 const mockLogEntries = [

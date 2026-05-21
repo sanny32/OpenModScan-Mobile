@@ -233,6 +233,12 @@
   "labelProperties": "Properties",
   "@labelProperties": {},
 
+  "labelRegisterOrder": "Register Order",
+  "@labelRegisterOrder": {},
+
+  "labelByteOrder": "Byte Order",
+  "@labelByteOrder": {},
+
   "writeRegisterTitle": "Write Register",
   "@writeRegisterTitle": {},
 

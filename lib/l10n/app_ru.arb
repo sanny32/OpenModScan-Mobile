@@ -71,6 +71,8 @@
   "labelPreviousValue": "Предыдущее значение",
   "labelInterpretations": "Интерпретации",
   "labelProperties": "Свойства",
+  "labelRegisterOrder": "Порядок регистров",
+  "labelByteOrder": "Порядок байт",
   "writeRegisterTitle": "Запись регистра",
   "btnWrite": "Записать",
   "labelNewValue": "Новое значение",
