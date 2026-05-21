@@ -190,6 +190,14 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     ];
   }
 
+  String _displayValueForType(int? raw, String type, String fallback) {
+    if (raw == null) return fallback;
+    for (final interpretation in _buildInterpretations(raw)) {
+      if (interpretation.typeName == type) return interpretation.value;
+    }
+    return fallback;
+  }
+
   void _save() {
     // TODO: persist type, comment, register order, byte order.
     setState(() => _hasChanges = false);
@@ -308,7 +316,6 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
           void selectRegisterOrder(String value) {
             setState(() {
               _registerOrder = value;
-              _hasChanges = true;
             });
             setInnerState(() {});
           }
@@ -316,7 +323,6 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
           void selectByteOrder(String value) {
             setState(() {
               _byteOrder = value;
-              _hasChanges = true;
             });
             setInnerState(() {});
           }
@@ -368,6 +374,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     final appColors = Theme.of(context).extension<AppColors>()!;
     final raw = _rawUInt16;
     final entry = widget.entry;
+    final currentValue = _displayValueForType(raw, _selectedType, entry.value);
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerHighest,
@@ -382,8 +389,10 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
           ),
         ),
         actions: [
-          _SavePillButton(onPressed: _save, label: l10n.save),
-          const SizedBox(width: 6),
+          if (_hasChanges) ...[
+            _SavePillButton(onPressed: _save, label: l10n.save),
+            const SizedBox(width: 6),
+          ],
           IconButton(
             icon: const Icon(Icons.more_vert),
             iconSize: 24,
@@ -470,14 +479,27 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  Text(
-                    entry.value,
-                    style: tt.displaySmall?.copyWith(
-                      color: appColors.valueColor,
-                      fontSize: 42,
-                      height: 0.95,
-                      fontWeight: FontWeight.bold,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                  SizedBox(
+                    width: double.infinity,
+                    height: 42,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          currentValue,
+                          maxLines: 1,
+                          softWrap: false,
+                          style: tt.displaySmall?.copyWith(
+                            color: appColors.valueColor,
+                            fontSize: 42,
+                            height: 0.95,
+                            fontWeight: FontWeight.bold,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                   if (entry.previousValue != null) ...[
