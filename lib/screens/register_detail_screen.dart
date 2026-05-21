@@ -6,61 +6,8 @@ import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
 import '../models/register_entry.dart';
 import '../theme/app_theme.dart';
+import '../widgets/type_badge.dart';
 
-final _detailRegisterTypes = kRegisterTypes.where((t) => t != 'Bool').toList();
-
-Color _typeColor(BuildContext context, String type) {
-  final cs = Theme.of(context).colorScheme;
-  final appColors = Theme.of(context).extension<AppColors>()!;
-  switch (type) {
-    case 'UInt16':
-    case 'UInt32':
-    case 'UInt64':
-      return cs.primary;
-    case 'Int16':
-    case 'Int32':
-    case 'Int64':
-      return appColors.connectedColor;
-    case 'Float32':
-    case 'Float64':
-      return appColors.warningColor;
-    case 'Hex':
-      return appColors.openLogColor;
-    case 'Binary':
-      return appColors.warningColor;
-    default:
-      return cs.onSurfaceVariant;
-  }
-}
-
-String _typeAbbrev(String type) {
-  switch (type) {
-    case 'UInt16':
-      return 'U16';
-    case 'Int16':
-      return 'I16';
-    case 'UInt32':
-      return 'U32';
-    case 'Int32':
-      return 'I32';
-    case 'UInt64':
-      return 'U64';
-    case 'Int64':
-      return 'I64';
-    case 'Float32':
-      return 'F32';
-    case 'Float64':
-      return 'F64';
-    case 'Hex':
-      return 'HEX';
-    case 'Binary':
-      return 'BIN';
-    default:
-      return type.length > 4
-          ? type.substring(0, 4).toUpperCase()
-          : type.toUpperCase();
-  }
-}
 
 String _typeDescription(String type) {
   switch (type) {
@@ -128,9 +75,9 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
   void initState() {
     super.initState();
     final settings = AppSettings.instance;
-    _selectedType = _detailRegisterTypes.contains(widget.entry.typeName)
+    _selectedType = kRegisterTypes.contains(widget.entry.typeName)
         ? widget.entry.typeName
-        : _detailRegisterTypes.first;
+        : kRegisterTypes.first;
     _registerOrder = AppSettings.registerOrders.contains(settings.registerOrder)
         ? settings.registerOrder
         : AppSettings.registerOrders.first;
@@ -571,11 +518,11 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                           color: cs.onSurfaceVariant,
                           size: 24,
                         ),
-                        selectedItemBuilder: (ctx) => _detailRegisterTypes
+                        selectedItemBuilder: (ctx) => kRegisterTypes
                             .map(
                               (t) => Row(
                                 children: [
-                                  _TypeBadge(type: t),
+                                  TypeBadge(type: t),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: _TypeNameText(
@@ -588,13 +535,13 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                               ),
                             )
                             .toList(),
-                        items: _detailRegisterTypes
+                        items: kRegisterTypes
                             .map(
                               (t) => DropdownMenuItem(
                                 value: t,
                                 child: Row(
                                   children: [
-                                    _TypeBadge(type: t),
+                                    TypeBadge(type: t),
                                     const SizedBox(width: 12),
                                     Expanded(child: Text(_typeDescription(t))),
                                   ],
@@ -964,33 +911,6 @@ class _OutlineField extends StatelessWidget {
   }
 }
 
-class _TypeBadge extends StatelessWidget {
-  final String type;
-  const _TypeBadge({required this.type});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _typeColor(context, type);
-    return Container(
-      width: 38,
-      height: 28,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Text(
-        _typeAbbrev(type),
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}
 
 class _InterpretationRow extends StatelessWidget {
   final _Interpretation interpretation;
@@ -1037,7 +957,7 @@ class _InterpretationRow extends StatelessWidget {
                           : cs.onSurfaceVariant.withValues(alpha: 0.85),
                     ),
                     const SizedBox(width: 12),
-                    _TypeBadge(type: interpretation.typeName),
+                    TypeBadge(type: interpretation.typeName),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _TypeNameText(

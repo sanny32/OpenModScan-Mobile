@@ -9,6 +9,7 @@ import '../services/device_repository.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection_info_bar.dart';
 import '../widgets/connection_status_chip.dart';
+import '../widgets/type_badge.dart';
 import 'register_detail_screen.dart';
 import 'status_detail_screen.dart';
 
@@ -1174,9 +1175,9 @@ class _RegisterRow extends StatelessWidget {
             ),
             SizedBox(
               width: 68,
-              child: Text(
-                entry.typeName,
-                style: tt.bodyMedium!.copyWith(color: appColors.typeColor),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: TypeBadge(type: entry.typeName),
               ),
             ),
             SizedBox(

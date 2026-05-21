@@ -9,7 +9,6 @@ const kRegisterTypes = [
   'Float64',
   'Hex',
   'Binary',
-  'Bool',
 ];
 
 class RegisterEntry {
