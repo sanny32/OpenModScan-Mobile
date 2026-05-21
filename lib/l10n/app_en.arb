@@ -10,7 +10,7 @@
   "navRegisters": "Registers",
   "@navRegisters": {},
 
-  "navLog": "Log",
+  "navLog": "Traffic",
   "@navLog": {},
 
   "navMore": "More",
@@ -88,10 +88,10 @@
   "viewAll": "View All >",
   "@viewAll": {},
 
-  "openLog": "Open Log",
+  "openLog": "Open Traffic",
   "@openLog": {},
 
-  "openLogSubtitle": "View communication log",
+  "openLogSubtitle": "View communication traffic",
   "@openLogSubtitle": {},
 
   "tabCoils": "Status",
@@ -308,16 +308,16 @@
   "settingsShowTypeBadges": "Show type badges",
   "@settingsShowTypeBadges": {},
 
-  "settingsSectionLog": "Log",
+  "settingsSectionLog": "Traffic",
   "@settingsSectionLog": {},
 
-  "settingsSaveLogToFile": "Save log to file",
+  "settingsSaveLogToFile": "Save traffic to file",
   "@settingsSaveLogToFile": {},
 
-  "settingsClearLogOnDisconnect": "Clear log on disconnect",
+  "settingsClearLogOnDisconnect": "Clear traffic on disconnect",
   "@settingsClearLogOnDisconnect": {},
 
-  "settingsMaxLogEntries": "Max log entries",
+  "settingsMaxLogEntries": "Max traffic entries",
   "@settingsMaxLogEntries": {},
 
   "settingsSectionAppearance": "Appearance",
