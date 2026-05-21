@@ -76,11 +76,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _section(
             label: l10n.settingsSectionLog,
             children: [
-              _navTile(
-                icon: Icons.description_outlined,
-                label: l10n.settingsLogLevel,
-                value: _s.logLevel,
-              ),
               _divider(),
               _toggleTile(
                 icon: Icons.save_outlined,
@@ -178,11 +173,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _divider() => Divider(
-        height: 1,
-        indent: 56,
-        endIndent: 0,
-        color: Theme.of(context).dividerTheme.color,
-      );
+    height: 1,
+    indent: 56,
+    endIndent: 0,
+    color: Theme.of(context).dividerTheme.color,
+  );
 
   Widget _navTile({
     required IconData icon,

@@ -263,9 +263,6 @@
   "settingsSectionLog": "Log",
   "@settingsSectionLog": {},
 
-  "settingsLogLevel": "Log level",
-  "@settingsLogLevel": {},
-
   "settingsSaveLogToFile": "Save log to file",
   "@settingsSaveLogToFile": {},
 

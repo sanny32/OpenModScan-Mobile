@@ -81,7 +81,6 @@
   "settingsConfirmBeforeWrite": "Подтверждать перед записью",
   "settingsShowLastValues": "Показывать последние значения",
   "settingsSectionLog": "Журнал",
-  "settingsLogLevel": "Уровень журнала",
   "settingsSaveLogToFile": "Сохранять журнал в файл",
   "settingsClearLogOnDisconnect": "Очищать журнал при отключении",
   "settingsMaxLogEntries": "Максимум записей журнала",

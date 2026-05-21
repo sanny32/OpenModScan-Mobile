@@ -9,7 +9,6 @@ class AppSettings {
   int defaultReadQty = 20;
   bool confirmBeforeWrite = true;
   bool showLastValues = true;
-  String logLevel = 'Info';
   bool saveLogToFile = false;
   bool clearLogOnDisconnect = false;
   int maxLogEntries = 1000;
@@ -24,7 +23,6 @@ class AppSettings {
     defaultReadQty = 20;
     confirmBeforeWrite = true;
     showLastValues = true;
-    logLevel = 'Info';
     saveLogToFile = false;
     clearLogOnDisconnect = false;
     maxLogEntries = 1000;
