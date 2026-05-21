@@ -16,21 +16,29 @@ enum _MenuAction { selectDevice, addRegs, selectRegsList, removeRegs }
 class _ListConfig {
   String name;
   String regType = '4xxxx';
+  String coilType = '0xxxx';
   int addrMode = 0;
   bool autoRefresh = true;
+  bool coilAutoRefresh = true;
   final TextEditingController startAddrCtrl;
   final TextEditingController countCtrl;
+  final TextEditingController coilStartAddrCtrl;
+  final TextEditingController coilCountCtrl;
 
   _ListConfig({
     required this.name,
     String startAddr = '40001',
     String count = '20',
   }) : startAddrCtrl = TextEditingController(text: startAddr),
-       countCtrl = TextEditingController(text: count);
+       countCtrl = TextEditingController(text: count),
+       coilStartAddrCtrl = TextEditingController(text: '00000'),
+       coilCountCtrl = TextEditingController(text: count);
 
   void dispose() {
     startAddrCtrl.dispose();
     countCtrl.dispose();
+    coilStartAddrCtrl.dispose();
+    coilCountCtrl.dispose();
   }
 }
 
@@ -310,13 +318,14 @@ class _RegistersScreenState extends State<RegistersScreen>
                   startAddrCtrl: active.startAddrCtrl,
                   countCtrl: active.countCtrl,
                 ),
-                Center(
-                  child: Text(
-                    l10n.tabCoils,
-                    style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+                _CoilsTab(
+                  coilType: active.coilType,
+                  onCoilTypeChanged: (v) => setState(() => active.coilType = v),
+                  autoRefresh: active.coilAutoRefresh,
+                  onAutoRefreshChanged: (v) =>
+                      setState(() => active.coilAutoRefresh = v),
+                  startAddrCtrl: active.coilStartAddrCtrl,
+                  countCtrl: active.coilCountCtrl,
                 ),
               ],
             ),
@@ -534,7 +543,353 @@ class _RegistersTab extends StatelessWidget {
   }
 }
 
+const _mockCoils = [
+  _BitEntry(address: 0, value: true, comment: 'Motor Start'),
+  _BitEntry(address: 1, value: false, comment: 'Motor Stop'),
+  _BitEntry(address: 2, value: true, comment: 'Pump Enable'),
+  _BitEntry(address: 3, value: false, comment: 'Alarm Reset'),
+  _BitEntry(address: 4, value: true, comment: 'System Ready'),
+  _BitEntry(address: 5, value: true, comment: 'Valve Open'),
+  _BitEntry(address: 6, value: false, comment: 'Valve Close'),
+  _BitEntry(address: 7, value: true, comment: 'Heater Enable'),
+  _BitEntry(address: 8, value: true, comment: 'Fan Enable'),
+  _BitEntry(address: 9, value: false, comment: 'Reserved'),
+];
+
+class _BitEntry {
+  final int address;
+  final bool value;
+  final String comment;
+
+  const _BitEntry({
+    required this.address,
+    required this.value,
+    required this.comment,
+  });
+
+  _BitEntry copyWith({bool? value}) => _BitEntry(
+    address: address,
+    value: value ?? this.value,
+    comment: comment,
+  );
+}
+
+String _bitRangeLabel(AppLocalizations l10n, int start, int end) {
+  final raw = l10n.registersShowing(start, end);
+  final startText = '$start';
+  final endText = '$end';
+  final startIndex = raw.indexOf(startText);
+  final endIndex = raw.lastIndexOf(endText);
+  if (startIndex < 0 || endIndex < 0) return raw;
+
+  final withEnd = raw.replaceRange(
+    endIndex,
+    endIndex + endText.length,
+    end.toString().padLeft(5, '0'),
+  );
+  final adjustedStartIndex = startIndex > endIndex
+      ? startIndex + 5 - endText.length
+      : startIndex;
+  return withEnd.replaceRange(
+    adjustedStartIndex,
+    adjustedStartIndex + startText.length,
+    start.toString().padLeft(5, '0'),
+  );
+}
+
+class _CoilsTab extends StatefulWidget {
+  final String coilType;
+  final ValueChanged<String> onCoilTypeChanged;
+  final bool autoRefresh;
+  final ValueChanged<bool> onAutoRefreshChanged;
+  final TextEditingController startAddrCtrl;
+  final TextEditingController countCtrl;
+
+  const _CoilsTab({
+    required this.coilType,
+    required this.onCoilTypeChanged,
+    required this.autoRefresh,
+    required this.onAutoRefreshChanged,
+    required this.startAddrCtrl,
+    required this.countCtrl,
+  });
+
+  @override
+  State<_CoilsTab> createState() => _CoilsTabState();
+}
+
+class _CoilsTabState extends State<_CoilsTab> {
+  late List<_BitEntry> _items;
+
+  bool get _canWrite => widget.coilType == '0xxxx';
+
+  @override
+  void initState() {
+    super.initState();
+    _items = List.of(_mockCoils);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final l10n = context.l10n;
+    final dividerColor = Theme.of(context).dividerTheme.color ?? cs.outline;
+    final start = int.tryParse(widget.startAddrCtrl.text) ?? 0;
+    final rawCount = int.tryParse(widget.countCtrl.text);
+    final count = rawCount == null || rawCount < 1 ? 20 : rawCount;
+    final end = start + count - 1;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: _CoilTypeDropdown(
+                  value: widget.coilType,
+                  onChanged: widget.onCoilTypeChanged,
+                ),
+              ),
+              const SizedBox(width: 8),
+              _AddrValueToggle(selected: 0, onChanged: (_) {}),
+              IconButton(
+                icon: const Icon(Icons.filter_list, size: 20),
+                onPressed: () {},
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              ),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.refresh, size: 15),
+                label: Text(l10n.btnRead),
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: cs.primary,
+                  foregroundColor: cs.onPrimary,
+                  textStyle: tt.bodyMedium,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
+          child: Row(
+            children: [
+              Text(
+                l10n.labelStart,
+                style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+              ),
+              const SizedBox(width: 6),
+              SizedBox(
+                width: 72,
+                child: TextField(
+                  controller: widget.startAddrCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  style: tt.bodyMedium,
+                  textAlign: TextAlign.center,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 8,
+                    ),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                l10n.labelCount,
+                style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+              ),
+              const SizedBox(width: 6),
+              SizedBox(
+                width: 44,
+                child: TextField(
+                  controller: widget.countCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    _MaxCountFormatter(max: 2000),
+                  ],
+                  style: tt.bodyMedium,
+                  textAlign: TextAlign.center,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 8,
+                    ),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+              const Spacer(),
+              Flexible(
+                child: Text(
+                  l10n.labelAutoRefresh,
+                  style: tt.bodyMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Transform.scale(
+                scale: 0.8,
+                child: Switch(
+                  value: widget.autoRefresh,
+                  onChanged: widget.onAutoRefreshChanged,
+                ),
+              ),
+              Text(
+                '1.0 s',
+                style: tt.bodyMedium!.copyWith(color: cs.primary),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          color: cs.surfaceContainer,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 72,
+                child: Text(
+                  l10n.colAddress,
+                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ),
+              SizedBox(
+                width: 124,
+                child: Text(
+                  l10n.colValue,
+                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  l10n.colComment,
+                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ),
+              const SizedBox(width: 24),
+            ],
+          ),
+        ),
+        Divider(height: 1, color: dividerColor),
+        Expanded(
+          child: ListView.separated(
+            itemCount: _items.length,
+            separatorBuilder: (_, _) => Divider(height: 1, color: dividerColor),
+            itemBuilder: (context, i) => _BitRow(
+              entry: _items[i],
+              displayAddress: start + _items[i].address,
+              canWrite: _canWrite,
+              onChanged: _canWrite
+                  ? (value) => setState(
+                      () => _items[i] = _items[i].copyWith(value: value),
+                    )
+                  : null,
+            ),
+          ),
+        ),
+        Container(
+          color: cs.surfaceContainer,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _bitRangeLabel(l10n, start, end),
+                style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+              ),
+              Text(
+                l10n.registersLastUpdate('10:42:35'),
+                style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BitRow extends StatelessWidget {
+  final _BitEntry entry;
+  final int displayAddress;
+  final bool canWrite;
+  final ValueChanged<bool>? onChanged;
+
+  const _BitRow({
+    required this.entry,
+    required this.displayAddress,
+    required this.canWrite,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return InkWell(
+      onTap: () {},
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 72,
+              child: Text(
+                displayAddress.toString().padLeft(5, '0'),
+                style: tt.bodyLarge,
+              ),
+            ),
+            SizedBox(
+              width: 124,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Transform.scale(
+                  scale: 0.82,
+                  alignment: Alignment.centerLeft,
+                  child: Switch(
+                    value: entry.value,
+                    onChanged: canWrite ? onChanged : null,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                entry.comment,
+                style: tt.bodyMedium,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Icon(Icons.chevron_right, color: cs.onSurfaceVariant, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _MaxCountFormatter extends TextInputFormatter {
+  final int max;
+
+  const _MaxCountFormatter({this.max = 125});
+
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
@@ -542,7 +897,7 @@ class _MaxCountFormatter extends TextInputFormatter {
   ) {
     if (newValue.text.isEmpty) return newValue;
     final n = int.tryParse(newValue.text);
-    if (n == null || n > 125) return oldValue;
+    if (n == null || n > max) return oldValue;
     return newValue;
   }
 }
@@ -575,6 +930,48 @@ class _RegTypeDropdown extends StatelessWidget {
             items: const [
               DropdownMenuItem(value: '4xxxx', child: Text('4xxxx')),
               DropdownMenuItem(value: '3xxxx', child: Text('3xxxx')),
+            ],
+            onChanged: (v) {
+              if (v != null) onChanged(v);
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CoilTypeDropdown extends StatelessWidget {
+  final String value;
+  final ValueChanged<String> onChanged;
+  const _CoilTypeDropdown({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return SizedBox(
+      height: 36,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: value,
+            isDense: true,
+            isExpanded: true,
+            dropdownColor: cs.surfaceContainerHighest,
+            style: tt.bodyMedium!.copyWith(color: cs.onSurface),
+            items: const [
+              DropdownMenuItem(value: '0xxxx', child: Text('Coils (0xxxx)')),
+              DropdownMenuItem(
+                value: '1xxxx',
+                child: Text('Discrete (1xxxx)'),
+              ),
             ],
             onChanged: (v) {
               if (v != null) onChanged(v);

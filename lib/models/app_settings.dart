@@ -4,12 +4,14 @@ class AppSettings {
 
   static const registerOrders = ['MSRF', 'LSRF'];
   static const byteOrders = ['Direct', 'Swapped'];
+  static const addressBases = ['0-based', '1-based'];
 
   String connectionType = 'Modbus TCP';
   int timeout = 1000;
   int reconnectDelay = 3000;
   int defaultUnitId = 1;
   int defaultReadQty = 20;
+  String addressBase = addressBases.first;
   String registerOrder = registerOrders.first;
   String byteOrder = byteOrders.first;
   bool confirmBeforeWrite = true;
@@ -26,6 +28,7 @@ class AppSettings {
     reconnectDelay = 3000;
     defaultUnitId = 1;
     defaultReadQty = 20;
+    addressBase = addressBases.first;
     registerOrder = registerOrders.first;
     byteOrder = byteOrders.first;
     confirmBeforeWrite = true;

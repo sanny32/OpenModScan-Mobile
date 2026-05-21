@@ -59,6 +59,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _divider(),
               _navTile(
+                icon: Icons.pin_outlined,
+                label: 'AddressBase',
+                value: _s.addressBase,
+                onTap: () => _showChoiceSheet(
+                  title: 'AddressBase',
+                  options: AppSettings.addressBases,
+                  selected: _s.addressBase,
+                  onSelected: (value) => setState(() => _s.addressBase = value),
+                ),
+              ),
+              _divider(),
+              _navTile(
                 icon: Icons.swap_vert_rounded,
                 label: l10n.labelRegisterOrder,
                 value: _s.registerOrder,
