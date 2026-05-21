@@ -254,13 +254,13 @@
   "menuSelectDevice": "Select Device",
   "@menuSelectDevice": {},
 
-  "menuAddRegs": "Add Regs",
+  "menuAddRegs": "New List",
   "@menuAddRegs": {},
 
-  "menuSelectRegsList": "Select Regs List",
+  "menuSelectRegsList": "Switch List",
   "@menuSelectRegsList": {},
 
-  "menuRemoveRegs": "Remove Regs",
+  "menuRemoveRegs": "Delete List",
   "@menuRemoveRegs": {},
 
   "dialogListNameHint": "List name",
