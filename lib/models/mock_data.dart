@@ -2,7 +2,7 @@ import 'device_info.dart';
 import 'log_entry.dart';
 import 'register_entry.dart';
 
-const mockDevice = DeviceInfo(
+final mockDevice = DeviceInfo(
   name: 'PLC #1',
   host: '192.168.0.10',
   port: 502,
@@ -10,7 +10,7 @@ const mockDevice = DeviceInfo(
   unitId: 1,
 );
 
-const mockDevices = [
+final mockDevices = [
   mockDevice,
   DeviceInfo(
     name: 'Water Pump Station',

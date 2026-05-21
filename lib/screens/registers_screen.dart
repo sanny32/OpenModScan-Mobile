@@ -5,6 +5,7 @@ import '../models/device_info.dart';
 import '../models/mock_data.dart';
 import '../models/app_settings.dart';
 import '../models/register_entry.dart';
+import '../models/register_list.dart';
 import '../services/connection_manager.dart';
 import '../services/device_repository.dart';
 import '../theme/app_theme.dart';
@@ -17,25 +18,47 @@ import 'status_detail_screen.dart';
 enum _MenuAction { selectDevice, addRegs, selectRegsList, removeRegs }
 
 class _ListConfig {
-  String name;
-  String regType = '4xxxx';
-  String coilType = '0xxxx';
-  int addrMode = 0;
-  bool autoRefresh = true;
-  bool coilAutoRefresh = true;
-  final TextEditingController startAddrCtrl;
-  final TextEditingController countCtrl;
-  final TextEditingController coilStartAddrCtrl;
-  final TextEditingController coilCountCtrl;
+  final RegisterList data;
+  late final TextEditingController startAddrCtrl;
+  late final TextEditingController countCtrl;
+  late final TextEditingController coilStartAddrCtrl;
+  late final TextEditingController coilCountCtrl;
 
-  _ListConfig({
-    required this.name,
-    String startAddr = '40001',
-    String count = '20',
-  }) : startAddrCtrl = TextEditingController(text: startAddr),
-       countCtrl = TextEditingController(text: count),
-       coilStartAddrCtrl = TextEditingController(text: '00000'),
-       coilCountCtrl = TextEditingController(text: count);
+  String get name => data.name;
+  set name(String v) => data.name = v;
+
+  String get regType => data.regType;
+  set regType(String v) => data.regType = v;
+
+  String get coilType => data.coilType;
+  set coilType(String v) => data.coilType = v;
+
+  int get addrMode => data.addrMode;
+  set addrMode(int v) => data.addrMode = v;
+
+  bool get autoRefresh => data.autoRefresh;
+  set autoRefresh(bool v) => data.autoRefresh = v;
+
+  bool get coilAutoRefresh => data.coilAutoRefresh;
+  set coilAutoRefresh(bool v) => data.coilAutoRefresh = v;
+
+  _ListConfig(this.data) {
+    startAddrCtrl = TextEditingController(text: data.startAddress.toString());
+    countCtrl = TextEditingController(text: data.count.toString());
+    coilStartAddrCtrl = TextEditingController(
+      text: data.coilStartAddress.toString().padLeft(5, '0'),
+    );
+    coilCountCtrl = TextEditingController(text: data.coilCount.toString());
+
+    startAddrCtrl.addListener(
+        () => data.startAddress = int.tryParse(startAddrCtrl.text) ?? 1);
+    countCtrl.addListener(
+        () => data.count = int.tryParse(countCtrl.text) ?? 20);
+    coilStartAddrCtrl.addListener(
+        () => data.coilStartAddress = int.tryParse(coilStartAddrCtrl.text) ?? 0);
+    coilCountCtrl.addListener(
+        () => data.coilCount = int.tryParse(coilCountCtrl.text) ?? 20);
+  }
 
   void dispose() {
     startAddrCtrl.dispose();
@@ -55,7 +78,7 @@ class RegistersScreen extends StatefulWidget {
 class _RegistersScreenState extends State<RegistersScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final List<_ListConfig> _lists = [_ListConfig(name: 'List 1')];
+  late List<_ListConfig> _lists;
   int _activeList = 0;
   String _deviceName = mockDevice.name;
 
@@ -67,10 +90,29 @@ class _RegistersScreenState extends State<RegistersScreen>
     return null;
   }
 
+  List<_ListConfig> _buildListsFromDevice() {
+    final device = _selectedDevice;
+    if (device != null && device.registerLists.isNotEmpty) {
+      return device.registerLists.map(_ListConfig.new).toList();
+    }
+    final defaultList = RegisterList(name: 'List 1');
+    device?.registerLists.add(defaultList);
+    return [_ListConfig(defaultList)];
+  }
+
+  Future<void> _saveDevice() async {
+    final device = _selectedDevice;
+    if (device == null) return;
+    final all = List.of(DeviceRepository.instance.devices.value);
+    final idx = all.indexWhere((d) => d.name == device.name);
+    if (idx >= 0) await DeviceRepository.instance.save(all);
+  }
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _lists = _buildListsFromDevice();
     DeviceRepository.instance.devices.addListener(_onChanged);
     ConnectionManager.instance.clients.addListener(_onChanged);
   }
@@ -133,15 +175,19 @@ class _RegistersScreenState extends State<RegistersScreen>
     );
 
     if (name != null && name.isNotEmpty) {
+      final newList = RegisterList(name: name);
+      _selectedDevice?.registerLists.add(newList);
       setState(() {
-        _lists.add(_ListConfig(name: name));
+        _lists.add(_ListConfig(newList));
         _activeList = _lists.length - 1;
       });
+      _saveDevice();
     }
   }
 
   void _removeActiveRegs() {
     if (_lists.length <= 1) return;
+    _selectedDevice?.registerLists.removeAt(_activeList);
     setState(() {
       _lists[_activeList].dispose();
       _lists.removeAt(_activeList);
@@ -149,6 +195,7 @@ class _RegistersScreenState extends State<RegistersScreen>
         _activeList = _lists.length - 1;
       }
     });
+    _saveDevice();
   }
 
   Future<void> _showSelectDeviceDialog() async {
@@ -181,8 +228,15 @@ class _RegistersScreenState extends State<RegistersScreen>
       ),
     );
 
-    if (selected != null) {
-      setState(() => _deviceName = selected);
+    if (selected != null && selected != _deviceName) {
+      for (final l in _lists) {
+        l.dispose();
+      }
+      setState(() {
+        _deviceName = selected;
+        _activeList = 0;
+        _lists = _buildListsFromDevice();
+      });
     }
   }
 
@@ -339,7 +393,14 @@ class _RegistersScreenState extends State<RegistersScreen>
   }
 }
 
-class _RegistersTab extends StatelessWidget {
+int _regTypeOffset(String regType) => switch (regType) {
+  '4xxxx' => 40000,
+  '3xxxx' => 30000,
+  '1xxxx' => 10000,
+  _ => 0,
+};
+
+class _RegistersTab extends StatefulWidget {
   final String regType;
   final ValueChanged<String> onRegTypeChanged;
   final int addrMode;
@@ -361,11 +422,54 @@ class _RegistersTab extends StatelessWidget {
   });
 
   @override
+  State<_RegistersTab> createState() => _RegistersTabState();
+}
+
+class _RegistersTabState extends State<_RegistersTab> {
+  void _onCtrlChanged() => setState(() {});
+
+  @override
+  void initState() {
+    super.initState();
+    widget.startAddrCtrl.addListener(_onCtrlChanged);
+    widget.countCtrl.addListener(_onCtrlChanged);
+  }
+
+  @override
+  void didUpdateWidget(_RegistersTab old) {
+    super.didUpdateWidget(old);
+    if (old.startAddrCtrl != widget.startAddrCtrl) {
+      old.startAddrCtrl.removeListener(_onCtrlChanged);
+      widget.startAddrCtrl.addListener(_onCtrlChanged);
+    }
+    if (old.countCtrl != widget.countCtrl) {
+      old.countCtrl.removeListener(_onCtrlChanged);
+      widget.countCtrl.addListener(_onCtrlChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.startAddrCtrl.removeListener(_onCtrlChanged);
+    widget.countCtrl.removeListener(_onCtrlChanged);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
     final dividerColor = Theme.of(context).dividerTheme.color ?? cs.outline;
+    final offset = _regTypeOffset(widget.regType);
+    final rawStart = int.tryParse(widget.startAddrCtrl.text) ?? 1;
+    final startAddr = offset + rawStart;
+    final rawCount = int.tryParse(widget.countCtrl.text);
+    final count = (rawCount == null || rawCount < 1) ? 20 : rawCount;
+    final endAddr = startAddr + count - 1;
+    final visibleRegisters = mockRegisters
+        .where((e) => e.address >= startAddr && e.address <= endAddr)
+        .toList();
 
     return Column(
       children: [
@@ -375,14 +479,14 @@ class _RegistersTab extends StatelessWidget {
             children: [
               Expanded(
                 child: _RegTypeDropdown(
-                  value: regType,
-                  onChanged: onRegTypeChanged,
+                  value: widget.regType,
+                  onChanged: widget.onRegTypeChanged,
                 ),
               ),
               const SizedBox(width: 8),
               _AddrValueToggle(
-                selected: addrMode,
-                onChanged: onAddrModeChanged,
+                selected: widget.addrMode,
+                onChanged: widget.onAddrModeChanged,
               ),
               IconButton(
                 icon: const Icon(Icons.filter_list, size: 20),
@@ -421,7 +525,7 @@ class _RegistersTab extends StatelessWidget {
               SizedBox(
                 width: 72,
                 child: TextField(
-                  controller: startAddrCtrl,
+                  controller: widget.startAddrCtrl,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   style: tt.bodyMedium,
@@ -444,7 +548,7 @@ class _RegistersTab extends StatelessWidget {
               SizedBox(
                 width: 44,
                 child: TextField(
-                  controller: countCtrl,
+                  controller: widget.countCtrl,
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
@@ -469,8 +573,8 @@ class _RegistersTab extends StatelessWidget {
               Transform.scale(
                 scale: 0.8,
                 child: Switch(
-                  value: autoRefresh,
-                  onChanged: onAutoRefreshChanged,
+                  value: widget.autoRefresh,
+                  onChanged: widget.onAutoRefreshChanged,
                 ),
               ),
               Text('1.0 s', style: tt.bodyMedium),
@@ -516,11 +620,11 @@ class _RegistersTab extends StatelessWidget {
         Divider(height: 1, color: dividerColor),
         Expanded(
           child: ListView.separated(
-            itemCount: mockRegisters.length,
+            itemCount: visibleRegisters.length,
             separatorBuilder: (_, _) => Divider(height: 1, color: dividerColor),
             itemBuilder: (context, i) => _RegisterRow(
-              entry: mockRegisters[i],
-              canWrite: regType == '4xxxx',
+              entry: visibleRegisters[i],
+              canWrite: widget.regType == '4xxxx',
             ),
           ),
         ),
@@ -531,7 +635,7 @@ class _RegistersTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                l10n.registersShowing(40001, 40020),
+                l10n.registersShowing(startAddr, endAddr),
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
               Text(

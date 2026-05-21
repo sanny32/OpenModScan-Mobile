@@ -1,3 +1,5 @@
+import 'register_list.dart';
+
 enum ProtocolType { modbusTcp, modbusRtuIp }
 
 class DeviceInfo {
@@ -9,8 +11,9 @@ class DeviceInfo {
   final int timeout;
   final int reconnectDelay;
   final String notes;
+  final List<RegisterList> registerLists;
 
-  const DeviceInfo({
+  DeviceInfo({
     required this.name,
     required this.host,
     required this.port,
@@ -19,7 +22,8 @@ class DeviceInfo {
     this.timeout = 1000,
     this.reconnectDelay = 3000,
     this.notes = '',
-  });
+    List<RegisterList>? registerLists,
+  }) : registerLists = registerLists ?? [];
 
   DeviceInfo copyWith({
     String? name,
@@ -30,6 +34,7 @@ class DeviceInfo {
     int? timeout,
     int? reconnectDelay,
     String? notes,
+    List<RegisterList>? registerLists,
   }) {
     return DeviceInfo(
       name: name ?? this.name,
@@ -40,6 +45,7 @@ class DeviceInfo {
       timeout: timeout ?? this.timeout,
       reconnectDelay: reconnectDelay ?? this.reconnectDelay,
       notes: notes ?? this.notes,
+      registerLists: registerLists ?? List.of(this.registerLists),
     );
   }
 
@@ -56,6 +62,7 @@ class DeviceInfo {
         'timeout': timeout,
         'reconnectDelay': reconnectDelay,
         'notes': notes,
+        'registerLists': registerLists.map((l) => l.toJson()).toList(),
       };
 
   factory DeviceInfo.fromJson(Map<String, dynamic> json) => DeviceInfo(
@@ -69,5 +76,8 @@ class DeviceInfo {
         timeout: json['timeout'] as int,
         reconnectDelay: json['reconnectDelay'] as int,
         notes: (json['notes'] as String?) ?? '',
+        registerLists: (json['registerLists'] as List<dynamic>? ?? [])
+            .map((e) => RegisterList.fromJson(e as Map<String, dynamic>))
+            .toList(),
       );
 }

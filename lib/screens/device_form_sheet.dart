@@ -54,7 +54,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
   }
 
   void _submit() {
-    final base = widget.initial ?? const DeviceInfo(
+    final base = widget.initial ?? DeviceInfo(
       name: '',
       host: '',
       port: 502,
