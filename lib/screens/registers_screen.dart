@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../l10n/l10n.dart';
 import '../models/device_info.dart';
+import '../models/mock_data.dart';
 import '../models/register_entry.dart';
+import '../services/connection_manager.dart';
+import '../services/device_repository.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection_info_bar.dart';
 import '../widgets/connection_status_chip.dart';
@@ -44,14 +47,30 @@ class _RegistersScreenState extends State<RegistersScreen>
   int _activeList = 0;
   String _deviceName = mockDevice.name;
 
+  DeviceInfo? get _selectedDevice {
+    final devs = DeviceRepository.instance.devices.value;
+    for (final d in devs) {
+      if (d.name == _deviceName) return d;
+    }
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    DeviceRepository.instance.devices.addListener(_onChanged);
+    ConnectionManager.instance.clients.addListener(_onChanged);
+  }
+
+  void _onChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    DeviceRepository.instance.devices.removeListener(_onChanged);
+    ConnectionManager.instance.clients.removeListener(_onChanged);
     _tabController.dispose();
     for (final list in _lists) {
       list.dispose();
@@ -121,7 +140,9 @@ class _RegistersScreenState extends State<RegistersScreen>
   Future<void> _showSelectDeviceDialog() async {
     final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
-    final connected = mockDevices.where((d) => d.connected).toList();
+    final connected = DeviceRepository.instance.devices.value
+        .where((d) => ConnectionManager.instance.isConnected(d))
+        .toList();
 
     final selected = await showDialog<String>(
       context: context,
@@ -197,7 +218,9 @@ class _RegistersScreenState extends State<RegistersScreen>
           children: [
             Text(_deviceName, style: tt.titleMedium),
             const SizedBox(height: 2),
-            ConnectionStatusChip(connected: mockDevice.connected),
+            ConnectionStatusChip(
+                connected: _selectedDevice != null &&
+                    ConnectionManager.instance.isConnected(_selectedDevice!)),
           ],
         ),
         actions: [
@@ -254,7 +277,7 @@ class _RegistersScreenState extends State<RegistersScreen>
       ),
       body: Column(
         children: [
-          ConnectionInfoBar(device: mockDevice),
+          if (_selectedDevice != null) ConnectionInfoBar(device: _selectedDevice!),
           TabBar(
             controller: _tabController,
             tabs: [

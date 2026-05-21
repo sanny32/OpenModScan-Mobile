@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/device_info.dart';
+import '../models/mock_data.dart';
 import '../models/register_entry.dart';
+import '../services/connection_manager.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection_status_chip.dart';
 import 'device_form_sheet.dart';
+import 'log_screen.dart';
 
 class DeviceScreen extends StatefulWidget {
   final DeviceInfo device;
@@ -17,10 +20,31 @@ class DeviceScreen extends StatefulWidget {
 class _DeviceScreenState extends State<DeviceScreen> {
   late DeviceInfo _device;
 
+  bool get _connected => ConnectionManager.instance.isConnected(_device);
+
   @override
   void initState() {
     super.initState();
     _device = widget.device;
+    ConnectionManager.instance.clients.addListener(_onConnectionChanged);
+  }
+
+  void _onConnectionChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    ConnectionManager.instance.clients.removeListener(_onConnectionChanged);
+    super.dispose();
+  }
+
+  Future<void> _toggleConnection() async {
+    if (_connected) {
+      await ConnectionManager.instance.disconnect(_device);
+    } else {
+      await ConnectionManager.instance.connect(_device);
+    }
   }
 
   void _editDevice() {
@@ -70,162 +94,172 @@ class _DeviceScreenState extends State<DeviceScreen> {
     final appColors = Theme.of(context).extension<AppColors>()!;
     final l10n = context.l10n;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context, _device),
-        ),
-        title: RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: l10n.appBarName,
-                style: tt.titleLarge!.copyWith(color: cs.onSurface),
-              ),
-              TextSpan(
-                text: l10n.appBarNameSuffix,
-                style: tt.titleLarge!.copyWith(color: appColors.brandGreen),
-              ),
-            ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) Navigator.pop(context, _device);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context, _device),
           ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: _editDevice,
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          ConnectionStatusChip(connected: _device.connected),
-          const SizedBox(height: 12),
-          _PlcCard(device: _device, connected: _device.connected),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: () => setState(
-                () => _device = _device.copyWith(connected: !_device.connected)),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(
-                  color: _device.connected ? cs.error : cs.primary),
-              foregroundColor: _device.connected ? cs.error : cs.primary,
-              minimumSize: const Size(double.infinity, 48),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text(_device.connected ? l10n.disconnect : l10n.connect),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _ActionCard(
-                  icon: Icons.download_outlined,
-                  title: l10n.readRegisters,
-                  subtitle: l10n.readRegistersSubtitle,
-                  color: cs.primary,
-                  enabled: _device.connected,
-                  onTap: () {},
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _ActionCard(
-                  icon: Icons.upload_outlined,
-                  title: l10n.writeValue,
-                  subtitle: l10n.writeValueSubtitle,
-                  color: appColors.writeActionColor,
-                  enabled: _device.connected,
-                  onTap: () {},
-                ),
-              ),
-            ],
-          ),
-          if (_device.connected) ...[
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          title: RichText(
+            text: TextSpan(
               children: [
-                Text(l10n.lastValues, style: tt.titleMedium),
-                TextButton(
-                  onPressed: () {},
-                  child: Text(l10n.viewAll),
+                TextSpan(
+                  text: l10n.appBarName,
+                  style: tt.titleLarge!.copyWith(color: cs.onSurface),
+                ),
+                TextSpan(
+                  text: l10n.appBarNameSuffix,
+                  style: tt.titleLarge!.copyWith(color: appColors.brandGreen),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            ...mockRegisters.take(5).map((r) => _LastValueRow(entry: r)),
-          ],
-          const SizedBox(height: 12),
-          Card(
-            child: ListTile(
-              enabled: _device.connected,
-              leading: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: (_device.connected
-                          ? appColors.openLogColor
-                          : cs.onSurfaceVariant)
-                      .withAlpha(26),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(Icons.list_alt,
-                    color: _device.connected
-                        ? appColors.openLogColor
-                        : cs.onSurfaceVariant,
-                    size: 24),
-              ),
-              title: Text(l10n.openLog,
-                  style: tt.titleSmall!.copyWith(
-                      color: _device.connected
-                          ? appColors.openLogColor
-                          : cs.onSurfaceVariant)),
-              subtitle: Text(l10n.openLogSubtitle,
-                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
-              trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-              onTap: _device.connected ? () {} : null,
-            ),
           ),
-          const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(l10n.labelNotes,
-                            style: tt.labelMedium!
-                                .copyWith(color: cs.onSurfaceVariant)),
-                        const SizedBox(height: 4),
-                        Text(
-                          _device.notes.isEmpty
-                              ? l10n.notesHint
-                              : _device.notes,
-                          style: tt.bodyMedium!.copyWith(
-                              color: _device.notes.isEmpty
-                                  ? cs.onSurfaceVariant
-                                  : cs.onSurface),
-                        ),
-                      ],
-                    ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: _editDevice,
+            ),
+          ],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            ConnectionStatusChip(connected: _connected),
+            const SizedBox(height: 12),
+            _PlcCard(device: _device, connected: _connected),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: _toggleConnection,
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: _connected ? cs.error : cs.primary),
+                foregroundColor: _connected ? cs.error : cs.primary,
+                minimumSize: const Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Text(_connected ? l10n.disconnect : l10n.connect),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _ActionCard(
+                    icon: Icons.download_outlined,
+                    title: l10n.readRegisters,
+                    subtitle: l10n.readRegistersSubtitle,
+                    color: cs.primary,
+                    enabled: _connected,
+                    onTap: () {},
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined),
-                    color: cs.onSurfaceVariant,
-                    onPressed: _editNotes,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _ActionCard(
+                    icon: Icons.upload_outlined,
+                    title: l10n.writeValue,
+                    subtitle: l10n.writeValueSubtitle,
+                    color: appColors.writeActionColor,
+                    enabled: _connected,
+                    onTap: () {},
+                  ),
+                ),
+              ],
+            ),
+            if (_connected) ...[
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(l10n.lastValues, style: tt.titleMedium),
+                  TextButton(
+                    onPressed: () {},
+                    child: Text(l10n.viewAll),
                   ),
                 ],
               ),
+              const SizedBox(height: 4),
+              ...mockRegisters.take(5).map((r) => _LastValueRow(entry: r)),
+            ],
+            const SizedBox(height: 12),
+            Card(
+              child: ListTile(
+                enabled: _connected,
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: (_connected
+                            ? appColors.openLogColor
+                            : cs.onSurfaceVariant)
+                        .withAlpha(26),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.list_alt,
+                      color: _connected
+                          ? appColors.openLogColor
+                          : cs.onSurfaceVariant,
+                      size: 24),
+                ),
+                title: Text(l10n.openLog,
+                    style: tt.titleSmall!.copyWith(
+                        color: _connected
+                            ? appColors.openLogColor
+                            : cs.onSurfaceVariant)),
+                subtitle: Text(l10n.openLogSubtitle,
+                    style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
+                trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+                onTap: _connected
+                    ? () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => LogScreen(device: _device)),
+                        )
+                    : null,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(l10n.labelNotes,
+                              style: tt.labelMedium!
+                                  .copyWith(color: cs.onSurfaceVariant)),
+                          const SizedBox(height: 4),
+                          Text(
+                            _device.notes.isEmpty
+                                ? l10n.notesHint
+                                : _device.notes,
+                            style: tt.bodyMedium!.copyWith(
+                                color: _device.notes.isEmpty
+                                    ? cs.onSurfaceVariant
+                                    : cs.onSurface),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined),
+                      color: cs.onSurfaceVariant,
+                      onPressed: _editNotes,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -281,8 +315,7 @@ class _PlcCard extends StatelessWidget {
                     size: 22),
                 const SizedBox(height: 4),
                 Text(l10n.unitId(device.unitId),
-                    style:
-                        tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
+                    style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
               ],
             ),
           ],

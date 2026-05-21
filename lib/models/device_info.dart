@@ -8,8 +8,6 @@ class DeviceInfo {
   final int unitId;
   final int timeout;
   final int reconnectDelay;
-  final bool connected;
-  final bool lastUsed;
   final String notes;
 
   const DeviceInfo({
@@ -20,8 +18,6 @@ class DeviceInfo {
     required this.unitId,
     this.timeout = 1000,
     this.reconnectDelay = 3000,
-    this.connected = false,
-    this.lastUsed = false,
     this.notes = '',
   });
 
@@ -33,8 +29,6 @@ class DeviceInfo {
     int? unitId,
     int? timeout,
     int? reconnectDelay,
-    bool? connected,
-    bool? lastUsed,
     String? notes,
   }) {
     return DeviceInfo(
@@ -45,8 +39,6 @@ class DeviceInfo {
       unitId: unitId ?? this.unitId,
       timeout: timeout ?? this.timeout,
       reconnectDelay: reconnectDelay ?? this.reconnectDelay,
-      connected: connected ?? this.connected,
-      lastUsed: lastUsed ?? this.lastUsed,
       notes: notes ?? this.notes,
     );
   }
@@ -79,45 +71,3 @@ class DeviceInfo {
         notes: (json['notes'] as String?) ?? '',
       );
 }
-
-const mockDevice = DeviceInfo(
-  name: 'PLC #1',
-  host: '192.168.0.10',
-  port: 502,
-  protocol: ProtocolType.modbusTcp,
-  unitId: 1,
-  connected: true,
-  lastUsed: true,
-);
-
-const mockDevices = [
-  mockDevice,
-  DeviceInfo(
-    name: 'Water Pump Station',
-    host: '192.168.0.20',
-    port: 502,
-    protocol: ProtocolType.modbusTcp,
-    unitId: 1,
-  ),
-  DeviceInfo(
-    name: 'HVAC Controller',
-    host: '192.168.0.30',
-    port: 502,
-    protocol: ProtocolType.modbusTcp,
-    unitId: 1,
-  ),
-  DeviceInfo(
-    name: 'Energy Meter',
-    host: '192.168.0.40',
-    port: 502,
-    protocol: ProtocolType.modbusTcp,
-    unitId: 1,
-  ),
-  DeviceInfo(
-    name: 'Boiler Control',
-    host: '10.0.0.15',
-    port: 502,
-    protocol: ProtocolType.modbusTcp,
-    unitId: 2,
-  ),
-];

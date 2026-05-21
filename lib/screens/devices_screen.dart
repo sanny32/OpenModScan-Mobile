@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/device_info.dart';
+import '../models/mock_data.dart';
+import '../services/connection_manager.dart';
 import '../services/device_repository.dart';
 import '../theme/app_theme.dart';
 import 'device_form_sheet.dart';
@@ -23,6 +25,17 @@ class _DevicesScreenState extends State<DevicesScreen> {
     super.initState();
     _devices = [];
     _loadDevices();
+    ConnectionManager.instance.clients.addListener(_onConnectionChanged);
+  }
+
+  void _onConnectionChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    ConnectionManager.instance.clients.removeListener(_onConnectionChanged);
+    super.dispose();
   }
 
   Future<void> _loadDevices() async {
@@ -32,6 +45,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
         _devices = saved.isEmpty ? List.of(mockDevices) : saved;
         _loading = false;
       });
+      DeviceRepository.instance.updateInMemory(_devices);
     }
   }
 
@@ -63,17 +77,17 @@ class _DevicesScreenState extends State<DevicesScreen> {
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
-      SnackBar(
-        content: Text(context.l10n.deviceDeleted),
-        action: SnackBarAction(
-          label: context.l10n.undo,
-          onPressed: () {
-            setState(() => _devices.insert(index, device));
-            DeviceRepository.instance.save(_devices);
-          },
+        SnackBar(
+          content: Text(context.l10n.deviceDeleted),
+          action: SnackBarAction(
+            label: context.l10n.undo,
+            onPressed: () {
+              setState(() => _devices.insert(index, device));
+              DeviceRepository.instance.save(_devices);
+            },
+          ),
         ),
-      ),
-    );
+      );
   }
 
   @override
@@ -88,84 +102,90 @@ class _DevicesScreenState extends State<DevicesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 4, 0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(l10n.navDevices, style: tt.headlineMedium),
-                  ),
-                  IconButton(
-                      icon: const Icon(Icons.add), onPressed: _openConnect),
-                  IconButton(
-                      icon: const Icon(Icons.more_horiz),
-                      onPressed: () {}),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: TextField(
-                onChanged: (v) => setState(() => _search = v),
-                decoration: InputDecoration(
-                  hintText: l10n.devicesSearch,
-                  prefixIcon: Icon(Icons.search,
-                      color: cs.onSurfaceVariant, size: 20),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 4, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(l10n.navDevices, style: tt.headlineMedium),
+                    ),
+                    IconButton(
+                        icon: const Icon(Icons.add), onPressed: _openConnect),
+                    IconButton(
+                        icon: const Icon(Icons.more_horiz), onPressed: () {}),
+                  ],
                 ),
               ),
-            ),
-            Expanded(
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView(
-                padding: const EdgeInsets.only(bottom: 8),
-                children: [
-                  _sectionHeader(context, l10n.devicesSavedConnections),
-                  ..._filtered.map((d) => Dismissible(
-                        key: ValueKey(d),
-                        direction: DismissDirection.endToStart,
-                        onDismissed: (_) => _deleteDevice(d),
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: cs.error,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(Icons.delete_outline,
-                              color: cs.onError, size: 26),
-                        ),
-                        child: _DeviceCard(
-                          device: d,
-                          onTap: () => Navigator.push<DeviceInfo>(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => DeviceScreen(device: d)),
-                          ).then((updated) {
-                            if (updated != null) {
-                              final idx = _devices.indexOf(d);
-                              if (idx != -1) {
-                                setState(() => _devices[idx] = updated);
-                                DeviceRepository.instance.save(_devices);
-                              }
-                            }
-                          }),
-                        ),
-                      )),
-                  _sectionHeader(context, l10n.devicesDiscoveredDevices),
-                  _DiscoveredCard(
-                    address: '192.168.0.50:502',
-                    protocol: 'Modbus TCP',
-                    unitId: 1,
-                    onConnect: _openConnect,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: TextField(
+                  onChanged: (v) => setState(() => _search = v),
+                  decoration: InputDecoration(
+                    hintText: l10n.devicesSearch,
+                    prefixIcon: Icon(Icons.search,
+                        color: cs.onSurfaceVariant, size: 20),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
                   ),
-                ],
+                ),
               ),
-            ),
-          _ScanButton(onTap: () {}),
+              Expanded(
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        children: [
+                          _sectionHeader(context, l10n.devicesSavedConnections),
+                          ..._filtered.map((d) => Dismissible(
+                                key: ValueKey(d),
+                                direction: DismissDirection.endToStart,
+                                onDismissed: (_) => _deleteDevice(d),
+                                background: Container(
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24),
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: cs.error,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(Icons.delete_outline,
+                                      color: cs.onError, size: 26),
+                                ),
+                                child: _DeviceCard(
+                                  device: d,
+                                  connected:
+                                      ConnectionManager.instance.isConnected(d),
+                                  onTap: () => Navigator.push<DeviceInfo>(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                            DeviceScreen(device: d)),
+                                  ).then((updated) {
+                                    if (updated != null) {
+                                      final idx = _devices.indexOf(d);
+                                      if (idx != -1) {
+                                        setState(
+                                            () => _devices[idx] = updated);
+                                        DeviceRepository.instance
+                                            .save(_devices);
+                                      }
+                                    }
+                                  }),
+                                ),
+                              )),
+                          _sectionHeader(
+                              context, l10n.devicesDiscoveredDevices),
+                          _DiscoveredCard(
+                            address: '192.168.0.50:502',
+                            protocol: 'Modbus TCP',
+                            unitId: 1,
+                            onConnect: _openConnect,
+                          ),
+                        ],
+                      ),
+              ),
+              _ScanButton(onTap: () {}),
             ],
           ),
         ),
@@ -186,8 +206,10 @@ class _DevicesScreenState extends State<DevicesScreen> {
 
 class _DeviceCard extends StatelessWidget {
   final DeviceInfo device;
+  final bool connected;
   final VoidCallback onTap;
-  const _DeviceCard({required this.device, required this.onTap});
+  const _DeviceCard(
+      {required this.device, required this.connected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -209,7 +231,7 @@ class _DeviceCard extends StatelessWidget {
                 height: 10,
                 margin: const EdgeInsets.only(right: 10),
                 decoration: BoxDecoration(
-                  color: device.connected
+                  color: connected
                       ? appColors.connectedColor
                       : cs.onSurfaceVariant,
                   shape: BoxShape.circle,
@@ -221,25 +243,7 @@ class _DeviceCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(device.name, style: tt.titleSmall),
-                        ),
-                        if (device.lastUsed)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: cs.primary,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(l10n.devicesLastUsed,
-                                style: tt.labelSmall!
-                                    .copyWith(color: cs.onPrimary)),
-                          ),
-                      ],
-                    ),
+                    Text(device.name, style: tt.titleSmall),
                     const SizedBox(height: 2),
                     Text(device.address,
                         style: tt.bodyMedium!
@@ -304,8 +308,8 @@ class _DiscoveredCard extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: cs.primary),
                 foregroundColor: cs.primary,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 shape: RoundedRectangleBorder(

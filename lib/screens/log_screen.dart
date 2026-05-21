@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/device_info.dart';
 import '../models/log_entry.dart';
+import '../models/mock_data.dart';
+import '../services/connection_manager.dart';
+import '../services/device_repository.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection_info_bar.dart';
 import '../widgets/connection_status_chip.dart';
@@ -9,7 +12,8 @@ import '../widgets/connection_status_chip.dart';
 enum _LogFilter { all, tx, rx, errors }
 
 class LogScreen extends StatefulWidget {
-  const LogScreen({super.key});
+  final DeviceInfo? device;
+  const LogScreen({super.key, this.device});
 
   @override
   State<LogScreen> createState() => _LogScreenState();
@@ -19,7 +23,33 @@ class _LogScreenState extends State<LogScreen> {
   _LogFilter _filter = _LogFilter.all;
   bool _autoScroll = true;
   bool _clearOnDisconnect = false;
-  String _deviceName = mockDevice.name;
+  late String _deviceName = (widget.device ?? mockDevice).name;
+
+  DeviceInfo? get _selectedDevice {
+    final devs = DeviceRepository.instance.devices.value;
+    for (final d in devs) {
+      if (d.name == _deviceName) return d;
+    }
+    return null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    DeviceRepository.instance.devices.addListener(_onChanged);
+    ConnectionManager.instance.clients.addListener(_onChanged);
+  }
+
+  void _onChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    DeviceRepository.instance.devices.removeListener(_onChanged);
+    ConnectionManager.instance.clients.removeListener(_onChanged);
+    super.dispose();
+  }
 
   List<LogEntry> get _filtered {
     switch (_filter) {
@@ -42,7 +72,6 @@ class _LogScreenState extends State<LogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const device = mockDevice;
     final entries = _filtered;
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
@@ -59,7 +88,9 @@ class _LogScreenState extends State<LogScreen> {
           children: [
             Text(_deviceName, style: tt.titleMedium),
             const SizedBox(height: 2),
-            ConnectionStatusChip(connected: device.connected),
+            ConnectionStatusChip(
+                connected: _selectedDevice != null &&
+                    ConnectionManager.instance.isConnected(_selectedDevice!)),
           ],
         ),
         actions: [
@@ -68,8 +99,8 @@ class _LogScreenState extends State<LogScreen> {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (name) => setState(() => _deviceName = name),
-            itemBuilder: (context) => mockDevices
-                .where((d) => d.connected)
+            itemBuilder: (context) => DeviceRepository.instance.devices.value
+                .where((d) => ConnectionManager.instance.isConnected(d))
                 .map(
                   (d) => PopupMenuItem<String>(
                     value: d.name,
@@ -92,7 +123,7 @@ class _LogScreenState extends State<LogScreen> {
       ),
       body: Column(
         children: [
-          ConnectionInfoBar(device: device),
+          if (_selectedDevice != null) ConnectionInfoBar(device: _selectedDevice!),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             child: Row(
