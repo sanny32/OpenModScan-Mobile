@@ -6,79 +6,99 @@ import '../l10n/l10n.dart';
 import '../models/register_entry.dart';
 import '../theme/app_theme.dart';
 
-// ─── Register / Byte order options ────────────────────────────────────────────
-const _kRegisterOrders = ['High-Low', 'Low-High'];
-const _kByteOrders = ['Big Endian', 'Little Endian'];
+const _kRegisterOrders = ['MSRF', 'LSRF'];
+const _kByteOrders = ['Direct', 'Swapped'];
+final _detailRegisterTypes = kRegisterTypes.where((t) => t != 'Bool').toList();
 
-// ─── Type metadata helpers ─────────────────────────────────────────────────────
-Color _typeColor(String type) {
+Color _typeColor(BuildContext context, String type) {
+  final cs = Theme.of(context).colorScheme;
+  final appColors = Theme.of(context).extension<AppColors>()!;
   switch (type) {
     case 'UInt16':
     case 'UInt32':
     case 'UInt64':
-      return const Color(0xFF1976D2);
+      return cs.primary;
     case 'Int16':
     case 'Int32':
     case 'Int64':
-      return const Color(0xFF00796B);
+      return appColors.connectedColor;
     case 'Float32':
     case 'Float64':
-      return const Color(0xFFE65100);
+      return appColors.warningColor;
     case 'Hex':
-      return const Color(0xFF7B1FA2);
+      return appColors.openLogColor;
     case 'Binary':
-      return const Color(0xFFBF360C);
-    case 'Bool':
-      return const Color(0xFF388E3C);
+      return appColors.warningColor;
     default:
-      return const Color(0xFF455A64);
+      return cs.onSurfaceVariant;
   }
 }
 
 String _typeAbbrev(String type) {
   switch (type) {
-    case 'UInt16': return 'U16';
-    case 'Int16':  return 'I16';
-    case 'UInt32': return 'U32';
-    case 'Int32':  return 'I32';
-    case 'UInt64': return 'U64';
-    case 'Int64':  return 'I64';
-    case 'Float32': return 'F32';
-    case 'Float64': return 'F64';
-    case 'Hex':    return 'HEX';
-    case 'Binary': return 'BIN';
-    case 'Bool':   return 'BOOL';
-    default:       return type.length > 4 ? type.substring(0, 4).toUpperCase() : type.toUpperCase();
+    case 'UInt16':
+      return 'U16';
+    case 'Int16':
+      return 'I16';
+    case 'UInt32':
+      return 'U32';
+    case 'Int32':
+      return 'I32';
+    case 'UInt64':
+      return 'U64';
+    case 'Int64':
+      return 'I64';
+    case 'Float32':
+      return 'F32';
+    case 'Float64':
+      return 'F64';
+    case 'Hex':
+      return 'HEX';
+    case 'Binary':
+      return 'BIN';
+    default:
+      return type.length > 4
+          ? type.substring(0, 4).toUpperCase()
+          : type.toUpperCase();
   }
 }
 
 String _typeDescription(String type) {
   switch (type) {
-    case 'UInt16':  return 'UInt16 (16 bit)';
-    case 'Int16':   return 'Int16 (16 bit)';
-    case 'UInt32':  return 'UInt32 (32 bit)';
-    case 'Int32':   return 'Int32 (32 bit)';
-    case 'UInt64':  return 'UInt64 (64 bit)';
-    case 'Int64':   return 'Int64 (64 bit)';
-    case 'Float32': return 'Float32 (IEEE 754)';
-    case 'Float64': return 'Float64 (IEEE 754)';
-    case 'Hex':     return 'Hex';
-    case 'Binary':  return 'Binary';
-    case 'Bool':    return 'Bool';
-    default:        return type;
+    case 'UInt16':
+      return 'UInt16 (16 bit)';
+    case 'Int16':
+      return 'Int16 (16 bit)';
+    case 'UInt32':
+      return 'UInt32 (32 bit)';
+    case 'Int32':
+      return 'Int32 (32 bit)';
+    case 'UInt64':
+      return 'UInt64 (64 bit)';
+    case 'Int64':
+      return 'Int64 (64 bit)';
+    case 'Float32':
+      return 'Float32 (IEEE 754)';
+    case 'Float64':
+      return 'Float64 (IEEE 754)';
+    case 'Hex':
+      return 'Hex';
+    case 'Binary':
+      return 'Binary';
+    default:
+      return type;
   }
 }
 
 String _formatFloat(double f) {
   if (f.isNaN) return 'NaN';
-  if (f.isInfinite) return f > 0 ? '+∞' : '-∞';
+  if (f.isInfinite) return f > 0 ? '+inf' : '-inf';
   if (f == 0.0) return '0';
   final abs = f.abs();
   if (abs < 0.001 || abs >= 1e7) return f.toStringAsExponential(6);
   return f.toStringAsPrecision(7).replaceAll(RegExp(r'\.?0+$'), '');
 }
 
-// ─── Main screen ──────────────────────────────────────────────────────────────
 class RegisterDetailScreen extends StatefulWidget {
   final RegisterEntry entry;
   const RegisterDetailScreen({super.key, required this.entry});
@@ -97,9 +117,9 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedType = kRegisterTypes.contains(widget.entry.typeName)
+    _selectedType = _detailRegisterTypes.contains(widget.entry.typeName)
         ? widget.entry.typeName
-        : kRegisterTypes.first;
+        : _detailRegisterTypes.first;
     _commentCtrl = TextEditingController(text: widget.entry.comment ?? '');
     _commentCtrl.addListener(_onTextChanged);
   }
@@ -115,7 +135,6 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     super.dispose();
   }
 
-  // ── Interpretation computations ──────────────────────────────────────────────
   int? get _rawUInt16 {
     final v = int.tryParse(widget.entry.value);
     if (v != null && v >= 0 && v <= 65535) return v;
@@ -123,41 +142,33 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
   }
 
   List<_Interpretation> _buildInterpretations(int raw) {
-    // Apply byte order swap if needed
-    final r = _byteOrder == 'Little Endian'
+    final r = _byteOrder == 'Swapped'
         ? ((raw & 0xFF) << 8) | ((raw >> 8) & 0xFF)
         : raw;
 
-    // 16-bit
     final uint16 = r;
     final int16 = r > 32767 ? r - 65536 : r;
-
-    // 32-bit
-    final uint32 = _registerOrder == 'High-Low' ? r << 16 : r;
+    final uint32 = _registerOrder == 'MSRF' ? r << 16 : r;
     final int32 = uint32 > 0x7FFFFFFF ? uint32 - 0x100000000 : uint32;
+    final uint64 = _registerOrder == 'MSRF' ? r << 48 : r;
+    final int64 = uint64;
 
-    // 64-bit
-    final uint64 = _registerOrder == 'High-Low' ? r << 48 : r;
-    final int64 = uint64; // Dart int is 64-bit signed; small values stay positive
-
-    // Float32
     final bdF32 = ByteData(4);
-    _registerOrder == 'High-Low'
+    _registerOrder == 'MSRF'
         ? bdF32.setUint16(0, r, Endian.big)
         : bdF32.setUint16(2, r, Endian.big);
     final float32 = bdF32.getFloat32(0, Endian.big);
 
-    // Float64
     final bdF64 = ByteData(8);
-    _registerOrder == 'High-Low'
+    _registerOrder == 'MSRF'
         ? bdF64.setUint16(0, r, Endian.big)
         : bdF64.setUint16(6, r, Endian.big);
     final float64 = bdF64.getFloat64(0, Endian.big);
 
-    // Display formats
     final hex = '0x${r.toRadixString(16).toUpperCase().padLeft(4, '0')}';
     final bin = r.toRadixString(2).padLeft(16, '0');
-    final binFmt = '${bin.substring(0, 4)} ${bin.substring(4, 8)} '
+    final binFmt =
+        '${bin.substring(0, 4)} ${bin.substring(4, 8)} '
         '${bin.substring(8, 12)} ${bin.substring(12)}';
 
     return [
@@ -171,13 +182,11 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
       _Interpretation('Float64', _formatFloat(float64)),
       _Interpretation('Hex', hex),
       _Interpretation('Binary', binFmt),
-      _Interpretation('Bool', r != 0 ? 'true' : 'false'),
     ];
   }
 
-  // ── Save / Write ─────────────────────────────────────────────────────────────
   void _save() {
-    // TODO: persist type, comment, register order, byte order
+    // TODO: persist type, comment, register order, byte order.
     setState(() => _hasChanges = false);
   }
 
@@ -199,23 +208,33 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
             children: [
               Row(
                 children: [
-                  Text('${l10n.colAddress}: ',
-                      style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant)),
-                  Text('${widget.entry.address}',
-                      style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    '${l10n.colAddress}: ',
+                    style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                  Text(
+                    '${widget.entry.address}',
+                    style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
               const SizedBox(height: 4),
               Row(
                 children: [
-                  Text('${l10n.colValue}: ',
-                      style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant)),
-                  Text(widget.entry.value,
-                      style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    '${l10n.colValue}: ',
+                    style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                  Text(
+                    widget.entry.value,
+                    style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
+                  ),
                   if (widget.entry.previousValue != null) ...[
                     const SizedBox(width: 8),
-                    Text('← ${widget.entry.previousValue}',
-                        style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
+                    Text(
+                      '← ${widget.entry.previousValue}',
+                      style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                    ),
                   ],
                 ],
               ),
@@ -241,7 +260,9 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l10n.cancel),
+            ),
             TextButton(
               onPressed: () =>
                   _doWrite(ctx, ctrl, l10n, setInnerState, (e) => error = e),
@@ -253,18 +274,87 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     );
   }
 
-  void _doWrite(BuildContext ctx, TextEditingController ctrl, dynamic l10n,
-      StateSetter setInnerState, void Function(String?) setError) {
+  void _doWrite(
+    BuildContext ctx,
+    TextEditingController ctrl,
+    dynamic l10n,
+    StateSetter setInnerState,
+    void Function(String?) setError,
+  ) {
     final raw = int.tryParse(ctrl.text);
     if (raw == null || raw < 0 || raw > 65535) {
       setInnerState(() => setError(l10n.writeValueRange));
       return;
     }
-    // TODO: perform actual Modbus write
+    // TODO: perform actual Modbus write.
     Navigator.pop(ctx);
   }
 
-  // ── Build ────────────────────────────────────────────────────────────────────
+  Future<void> _showDataLayoutSheet() async {
+    final l10n = context.l10n;
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setInnerState) {
+          void selectRegisterOrder(String value) {
+            setState(() {
+              _registerOrder = value;
+              _hasChanges = true;
+            });
+            setInnerState(() {});
+          }
+
+          void selectByteOrder(String value) {
+            setState(() {
+              _byteOrder = value;
+              _hasChanges = true;
+            });
+            setInnerState(() {});
+          }
+
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Data layout',
+                    style: tt.titleMedium?.copyWith(
+                      color: cs.onSurface,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _LayoutChoiceSection(
+                    label: l10n.labelRegisterOrder,
+                    icon: Icons.swap_vert_rounded,
+                    options: _kRegisterOrders,
+                    value: _registerOrder,
+                    onSelected: selectRegisterOrder,
+                  ),
+                  const SizedBox(height: 14),
+                  _LayoutChoiceSection(
+                    label: l10n.labelByteOrder,
+                    icon: Icons.swap_horiz_rounded,
+                    options: _kByteOrders,
+                    value: _byteOrder,
+                    onSelected: selectByteOrder,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -275,31 +365,35 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     final entry = widget.entry;
 
     return Scaffold(
+      backgroundColor: cs.surfaceContainerHighest,
       appBar: AppBar(
-        title: Text('${entry.address}'),
+        toolbarHeight: 56,
+        title: Text(
+          '${entry.address}',
+          style: tt.titleLarge?.copyWith(
+            color: cs.onSurface,
+            fontWeight: FontWeight.w800,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
         actions: [
-          if (_hasChanges)
-            Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: FilledButton.tonal(
-                onPressed: _save,
-                style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
-                child: Text(l10n.save),
-              ),
-            ),
+          _SavePillButton(onPressed: _save, label: l10n.save),
+          const SizedBox(width: 6),
           IconButton(
             icon: const Icon(Icons.more_vert),
+            iconSize: 24,
             onPressed: () {},
           ),
+          const SizedBox(width: 2),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+        padding: const EdgeInsets.fromLTRB(8, 6, 8, 92),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Value card ────────────────────────────────────
             _OutlinedCard(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -308,9 +402,10 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                     children: [
                       Text(
                         'CURRENT VALUE',
-                        style: tt.labelSmall!.copyWith(
+                        style: tt.titleSmall!.copyWith(
                           color: cs.onSurfaceVariant,
-                          letterSpacing: 0.8,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                       const Spacer(),
@@ -318,51 +413,83 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.schedule_rounded,
-                                size: 13, color: cs.onSurfaceVariant),
-                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.schedule_rounded,
+                              size: 18,
+                              color: cs.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 8),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Text(entry.timestamp!,
-                                    style: tt.labelSmall!
-                                        .copyWith(color: cs.onSurfaceVariant)),
+                                Text(
+                                  entry.timestamp!,
+                                  style: tt.bodyLarge!.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                    fontSize: 14,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                                ),
                                 if (entry.date != null)
-                                  Text(entry.date!,
-                                      style: tt.labelSmall!.copyWith(
-                                          color: cs.onSurfaceVariant)),
+                                  Text(
+                                    entry.date!,
+                                    style: tt.bodyLarge!.copyWith(
+                                      color: cs.onSurfaceVariant,
+                                      fontSize: 13,
+                                      height: 1.45,
+                                      fontFeatures: const [
+                                        FontFeature.tabularFigures(),
+                                      ],
+                                    ),
+                                  ),
                               ],
                             ),
                           ],
                         ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 18),
                   Text(
                     entry.value,
-                    style: tt.displaySmall!.copyWith(
+                    style: tt.displaySmall?.copyWith(
                       color: appColors.valueColor,
+                      fontSize: 46,
+                      height: 0.95,
                       fontWeight: FontWeight.bold,
                       fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
                   if (entry.previousValue != null) ...[
-                    const SizedBox(height: 10),
-                    Divider(height: 1, color: cs.outlineVariant),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 20),
+                    Divider(height: 1, thickness: 1.2, color: cs.outline),
+                    const SizedBox(height: 11),
                     Row(
                       children: [
-                        Icon(Icons.arrow_back_rounded,
-                            size: 14, color: cs.onSurfaceVariant),
-                        const SizedBox(width: 6),
-                        Text(l10n.labelPreviousValue,
-                            style: tt.bodySmall!
-                                .copyWith(color: cs.onSurfaceVariant)),
-                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.arrow_back_rounded,
+                          size: 21,
+                          color: cs.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 14),
+                        Flexible(
+                          child: Text(
+                            l10n.labelPreviousValue,
+                            overflow: TextOverflow.ellipsis,
+                            style: tt.bodyLarge!.copyWith(
+                              color: cs.onSurfaceVariant,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
                         Text(
                           entry.previousValue!,
                           style: tt.bodyMedium!.copyWith(
                             color: cs.onSurfaceVariant,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                             fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                         ),
@@ -372,44 +499,55 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-
-            // ── Properties ────────────────────────────────────
+            const SizedBox(height: 18),
             _SectionHeader(l10n.labelProperties),
-            const SizedBox(height: 8),
+            const SizedBox(height: 7),
             _OutlinedCard(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(8, 7, 8, 8),
               child: Column(
                 children: [
-                  // Type dropdown with badge
                   _OutlineField(
                     label: l10n.colType,
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: _selectedType,
-                        isDense: true,
+                        itemHeight: 48,
                         isExpanded: true,
-                        selectedItemBuilder: (ctx) => kRegisterTypes
-                            .map((t) => Row(
+                        icon: Icon(
+                          Icons.arrow_drop_down,
+                          color: cs.onSurfaceVariant,
+                          size: 24,
+                        ),
+                        selectedItemBuilder: (ctx) => _detailRegisterTypes
+                            .map(
+                              (t) => Row(
+                                children: [
+                                  _TypeBadge(type: t),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _TypeNameText(
+                                      type: t,
+                                      isSelected: false,
+                                      compact: true,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                            .toList(),
+                        items: _detailRegisterTypes
+                            .map(
+                              (t) => DropdownMenuItem(
+                                value: t,
+                                child: Row(
                                   children: [
                                     _TypeBadge(type: t),
-                                    const SizedBox(width: 8),
-                                    Text(_typeDescription(t),
-                                        style: tt.bodyMedium),
+                                    const SizedBox(width: 12),
+                                    Expanded(child: Text(_typeDescription(t))),
                                   ],
-                                ))
-                            .toList(),
-                        items: kRegisterTypes
-                            .map((t) => DropdownMenuItem(
-                                  value: t,
-                                  child: Row(
-                                    children: [
-                                      _TypeBadge(type: t),
-                                      const SizedBox(width: 8),
-                                      Text(_typeDescription(t)),
-                                    ],
-                                  ),
-                                ))
+                                ),
+                              ),
+                            )
                             .toList(),
                         onChanged: (v) {
                           if (v != null) {
@@ -422,159 +560,64 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  // Comment
+                  const SizedBox(height: 8),
                   TextField(
                     controller: _commentCtrl,
+                    style: tt.bodyLarge?.copyWith(
+                      color: cs.onSurface,
+                      fontSize: 15,
+                    ),
                     decoration: InputDecoration(
                       labelText: l10n.colComment,
-                      border: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                      floatingLabelBehavior: FloatingLabelBehavior.always,
+                      filled: false,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 13,
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Register Order
-                  _OutlineField(
-                    label: l10n.labelRegisterOrder,
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _registerOrder,
-                        isDense: true,
-                        isExpanded: true,
-                        items: _kRegisterOrders
-                            .map((o) =>
-                                DropdownMenuItem(value: o, child: Text(o)))
-                            .toList(),
-                        onChanged: (v) {
-                          if (v != null) {
-                            setState(() {
-                              _registerOrder = v;
-                              _hasChanges = true;
-                            });
-                          }
-                        },
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide(
+                          color: cs.outline.withValues(alpha: 0.55),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Byte Order
-                  _OutlineField(
-                    label: l10n.labelByteOrder,
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _byteOrder,
-                        isDense: true,
-                        isExpanded: true,
-                        items: _kByteOrders
-                            .map((o) =>
-                                DropdownMenuItem(value: o, child: Text(o)))
-                            .toList(),
-                        onChanged: (v) {
-                          if (v != null) {
-                            setState(() {
-                              _byteOrder = v;
-                              _hasChanges = true;
-                            });
-                          }
-                        },
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide(color: cs.primary, width: 1.4),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-
-            // ── Interpretations ───────────────────────────────
             if (raw != null) ...[
-              const SizedBox(height: 20),
-              _SectionHeader(l10n.labelInterpretations),
-              const SizedBox(height: 8),
+              const SizedBox(height: 18),
+              _InterpretationsHeader(
+                title: l10n.labelInterpretations,
+                registerOrder: _registerOrder,
+                byteOrder: _byteOrder,
+                onTap: _showDataLayoutSheet,
+              ),
+              const SizedBox(height: 7),
               _OutlinedCard(
                 padding: EdgeInsets.zero,
+                clip: true,
                 child: Column(
                   children: () {
                     final items = _buildInterpretations(raw);
                     return List.generate(items.length, (i) {
                       final interp = items[i];
                       final isCurrent = interp.typeName == _selectedType;
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (i > 0)
-                            Divider(
-                              height: 1,
-                              indent: 16,
-                              endIndent: 16,
-                              color: cs.outlineVariant,
-                            ),
-                          Material(
-                            color: isCurrent
-                                ? cs.primaryContainer.withValues(alpha: 0.35)
-                                : Colors.transparent,
-                            child: InkWell(
-                              onTap: isCurrent
-                                  ? null
-                                  : () => setState(() {
-                                        _selectedType = interp.typeName;
-                                        _hasChanges = true;
-                                      }),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 11),
-                                child: Row(
-                                  children: [
-                                    // Radio indicator
-                                    Icon(
-                                      isCurrent
-                                          ? Icons.radio_button_checked
-                                          : Icons.radio_button_unchecked,
-                                      size: 18,
-                                      color: isCurrent
-                                          ? cs.primary
-                                          : cs.onSurfaceVariant
-                                              .withValues(alpha: 0.5),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    // Type badge
-                                    _TypeBadge(type: interp.typeName),
-                                    const SizedBox(width: 10),
-                                    // Type name
-                                    Expanded(
-                                      child: Text(
-                                        _typeDescription(interp.typeName),
-                                        style: tt.bodyMedium!.copyWith(
-                                          color: isCurrent ? cs.primary : null,
-                                          fontWeight: isCurrent
-                                              ? FontWeight.w600
-                                              : null,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    // Value
-                                    interp.typeName == 'Bool'
-                                        ? _BoolChip(value: interp.value)
-                                        : Text(
-                                            interp.value,
-                                            style: tt.bodyMedium!.copyWith(
-                                              color: isCurrent
-                                                  ? appColors.valueColor
-                                                  : cs.onSurfaceVariant,
-                                              fontWeight: isCurrent
-                                                  ? FontWeight.bold
-                                                  : null,
-                                              fontFeatures: const [
-                                                FontFeature.tabularFigures(),
-                                              ],
-                                            ),
-                                          ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                      return _InterpretationRow(
+                        interpretation: interp,
+                        selected: isCurrent,
+                        showDivider: i > 0,
+                        onTap: isCurrent
+                            ? null
+                            : () => setState(() {
+                                _selectedType = interp.typeName;
+                                _hasChanges = true;
+                              }),
                       );
                     });
                   }(),
@@ -586,34 +629,228 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showWriteDialog,
+        backgroundColor: cs.primary,
+        foregroundColor: cs.onPrimary,
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         icon: const Icon(Icons.edit_outlined),
-        label: Text(l10n.writeValue),
+        label: Text(
+          l10n.writeValue,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        ),
       ),
     );
   }
 }
 
-// ─── Reusable widgets ──────────────────────────────────────────────────────────
+class _InterpretationsHeader extends StatelessWidget {
+  final String title;
+  final String registerOrder;
+  final String byteOrder;
+  final VoidCallback onTap;
 
-class _OutlinedCard extends StatelessWidget {
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-
-  const _OutlinedCard({
-    required this.child,
-    this.padding = const EdgeInsets.all(16),
+  const _InterpretationsHeader({
+    required this.title,
+    required this.registerOrder,
+    required this.byteOrder,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return Row(
+      children: [
+        Expanded(child: _SectionHeader(title)),
+        Material(
+          color: cs.surface.withValues(alpha: 0),
+          borderRadius: BorderRadius.circular(6),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(6),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 4, 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.tune_rounded,
+                    size: 15,
+                    color: cs.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    '$registerOrder · $byteOrder',
+                    style: tt.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 18,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LayoutChoiceSection extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final List<String> options;
+  final String value;
+  final ValueChanged<String> onSelected;
+
+  const _LayoutChoiceSection({
+    required this.label,
+    required this.icon,
+    required this.options,
+    required this.value,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 18, color: cs.onSurfaceVariant),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SegmentedButton<String>(
+          segments: options
+              .map(
+                (option) =>
+                    ButtonSegment<String>(value: option, label: Text(option)),
+              )
+              .toList(),
+          selected: {value},
+          onSelectionChanged: (selection) => onSelected(selection.first),
+          showSelectedIcon: false,
+          style: ButtonStyle(
+            visualDensity: VisualDensity.compact,
+            backgroundColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return cs.primary;
+              }
+              return cs.surface;
+            }),
+            foregroundColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return cs.onPrimary;
+              }
+              return cs.onSurface;
+            }),
+            side: WidgetStatePropertyAll(
+              BorderSide(color: cs.outline.withValues(alpha: 0.55)),
+            ),
+            textStyle: WidgetStatePropertyAll(
+              tt.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SavePillButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final String label;
+
+  const _SavePillButton({required this.onPressed, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      label: label,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: onPressed,
+        child: Ink(
+          height: 42,
+          width: 78,
+          decoration: BoxDecoration(
+            color: cs.primary,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: cs.shadow.withValues(alpha: 0.12),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: cs.onPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OutlinedCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final bool clip;
+
+  const _OutlinedCard({
+    required this.child,
+    this.padding = const EdgeInsets.all(16),
+    this.clip = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
+      clipBehavior: clip ? Clip.antiAlias : Clip.none,
       padding: padding,
       decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant),
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: cs.outline.withValues(alpha: isDark ? 0.7 : 0.28),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: isDark ? 0.16 : 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: child,
     );
@@ -628,17 +865,41 @@ class _OutlineField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return InputDecorator(
       decoration: InputDecoration(
         labelText: label,
-        border: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(10)),
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        filled: false,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(6),
+          borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.55)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(6),
+          borderSide: BorderSide(color: cs.primary, width: 1.4),
         ),
         isDense: true,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        contentPadding: const EdgeInsets.fromLTRB(14, 3, 12, 3),
       ),
-      child: child,
+      child: SizedBox(
+        height: 38,
+        child: Row(
+          children: [
+            Expanded(
+              child: DefaultTextStyle.merge(
+                style: TextStyle(
+                  color: cs.onSurface,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+                child: child,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -649,50 +910,160 @@ class _TypeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _typeColor(type);
+    final color = _typeColor(context, type);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      width: 38,
+      height: 28,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        border: Border.all(color: color.withValues(alpha: 0.7)),
-        borderRadius: BorderRadius.circular(4),
+        color: color.withValues(alpha: 0.10),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+        borderRadius: BorderRadius.circular(5),
       ),
       child: Text(
         _typeAbbrev(type),
         style: TextStyle(
           color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.3,
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
   }
 }
 
-class _BoolChip extends StatelessWidget {
-  final String value;
-  const _BoolChip({required this.value});
+class _InterpretationRow extends StatelessWidget {
+  final _Interpretation interpretation;
+  final bool selected;
+  final bool showDivider;
+  final VoidCallback? onTap;
+
+  const _InterpretationRow({
+    required this.interpretation,
+    required this.selected,
+    required this.showDivider,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isTrue = value == 'true';
-    final color = isTrue ? const Color(0xFF388E3C) : const Color(0xFFC62828);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        value,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.bold,
-          fontSize: 13,
+    final cs = Theme.of(context).colorScheme;
+    final appColors = Theme.of(context).extension<AppColors>()!;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (showDivider)
+          Divider(height: 1, color: cs.outline.withValues(alpha: 0.7)),
+        Material(
+          color: selected
+              ? cs.primary.withValues(alpha: 0.08)
+              : cs.surface.withValues(alpha: 0),
+          child: InkWell(
+            onTap: onTap,
+            child: SizedBox(
+              height: 50,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Row(
+                  children: [
+                    Icon(
+                      selected
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      size: 21,
+                      color: selected
+                          ? cs.primary
+                          : cs.onSurfaceVariant.withValues(alpha: 0.85),
+                    ),
+                    const SizedBox(width: 12),
+                    _TypeBadge(type: interpretation.typeName),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _TypeNameText(
+                        type: interpretation.typeName,
+                        isSelected: selected,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          interpretation.value,
+                          maxLines: 1,
+                          overflow: TextOverflow.fade,
+                          softWrap: false,
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            color: selected
+                                ? appColors.valueColor
+                                : cs.onSurfaceVariant,
+                            fontSize: 14,
+                            fontWeight: selected
+                                ? FontWeight.w800
+                                : FontWeight.w500,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
+      ],
+    );
+  }
+}
+
+class _TypeNameText extends StatelessWidget {
+  final String type;
+  final bool isSelected;
+  final bool compact;
+
+  const _TypeNameText({
+    required this.type,
+    required this.isSelected,
+    this.compact = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final description = _typeDescription(type);
+    final match = RegExp(r'^(.*?) (\(.+\))$').firstMatch(description);
+    final main = match?.group(1) ?? description;
+    final suffix = match?.group(2);
+    final color = isSelected ? cs.primary : cs.onSurface;
+    final size = compact ? 15.0 : 14.0;
+
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: main,
+            style: TextStyle(
+              color: color,
+              fontSize: size,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            ),
+          ),
+          if (suffix != null)
+            TextSpan(
+              text: ' $suffix',
+              style: TextStyle(
+                color: isSelected ? cs.primary : cs.onSurfaceVariant,
+                fontSize: size,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+              ),
+            ),
+        ],
       ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }
@@ -703,12 +1074,16 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title.toUpperCase(),
-      style: Theme.of(context).textTheme.labelSmall!.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            letterSpacing: 0.8,
-          ),
+    return Padding(
+      padding: const EdgeInsets.only(left: 1),
+      child: Text(
+        title.toUpperCase(),
+        style: Theme.of(context).textTheme.titleSmall!.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
     );
   }
 }
