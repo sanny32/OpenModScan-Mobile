@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/device_info.dart';
 import '../theme/app_theme.dart';
-import 'connect_device_sheet.dart';
+import 'device_form_sheet.dart';
 import 'device_screen.dart';
 
 class DevicesScreen extends StatefulWidget {
@@ -27,7 +27,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const ConnectDeviceSheet(),
+      builder: (_) => const DeviceFormSheet(),
     );
   }
 

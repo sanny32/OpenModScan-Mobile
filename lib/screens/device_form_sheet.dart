@@ -1,22 +1,45 @@
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
+import '../models/device_info.dart';
 
-class ConnectDeviceSheet extends StatefulWidget {
-  const ConnectDeviceSheet({super.key});
+class DeviceFormSheet extends StatefulWidget {
+  /// Null → add mode ("Connect to Device" / "Connect").
+  /// Non-null → edit mode ("Edit Device" / "Save").
+  final DeviceInfo? initial;
+
+  const DeviceFormSheet({super.key, this.initial});
 
   @override
-  State<ConnectDeviceSheet> createState() => _ConnectDeviceSheetState();
+  State<DeviceFormSheet> createState() => _DeviceFormSheetState();
 }
 
-class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
-  int _connType = 0;
-  final _nameCtrl = TextEditingController(text: 'PLC #1');
-  final _hostCtrl = TextEditingController(text: '192.168.0.10');
-  final _portCtrl = TextEditingController(text: '502');
-  final _unitCtrl = TextEditingController(text: '1');
-  final _timeoutCtrl = TextEditingController(text: '1000');
-  final _reconnectCtrl = TextEditingController(text: '3000');
-  final _notesCtrl = TextEditingController();
+class _DeviceFormSheetState extends State<DeviceFormSheet> {
+  late int _connType;
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _hostCtrl;
+  late final TextEditingController _portCtrl;
+  late final TextEditingController _unitCtrl;
+  late final TextEditingController _timeoutCtrl;
+  late final TextEditingController _reconnectCtrl;
+  late final TextEditingController _notesCtrl;
+
+  bool get _isEdit => widget.initial != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final d = widget.initial;
+    _connType = d?.protocol == ProtocolType.modbusRtuIp ? 1 : 0;
+    _nameCtrl = TextEditingController(text: d?.name ?? '');
+    _hostCtrl = TextEditingController(text: d?.host ?? '');
+    _portCtrl = TextEditingController(text: (d?.port ?? 502).toString());
+    _unitCtrl = TextEditingController(text: (d?.unitId ?? 1).toString());
+    _timeoutCtrl =
+        TextEditingController(text: (d?.timeout ?? 1000).toString());
+    _reconnectCtrl =
+        TextEditingController(text: (d?.reconnectDelay ?? 3000).toString());
+    _notesCtrl = TextEditingController(text: d?.notes ?? '');
+  }
 
   @override
   void dispose() {
@@ -28,6 +51,28 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
     _reconnectCtrl.dispose();
     _notesCtrl.dispose();
     super.dispose();
+  }
+
+  void _submit() {
+    final base = widget.initial ?? const DeviceInfo(
+      name: '',
+      host: '',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+    );
+    final updated = base.copyWith(
+      name: _nameCtrl.text.trim().isEmpty ? base.name : _nameCtrl.text.trim(),
+      host: _hostCtrl.text.trim().isEmpty ? base.host : _hostCtrl.text.trim(),
+      port: int.tryParse(_portCtrl.text) ?? base.port,
+      protocol:
+          _connType == 0 ? ProtocolType.modbusTcp : ProtocolType.modbusRtuIp,
+      unitId: int.tryParse(_unitCtrl.text) ?? base.unitId,
+      timeout: int.tryParse(_timeoutCtrl.text) ?? base.timeout,
+      reconnectDelay: int.tryParse(_reconnectCtrl.text) ?? base.reconnectDelay,
+      notes: _notesCtrl.text,
+    );
+    Navigator.pop(context, updated);
   }
 
   @override
@@ -67,13 +112,15 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                     child: Text(l10n.cancel),
                   ),
                   Expanded(
-                    child: Text(l10n.connectToDevice,
-                        textAlign: TextAlign.center,
-                        style: tt.titleMedium),
+                    child: Text(
+                      _isEdit ? l10n.editDevice : l10n.connectToDevice,
+                      textAlign: TextAlign.center,
+                      style: tt.titleMedium,
+                    ),
                   ),
                   TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(l10n.save),
+                    onPressed: _submit,
+                    child: Text(_isEdit ? l10n.save : l10n.save),
                   ),
                 ],
               ),
@@ -136,7 +183,8 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                           children: [
                             _label(context, l10n.labelPort),
                             const SizedBox(height: 6),
-                            _field(_portCtrl, type: TextInputType.number),
+                            _field(_portCtrl,
+                                type: TextInputType.number),
                           ],
                         ),
                       ),
@@ -186,7 +234,7 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: cs.primary,
                       foregroundColor: cs.onPrimary,
@@ -195,7 +243,8 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: Text(l10n.connect),
+                    child:
+                        Text(_isEdit ? l10n.save : l10n.connect),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -233,10 +282,9 @@ class _ConnectDeviceSheetState extends State<ConnectDeviceSheet> {
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           suffixText: suffix,
-          suffixStyle: Theme.of(context)
-              .textTheme
-              .bodyMedium!
-              .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          suffixStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
+              color:
+                  Theme.of(context).colorScheme.onSurfaceVariant),
         ),
       );
 }
@@ -283,13 +331,16 @@ class _TypeCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: selected ? cs.primary : cs.onSurfaceVariant,
+                    color:
+                        selected ? cs.primary : cs.onSurfaceVariant,
                     width: 2,
                   ),
-                  color: selected ? cs.primary : Colors.transparent,
+                  color:
+                      selected ? cs.primary : Colors.transparent,
                 ),
                 child: selected
-                    ? Icon(Icons.circle, size: 8, color: cs.onPrimary)
+                    ? Icon(Icons.circle,
+                        size: 8, color: cs.onPrimary)
                     : null,
               ),
             ),
@@ -297,12 +348,13 @@ class _TypeCard extends StatelessWidget {
             Icon(icon, size: 34, color: cs.primary),
             const SizedBox(height: 8),
             Text(label,
-                style: tt.labelLarge!.copyWith(fontWeight: FontWeight.bold),
+                style: tt.labelLarge!
+                    .copyWith(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center),
             const SizedBox(height: 2),
             Text(sub,
-                style:
-                    tt.labelSmall!.copyWith(color: cs.onSurfaceVariant),
+                style: tt.labelSmall!
+                    .copyWith(color: cs.onSurfaceVariant),
                 textAlign: TextAlign.center),
           ],
         ),

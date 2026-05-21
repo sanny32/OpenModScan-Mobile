@@ -4,7 +4,7 @@ import '../models/device_info.dart';
 import '../models/register_entry.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection_status_chip.dart';
-import 'edit_device_sheet.dart';
+import 'device_form_sheet.dart';
 
 class DeviceScreen extends StatefulWidget {
   final DeviceInfo device;
@@ -28,7 +28,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => EditDeviceSheet(device: _device),
+      builder: (_) => DeviceFormSheet(initial: _device),
     ).then((updated) {
       if (updated != null) setState(() => _device = updated);
     });

@@ -6,6 +6,8 @@ class DeviceInfo {
   final int port;
   final ProtocolType protocol;
   final int unitId;
+  final int timeout;
+  final int reconnectDelay;
   final bool connected;
   final bool lastUsed;
   final String notes;
@@ -16,6 +18,8 @@ class DeviceInfo {
     required this.port,
     required this.protocol,
     required this.unitId,
+    this.timeout = 1000,
+    this.reconnectDelay = 3000,
     this.connected = false,
     this.lastUsed = false,
     this.notes = '',
@@ -27,6 +31,8 @@ class DeviceInfo {
     int? port,
     ProtocolType? protocol,
     int? unitId,
+    int? timeout,
+    int? reconnectDelay,
     bool? connected,
     bool? lastUsed,
     String? notes,
@@ -37,6 +43,8 @@ class DeviceInfo {
       port: port ?? this.port,
       protocol: protocol ?? this.protocol,
       unitId: unitId ?? this.unitId,
+      timeout: timeout ?? this.timeout,
+      reconnectDelay: reconnectDelay ?? this.reconnectDelay,
       connected: connected ?? this.connected,
       lastUsed: lastUsed ?? this.lastUsed,
       notes: notes ?? this.notes,
