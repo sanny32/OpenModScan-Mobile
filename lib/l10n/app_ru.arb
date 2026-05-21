@@ -49,6 +49,8 @@
   "logMessages": "Сообщений: {count}",
   "logClearOnDisconnect": "Очищать при отключении",
   "editDevice": "Редактировать устройство",
+  "deviceDeleted": "Устройство удалено",
+  "undo": "Отменить",
   "connectToDevice": "Подключиться к устройству",
   "cancel": "Отмена",
   "save": "Сохранить",

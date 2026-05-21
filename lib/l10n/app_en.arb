@@ -167,6 +167,12 @@
   "editDevice": "Edit Device",
   "@editDevice": {},
 
+  "deviceDeleted": "Device deleted",
+  "@deviceDeleted": {},
+
+  "undo": "Undo",
+  "@undo": {},
+
   "connectToDevice": "Connect to device",
   "@connectToDevice": {},
 

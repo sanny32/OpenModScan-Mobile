@@ -14,8 +14,15 @@ class DevicesScreen extends StatefulWidget {
 
 class _DevicesScreenState extends State<DevicesScreen> {
   String _search = '';
+  late List<DeviceInfo> _devices;
 
-  List<DeviceInfo> get _filtered => mockDevices
+  @override
+  void initState() {
+    super.initState();
+    _devices = List.of(mockDevices);
+  }
+
+  List<DeviceInfo> get _filtered => _devices
       .where((d) =>
           _search.isEmpty ||
           d.name.toLowerCase().contains(_search.toLowerCase()) ||
@@ -28,6 +35,21 @@ class _DevicesScreenState extends State<DevicesScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const DeviceFormSheet(),
+    );
+  }
+
+  void _deleteDevice(DeviceInfo device) {
+    final index = _devices.indexOf(device);
+    setState(() => _devices.remove(device));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(context.l10n.deviceDeleted),
+        action: SnackBarAction(
+          label: context.l10n.undo,
+          onPressed: () => setState(() => _devices.insert(index, device)),
+        ),
+      ),
     );
   }
 
@@ -74,12 +96,29 @@ class _DevicesScreenState extends State<DevicesScreen> {
                 padding: const EdgeInsets.only(bottom: 72),
                 children: [
                   _sectionHeader(context, l10n.devicesSavedConnections),
-                  ..._filtered.map((d) => _DeviceCard(
-                        device: d,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => DeviceScreen(device: d),
+                  ..._filtered.map((d) => Dismissible(
+                        key: ValueKey(d),
+                        direction: DismissDirection.endToStart,
+                        onDismissed: (_) => _deleteDevice(d),
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: cs.error,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(Icons.delete_outline,
+                              color: cs.onError, size: 26),
+                        ),
+                        child: _DeviceCard(
+                          device: d,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DeviceScreen(device: d),
+                            ),
                           ),
                         ),
                       )),
