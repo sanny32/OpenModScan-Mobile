@@ -6,6 +6,7 @@ import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
 import '../models/register_entry.dart';
 import '../theme/app_theme.dart';
+import '../utils/modbus_format.dart';
 import '../widgets/type_badge.dart';
 
 
@@ -36,14 +37,6 @@ String _typeDescription(String type) {
   }
 }
 
-String _formatFloat(double f) {
-  if (f.isNaN) return 'NaN';
-  if (f.isInfinite) return f > 0 ? '+inf' : '-inf';
-  if (f == 0.0) return '0';
-  final abs = f.abs();
-  if (abs < 0.001 || abs >= 1e7) return f.toStringAsExponential(6);
-  return f.toStringAsPrecision(7).replaceAll(RegExp(r'\.?0+$'), '');
-}
 
 String _displayTimestamp(String timestamp) {
   if (RegExp(r'\.\d+$').hasMatch(timestamp)) return timestamp;
@@ -53,11 +46,15 @@ String _displayTimestamp(String timestamp) {
 class RegisterDetailScreen extends StatefulWidget {
   final RegisterEntry entry;
   final bool canWrite;
+  final void Function(String typeName, String? comment)? onSaved;
+  final void Function(String newValue)? onValueWritten;
 
   const RegisterDetailScreen({
     super.key,
     required this.entry,
     this.canWrite = true,
+    this.onSaved,
+    this.onValueWritten,
   });
 
   @override
@@ -146,8 +143,8 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
       _Interpretation('Int32', int32.toString()),
       _Interpretation('UInt64', uint64.toString()),
       _Interpretation('Int64', int64.toString()),
-      _Interpretation('Float32', _formatFloat(float32)),
-      _Interpretation('Float64', _formatFloat(float64)),
+      _Interpretation('Float32', formatFloat(float32)),
+      _Interpretation('Float64', formatFloat(float64)),
       _Interpretation('Hex', hex),
       _Interpretation('Binary', binFmt),
     ];
@@ -162,7 +159,8 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
   }
 
   void _save() {
-    // TODO: persist type, comment, register order, byte order.
+    final comment = _commentCtrl.text.trim();
+    widget.onSaved?.call(_selectedType, comment.isEmpty ? null : comment);
     setState(() => _hasChanges = false);
   }
 
@@ -263,6 +261,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
       return;
     }
     // TODO: perform actual Modbus write.
+    widget.onValueWritten?.call(ctrl.text);
     Navigator.pop(ctx);
   }
 

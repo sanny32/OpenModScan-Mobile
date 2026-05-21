@@ -11,6 +11,7 @@ import '../services/device_repository.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection_info_bar.dart';
 import '../widgets/connection_status_chip.dart';
+import '../utils/modbus_format.dart';
 import '../widgets/type_badge.dart';
 import 'register_detail_screen.dart';
 import 'status_detail_screen.dart';
@@ -81,6 +82,7 @@ class _RegistersScreenState extends State<RegistersScreen>
   late List<_ListConfig> _lists;
   int _activeList = 0;
   String _deviceName = mockDevice.name;
+  final Map<int, (String, String?)> _runtimeValues = {};
 
   DeviceInfo? get _selectedDevice {
     final devs = DeviceRepository.instance.devices.value;
@@ -240,6 +242,25 @@ class _RegistersScreenState extends State<RegistersScreen>
     }
   }
 
+  void _onValueWritten(int address, String value) {
+    final prev = _runtimeValues[address]?.$1 ?? '';
+    setState(() => _runtimeValues[address] = (value, prev.isEmpty ? null : prev));
+  }
+
+  void _onEntryChanged(int address, String typeName, String? comment) {
+    final list = _lists[_activeList].data;
+    final idx = list.entries.indexWhere((e) => e.address == address);
+    if (idx >= 0) {
+      list.entries[idx] = RegisterConfig(
+          address: address, typeName: typeName, comment: comment);
+    } else {
+      list.entries.add(
+          RegisterConfig(address: address, typeName: typeName, comment: comment));
+    }
+    setState(() {});
+    _saveDevice();
+  }
+
   Future<void> _showSelectListDialog() async {
     final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
@@ -374,6 +395,10 @@ class _RegistersScreenState extends State<RegistersScreen>
                       setState(() => active.autoRefresh = v),
                   startAddrCtrl: active.startAddrCtrl,
                   countCtrl: active.countCtrl,
+                  registerList: active.data,
+                  runtimeValues: _runtimeValues,
+                  onEntryChanged: _onEntryChanged,
+                  onValueWritten: _onValueWritten,
                 ),
                 _CoilsTab(
                   coilType: active.coilType,
@@ -409,6 +434,10 @@ class _RegistersTab extends StatefulWidget {
   final ValueChanged<bool> onAutoRefreshChanged;
   final TextEditingController startAddrCtrl;
   final TextEditingController countCtrl;
+  final RegisterList registerList;
+  final Map<int, (String, String?)> runtimeValues;
+  final void Function(int address, String typeName, String? comment) onEntryChanged;
+  final void Function(int address, String value) onValueWritten;
 
   const _RegistersTab({
     required this.regType,
@@ -419,6 +448,10 @@ class _RegistersTab extends StatefulWidget {
     required this.onAutoRefreshChanged,
     required this.startAddrCtrl,
     required this.countCtrl,
+    required this.registerList,
+    required this.runtimeValues,
+    required this.onEntryChanged,
+    required this.onValueWritten,
   });
 
   @override
@@ -468,10 +501,35 @@ class _RegistersTabState extends State<_RegistersTab> {
     final count = (rawCount == null || rawCount < 1) ? 20 : rawCount;
     final endAddr = startAddr + count - 1;
     final mockByAddress = {for (final e in mockRegisters) e.address: e};
+    final configByAddress = {
+      for (final e in widget.registerList.entries) e.address: e
+    };
+    // Build raw uint16 map for visible + 3 extra addresses (needed for 64-bit types).
+    final rawInts = <int, int>{};
+    for (var i = 0; i < count + 3; i++) {
+      final addr = startAddr + i;
+      final runtime = widget.runtimeValues[addr];
+      final mock = mockByAddress[addr];
+      rawInts[addr] =
+          int.tryParse(runtime?.$1 ?? mock?.value ?? '') ?? 0;
+    }
     final visibleRegisters = List.generate(count, (i) {
       final addr = startAddr + i;
-      return mockByAddress[addr] ??
-          RegisterEntry(address: addr, value: '0', typeName: 'UInt16');
+      final mock = mockByAddress[addr];
+      final config = configByAddress[addr];
+      final runtime = widget.runtimeValues[addr];
+      final typeName = config?.typeName ?? mock?.typeName ?? 'UInt16';
+      final rawStr = runtime?.$1 ?? mock?.value ?? '0';
+      return RegisterEntry(
+        address: addr,
+        value: rawStr,
+        displayValue: computeDisplayValue(addr, typeName, rawInts),
+        previousValue: runtime?.$2 ?? mock?.previousValue,
+        typeName: typeName,
+        comment: config?.comment ?? mock?.comment,
+        timestamp: mock?.timestamp,
+        date: mock?.date,
+      );
     });
 
     return Column(
@@ -628,6 +686,8 @@ class _RegistersTabState extends State<_RegistersTab> {
             itemBuilder: (context, i) => _RegisterRow(
               entry: visibleRegisters[i],
               canWrite: widget.regType == '4xxxx',
+              onEntryChanged: widget.onEntryChanged,
+              onValueWritten: widget.onValueWritten,
             ),
           ),
         ),
@@ -1229,8 +1289,15 @@ Future<void> _showWriteRegisterDialog(
 class _RegisterRow extends StatelessWidget {
   final RegisterEntry entry;
   final bool canWrite;
+  final void Function(int address, String typeName, String? comment)? onEntryChanged;
+  final void Function(int address, String value)? onValueWritten;
 
-  const _RegisterRow({required this.entry, required this.canWrite});
+  const _RegisterRow({
+    required this.entry,
+    required this.canWrite,
+    this.onEntryChanged,
+    this.onValueWritten,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1241,8 +1308,16 @@ class _RegisterRow extends StatelessWidget {
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              RegisterDetailScreen(entry: entry, canWrite: canWrite),
+          builder: (_) => RegisterDetailScreen(
+            entry: entry,
+            canWrite: canWrite,
+            onSaved: onEntryChanged != null
+                ? (type, comment) => onEntryChanged!(entry.address, type, comment)
+                : null,
+            onValueWritten: onValueWritten != null
+                ? (v) => onValueWritten!(entry.address, v)
+                : null,
+          ),
         ),
       ),
       child: Padding(
@@ -1264,7 +1339,7 @@ class _RegisterRow extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      entry.value,
+                      entry.displayValue ?? entry.value,
                       style: tt.bodyLarge!.copyWith(
                         color: appColors.valueColor,
                         fontWeight: FontWeight.bold,
