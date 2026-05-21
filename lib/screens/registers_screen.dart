@@ -704,13 +704,9 @@ class _CoilsTabState extends State<_CoilsTab> {
                 ),
               ),
               const Spacer(),
-              Flexible(
-                child: Text(
-                  l10n.labelAutoRefresh,
-                  style: tt.bodyMedium,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Text(
+                l10n.labelAutoRefresh,
+                style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
               ),
               Transform.scale(
                 scale: 0.8,
@@ -719,7 +715,7 @@ class _CoilsTabState extends State<_CoilsTab> {
                   onChanged: widget.onAutoRefreshChanged,
                 ),
               ),
-              Text('1.0 s', style: tt.bodyMedium!.copyWith(color: cs.primary)),
+              Text('1.0 s', style: tt.bodyMedium),
             ],
           ),
         ),
