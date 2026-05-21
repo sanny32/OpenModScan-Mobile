@@ -467,9 +467,12 @@ class _RegistersTabState extends State<_RegistersTab> {
     final rawCount = int.tryParse(widget.countCtrl.text);
     final count = (rawCount == null || rawCount < 1) ? 20 : rawCount;
     final endAddr = startAddr + count - 1;
-    final visibleRegisters = mockRegisters
-        .where((e) => e.address >= startAddr && e.address <= endAddr)
-        .toList();
+    final mockByAddress = {for (final e in mockRegisters) e.address: e};
+    final visibleRegisters = List.generate(count, (i) {
+      final addr = startAddr + i;
+      return mockByAddress[addr] ??
+          RegisterEntry(address: addr, value: '0', typeName: 'UInt16');
+    });
 
     return Column(
       children: [
