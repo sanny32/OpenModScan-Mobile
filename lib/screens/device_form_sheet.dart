@@ -5,9 +5,11 @@ import '../models/device_info.dart';
 class DeviceFormSheet extends StatefulWidget {
   /// Null → add mode ("Connect to Device" / "Connect").
   /// Non-null → edit mode ("Edit Device" / "Save").
+  /// [addMode] forces add-mode UI even when [initial] is provided (pre-fill from discovery).
   final DeviceInfo? initial;
+  final bool addMode;
 
-  const DeviceFormSheet({super.key, this.initial});
+  const DeviceFormSheet({super.key, this.initial, this.addMode = false});
 
   @override
   State<DeviceFormSheet> createState() => _DeviceFormSheetState();
@@ -23,7 +25,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
   late final TextEditingController _reconnectCtrl;
   late final TextEditingController _notesCtrl;
 
-  bool get _isEdit => widget.initial != null;
+  bool get _isEdit => widget.initial != null && !widget.addMode;
 
   @override
   void initState() {

@@ -62,12 +62,22 @@ class _DevicesScreenState extends State<DevicesScreen> {
           d.address.contains(_search))
       .toList();
 
-  void _openConnect() async {
+  void _openConnect([DiscoveredDevice? discovered]) async {
+    final initial = discovered == null
+        ? null
+        : DeviceInfo(
+            name: 'Device #${_devices.length + 1}',
+            host: discovered.host,
+            port: discovered.port,
+            protocol: discovered.protocol,
+            unitId: discovered.unitId,
+          );
+
     final device = await showModalBottomSheet<DeviceInfo>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const DeviceFormSheet(),
+      builder: (_) => DeviceFormSheet(initial: initial, addMode: true),
     );
     if (device != null && mounted) {
       setState(() => _devices.add(device));
@@ -201,6 +211,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                                 device: d,
                                 onConnect: _openConnect,
                               )),
+
                         ],
                       ),
               ),
@@ -300,7 +311,7 @@ class _DeviceCard extends StatelessWidget {
 
 class _DiscoveredCard extends StatelessWidget {
   final DiscoveredDevice device;
-  final VoidCallback onConnect;
+  final void Function(DiscoveredDevice) onConnect;
 
   const _DiscoveredCard({required this.device, required this.onConnect});
 
@@ -330,7 +341,7 @@ class _DiscoveredCard extends StatelessWidget {
               ),
             ),
             OutlinedButton(
-              onPressed: onConnect,
+              onPressed: () => onConnect(device),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: cs.primary),
                 foregroundColor: cs.primary,
