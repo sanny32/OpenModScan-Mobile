@@ -4,6 +4,7 @@ import '../models/device_info.dart';
 import '../models/register_entry.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection_status_chip.dart';
+import 'edit_device_sheet.dart';
 
 class DeviceScreen extends StatefulWidget {
   final DeviceInfo device;
@@ -14,18 +15,27 @@ class DeviceScreen extends StatefulWidget {
 }
 
 class _DeviceScreenState extends State<DeviceScreen> {
-  late String _notes;
-  late bool _connected;
+  late DeviceInfo _device;
 
   @override
   void initState() {
     super.initState();
-    _notes = widget.device.notes;
-    _connected = widget.device.connected;
+    _device = widget.device;
+  }
+
+  void _editDevice() {
+    showModalBottomSheet<DeviceInfo>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => EditDeviceSheet(device: _device),
+    ).then((updated) {
+      if (updated != null) setState(() => _device = updated);
+    });
   }
 
   void _editNotes() {
-    final ctrl = TextEditingController(text: _notes);
+    final ctrl = TextEditingController(text: _device.notes);
     final l10n = context.l10n;
     showDialog<String>(
       context: context,
@@ -49,13 +59,12 @@ class _DeviceScreenState extends State<DeviceScreen> {
         ],
       ),
     ).then((value) {
-      if (value != null) setState(() => _notes = value);
+      if (value != null) setState(() => _device = _device.copyWith(notes: value));
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final device = widget.device;
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>()!;
@@ -78,27 +87,31 @@ class _DeviceScreenState extends State<DeviceScreen> {
           ),
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.settings), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: _editDevice,
+          ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          ConnectionStatusChip(connected: _connected),
+          ConnectionStatusChip(connected: _device.connected),
           const SizedBox(height: 12),
-          _PlcCard(device: device, connected: _connected),
+          _PlcCard(device: _device, connected: _device.connected),
           const SizedBox(height: 12),
           OutlinedButton(
-            onPressed: () => setState(() => _connected = !_connected),
+            onPressed: () => setState(
+                () => _device = _device.copyWith(connected: !_device.connected)),
             style: OutlinedButton.styleFrom(
               side: BorderSide(
-                  color: _connected ? cs.error : cs.primary),
-              foregroundColor: _connected ? cs.error : cs.primary,
+                  color: _device.connected ? cs.error : cs.primary),
+              foregroundColor: _device.connected ? cs.error : cs.primary,
               minimumSize: const Size(double.infinity, 48),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
             ),
-            child: Text(_connected ? l10n.disconnect : l10n.connect),
+            child: Text(_device.connected ? l10n.disconnect : l10n.connect),
           ),
           const SizedBox(height: 16),
           Row(
@@ -109,7 +122,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                   title: l10n.readRegisters,
                   subtitle: l10n.readRegistersSubtitle,
                   color: cs.primary,
-                  enabled: _connected,
+                  enabled: _device.connected,
                   onTap: () {},
                 ),
               ),
@@ -120,13 +133,13 @@ class _DeviceScreenState extends State<DeviceScreen> {
                   title: l10n.writeValue,
                   subtitle: l10n.writeValueSubtitle,
                   color: appColors.writeActionColor,
-                  enabled: _connected,
+                  enabled: _device.connected,
                   onTap: () {},
                 ),
               ),
             ],
           ),
-          if (_connected) ...[
+          if (_device.connected) ...[
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -144,32 +157,32 @@ class _DeviceScreenState extends State<DeviceScreen> {
           const SizedBox(height: 12),
           Card(
             child: ListTile(
-              enabled: _connected,
+              enabled: _device.connected,
               leading: Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: (_connected
+                  color: (_device.connected
                           ? appColors.openLogColor
                           : cs.onSurfaceVariant)
                       .withAlpha(26),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(Icons.list_alt,
-                    color: _connected
+                    color: _device.connected
                         ? appColors.openLogColor
                         : cs.onSurfaceVariant,
                     size: 24),
               ),
               title: Text(l10n.openLog,
                   style: tt.titleSmall!.copyWith(
-                      color: _connected
+                      color: _device.connected
                           ? appColors.openLogColor
                           : cs.onSurfaceVariant)),
               subtitle: Text(l10n.openLogSubtitle,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
               trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-              onTap: _connected ? () {} : null,
+              onTap: _device.connected ? () {} : null,
             ),
           ),
           const SizedBox(height: 12),
@@ -188,9 +201,11 @@ class _DeviceScreenState extends State<DeviceScreen> {
                                 .copyWith(color: cs.onSurfaceVariant)),
                         const SizedBox(height: 4),
                         Text(
-                          _notes.isEmpty ? l10n.notesHint : _notes,
+                          _device.notes.isEmpty
+                              ? l10n.notesHint
+                              : _device.notes,
                           style: tt.bodyMedium!.copyWith(
-                              color: _notes.isEmpty
+                              color: _device.notes.isEmpty
                                   ? cs.onSurfaceVariant
                                   : cs.onSurface),
                         ),

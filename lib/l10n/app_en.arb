@@ -164,6 +164,9 @@
   "logClearOnDisconnect": "Clear on disconnect",
   "@logClearOnDisconnect": {},
 
+  "editDevice": "Edit Device",
+  "@editDevice": {},
+
   "connectToDevice": "Connect to device",
   "@connectToDevice": {},
 

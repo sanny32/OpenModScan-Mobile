@@ -21,6 +21,28 @@ class DeviceInfo {
     this.notes = '',
   });
 
+  DeviceInfo copyWith({
+    String? name,
+    String? host,
+    int? port,
+    ProtocolType? protocol,
+    int? unitId,
+    bool? connected,
+    bool? lastUsed,
+    String? notes,
+  }) {
+    return DeviceInfo(
+      name: name ?? this.name,
+      host: host ?? this.host,
+      port: port ?? this.port,
+      protocol: protocol ?? this.protocol,
+      unitId: unitId ?? this.unitId,
+      connected: connected ?? this.connected,
+      lastUsed: lastUsed ?? this.lastUsed,
+      notes: notes ?? this.notes,
+    );
+  }
+
   String get address => '$host:$port';
 
   String get protocolName => 'Modbus TCP';

@@ -48,6 +48,7 @@
   "colFunction": "Функция",
   "logMessages": "Сообщений: {count}",
   "logClearOnDisconnect": "Очищать при отключении",
+  "editDevice": "Редактировать устройство",
   "connectToDevice": "Подключиться к устройству",
   "cancel": "Отмена",
   "save": "Сохранить",
