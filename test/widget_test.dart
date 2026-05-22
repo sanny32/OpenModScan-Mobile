@@ -5,6 +5,8 @@ import 'package:omodscan_mobile/features/registers/register_list_dialogs.dart';
 import 'package:omodscan_mobile/l10n/l10n.dart';
 import 'package:omodscan_mobile/main.dart';
 import 'package:omodscan_mobile/models/app_settings.dart';
+import 'package:omodscan_mobile/models/device_info.dart';
+import 'package:omodscan_mobile/models/register_list.dart';
 import 'package:omodscan_mobile/runtime/fakes/demo_fixtures.dart';
 import 'package:omodscan_mobile/services/device_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -53,6 +55,61 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Device register list opens registers with its range config', (
+    WidgetTester tester,
+  ) async {
+    await DeviceRepository.instance.replaceAll([
+      DeviceInfo(
+        id: 'target-device',
+        name: 'Target PLC',
+        host: '127.0.0.20',
+        port: 502,
+        protocol: ProtocolType.modbusTcp,
+        unitId: 1,
+        registerLists: [
+          RegisterList(
+            id: 'holding-list',
+            name: 'Holding List',
+            regType: '4xxxx',
+            startAddress: 1,
+            count: 20,
+          ),
+          RegisterList(
+            id: 'input-list',
+            name: 'Input List',
+            regType: '3xxxx',
+            startAddress: 37,
+            count: 8,
+          ),
+        ],
+      ),
+    ]);
+
+    await tester.pumpWidget(const OModScanApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Target PLC'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Input List'), 300);
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -120));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Input List'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Input (3xxxx)'), findsWidgets);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is TextField && widget.controller?.text == '37',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is TextField && widget.controller?.text == '8',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Theme setting updates app theme', (WidgetTester tester) async {

@@ -61,7 +61,8 @@ class _RegistersScreenState extends State<RegistersScreen>
 
   String get _currentListSignature =>
       '${widget.controller.selectedDeviceId}:'
-      '${widget.controller.lists.map((list) => list.id).join(',')}';
+      '${widget.controller.lists.map((list) => list.id).join(',')}:'
+      '${widget.controller.activeList?.id}';
 
   @override
   void initState() {
