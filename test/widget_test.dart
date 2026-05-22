@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omodscan_mobile/features/devices/device_screen.dart';
+import 'package:omodscan_mobile/features/registers/register_list_dialogs.dart';
+import 'package:omodscan_mobile/l10n/l10n.dart';
 import 'package:omodscan_mobile/main.dart';
 import 'package:omodscan_mobile/models/app_settings.dart';
 import 'package:omodscan_mobile/runtime/fakes/demo_fixtures.dart';
@@ -36,6 +38,21 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(DeviceScreen), findsOneWidget);
+  });
+
+  testWidgets('Register list dialog closes without disposed controllers', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const _RegisterListDialogHarness());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open dialog'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Theme setting updates app theme', (WidgetTester tester) async {
@@ -82,4 +99,27 @@ void main() {
     expect(find.text('Системная'), findsOneWidget);
     expect(find.text('Русский'), findsOneWidget);
   });
+}
+
+class _RegisterListDialogHarness extends StatelessWidget {
+  const _RegisterListDialogHarness();
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => Center(
+            child: ElevatedButton(
+              onPressed: () =>
+                  showRegisterListDialog(context, defaultName: 'List 1'),
+              child: const Text('Open dialog'),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
