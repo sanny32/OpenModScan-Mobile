@@ -32,8 +32,8 @@ class AppNavigationService {
   }
 
   void goToRegisters(String deviceName, {String? listId, WidgetBuilder? backRoute}) {
-    pendingDevice.value = deviceName;
     pendingListId.value = listId;
+    pendingDevice.value = deviceName;
     pushTab(tab: 1, backRoute: backRoute);
   }
 

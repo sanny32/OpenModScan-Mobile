@@ -133,24 +133,29 @@ class _RegistersScreenState extends State<RegistersScreen>
     final listId = AppNavigationService.instance.pendingListId.value;
     AppNavigationService.instance.pendingListId.value = null;
 
-    if (name == _deviceName) {
-      if (listId != null) {
-        final idx = _lists.indexWhere((l) => l.data.id == listId);
-        if (idx >= 0) setState(() => _activeList = idx);
-      }
-      return;
+    final sameDevice = name == _deviceName;
+    if (!sameDevice) _deviceName = name;
+
+    final newLists = _buildListsFromDevice();
+    int newActive = 0;
+    if (listId != null) {
+      final idx = newLists.indexWhere((l) => l.data.id == listId);
+      newActive = idx >= 0 ? idx : 0;
+    } else if (sameDevice) {
+      newActive = _activeList.clamp(0, newLists.length - 1);
     }
+
     for (final l in _lists) { l.dispose(); }
     setState(() {
-      _deviceName = name;
-      _lists = _buildListsFromDevice();
-      if (listId != null) {
-        final idx = _lists.indexWhere((l) => l.data.id == listId);
-        _activeList = idx >= 0 ? idx : 0;
-      } else {
-        _activeList = 0;
-      }
+      _lists = newLists;
+      _activeList = newActive;
     });
+
+    if (listId != null) {
+      final regType = newLists[newActive].data.regType;
+      final targetTab = (regType == '0xxxx' || regType == '1xxxx') ? 1 : 0;
+      _tabController.animateTo(targetTab);
+    }
   }
 
   @override
@@ -182,19 +187,65 @@ class _RegistersScreenState extends State<RegistersScreen>
 
   Future<void> _addRegs() async {
     final defaultName = 'List ${_lists.length + 1}';
-    final ctrl = TextEditingController(text: defaultName);
+    final nameCtrl = TextEditingController(text: defaultName);
+    final startCtrl = TextEditingController(text: '1');
+    final countCtrl = TextEditingController(text: '20');
+    String regType = '4xxxx';
 
-    final name = await showDialog<String>(
+    final result = await showDialog<RegisterList>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(context.l10n.menuAddRegs),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: context.l10n.dialogListNameHint,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: context.l10n.labelName,
+                  hintText: context.l10n.dialogListNameHint,
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: regType,
+                decoration: InputDecoration(
+                  labelText: context.l10n.labelRegisterType,
+                ),
+                items: const [
+                  DropdownMenuItem(value: '4xxxx', child: Text('Holding (4xxxx)')),
+                  DropdownMenuItem(value: '3xxxx', child: Text('Input (3xxxx)')),
+                  DropdownMenuItem(value: '1xxxx', child: Text('Discrete Input (1xxxx)')),
+                  DropdownMenuItem(value: '0xxxx', child: Text('Coils (0xxxx)')),
+                ],
+                onChanged: (v) { if (v != null) regType = v; },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: startCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: InputDecoration(labelText: context.l10n.labelStart),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: countCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: InputDecoration(labelText: context.l10n.labelCount),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
         ),
         actions: [
           TextButton(
@@ -202,18 +253,27 @@ class _RegistersScreenState extends State<RegistersScreen>
             child: Text(context.l10n.cancel),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            onPressed: () {
+              final name = nameCtrl.text.trim();
+              if (name.isEmpty) return;
+              Navigator.pop(ctx, RegisterList(
+                name: name,
+                regType: regType,
+                startAddress: int.tryParse(startCtrl.text) ?? 1,
+                count: int.tryParse(countCtrl.text) ?? 20,
+              ));
+            },
             child: Text(context.l10n.save),
           ),
         ],
       ),
     );
 
-    if (name != null && name.isNotEmpty) {
-      final newList = RegisterList(name: name);
-      _selectedDevice?.registerLists.add(newList);
+    if (!mounted) return;
+    if (result != null) {
+      _selectedDevice?.registerLists.add(result);
       setState(() {
-        _lists.add(_ListConfig(newList));
+        _lists.add(_ListConfig(result));
         _activeList = _lists.length - 1;
       });
       _saveDevice();
@@ -1189,6 +1249,8 @@ class _RegTypeDropdown extends StatelessWidget {
             items: const [
               DropdownMenuItem(value: '4xxxx', child: Text('Holding (4xxxx)')),
               DropdownMenuItem(value: '3xxxx', child: Text('Input (3xxxx)')),
+              DropdownMenuItem(value: '1xxxx', child: Text('Discrete Input (1xxxx)')),
+              DropdownMenuItem(value: '0xxxx', child: Text('Coils (0xxxx)')),
             ],
             onChanged: (v) {
               if (v != null) onChanged(v);
