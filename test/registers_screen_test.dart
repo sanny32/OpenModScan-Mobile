@@ -284,33 +284,58 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('40001'));
+    String? savedType;
+    String? savedComment;
+    const testEntry = RegisterEntry(
+      address: 40001,
+      value: '1',
+      typeName: 'UInt16',
+      rawWords: {40001: 1, 40002: 2},
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegisterDetailScreen(
+          entry: testEntry,
+          canWrite: false,
+          onSaved: (type, comment) {
+            savedType = type;
+            savedComment = comment;
+          },
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Select UInt32 via the interpretations list row.
+    await tester.tap(find.text('UInt32 (32 bit)'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(DropdownButton<String>));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('UInt32 (32 bit)').last);
+
+    expect(savedType, 'UInt32');
+
+    // Open comment editor by tapping the comment card.
+    await tester.tap(find.text('Add a comment'));
     await tester.pumpAndSettle();
     await tester.enterText(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is TextField && widget.decoration?.labelText == 'Comment',
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
       ),
       'Pressure setpoint',
     );
-    await tester.pump();
-    await tester.tap(find.text('Save'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Save'),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    expect(find.text('UInt32'), findsOneWidget);
-    expect(find.text('Pressure setpoint'), findsOneWidget);
-    final entry = DeviceRepository.instance
-        .findById(device.id)!
-        .registerLists
-        .single
-        .entries
-        .single;
-    expect(entry.typeName, 'UInt32');
-    expect(entry.comment, 'Pressure setpoint');
+    expect(savedType, 'UInt32');
+    expect(savedComment, 'Pressure setpoint');
 
     await tester.pumpWidget(const SizedBox.shrink());
     controller.dispose();

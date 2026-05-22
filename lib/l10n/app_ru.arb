@@ -34,6 +34,7 @@
   "colValue": "Значение",
   "colType": "Тип",
   "colComment": "Комментарий",
+  "commentHint": "Добавьте комментарий",
   "btnRead": "Читать",
   "labelStart": "Начало",
   "labelCount": "Количество",

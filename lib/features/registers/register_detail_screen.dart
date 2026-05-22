@@ -62,7 +62,6 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
   late TextEditingController _commentCtrl;
   late String _registerOrder;
   late String _byteOrder;
-  bool _hasChanges = false;
 
   @override
   void initState() {
@@ -78,7 +77,6 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
         ? settings.byteOrder
         : AppSettings.byteOrders.first;
     _commentCtrl = TextEditingController(text: widget.entry.comment ?? '');
-    _commentCtrl.addListener(_onTextChanged);
     AppSettings.instance.showTypeBadgesNotifier.addListener(
       _onBadgeSettingChanged,
     );
@@ -86,13 +84,21 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
 
   void _onBadgeSettingChanged() => setState(() {});
 
-  void _onTextChanged() {
-    if (!_hasChanges) setState(() => _hasChanges = true);
+  void _saveComment(String? value) {
+    _commentCtrl.text = value ?? '';
+    setState(() {});
+    final comment = _commentCtrl.text.trim();
+    widget.onSaved?.call(_selectedType, comment.isEmpty ? null : comment);
+  }
+
+  void _selectType(String type) {
+    setState(() => _selectedType = type);
+    final comment = _commentCtrl.text.trim();
+    widget.onSaved?.call(type, comment.isEmpty ? null : comment);
   }
 
   @override
   void dispose() {
-    _commentCtrl.removeListener(_onTextChanged);
     _commentCtrl.dispose();
     AppSettings.instance.showTypeBadgesNotifier.removeListener(
       _onBadgeSettingChanged,
@@ -123,12 +129,6 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
       if (interp.typeName == type) return interp.value;
     }
     return widget.entry.value;
-  }
-
-  void _save() {
-    final comment = _commentCtrl.text.trim();
-    widget.onSaved?.call(_selectedType, comment.isEmpty ? null : comment);
-    Navigator.pop(context);
   }
 
   Future<void> _showWriteDialog() async {
@@ -317,10 +317,6 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
           ),
         ),
         actions: [
-          if (_hasChanges) ...[
-            _SavePillButton(onPressed: _save, label: l10n.save),
-            const SizedBox(width: 6),
-          ],
           IconButton(
             icon: const Icon(Icons.more_vert),
             iconSize: 24,
@@ -430,38 +426,35 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                       ),
                     ),
                   ),
-                  ValueListenableBuilder<bool>(
-                    valueListenable:
-                        AppSettings.instance.showLastValuesNotifier,
-                    builder: (_, showLastValues, _) {
-                      if (!showLastValues || entry.previousValue == null) {
-                        return const SizedBox.shrink();
-                      }
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(height: 16),
-                          Divider(height: 1, thickness: 1.2, color: cs.outline),
-                          const SizedBox(height: 8),
-                          Row(
+                  const SizedBox(height: 16),
+                  Divider(height: 1, thickness: 1.2, color: cs.outline),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      ValueListenableBuilder<bool>(
+                        valueListenable:
+                            AppSettings.instance.showLastValuesNotifier,
+                        builder: (_, showLastValues, _) {
+                          if (!showLastValues || entry.previousValue == null) {
+                            return const SizedBox.shrink();
+                          }
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.arrow_back_rounded,
-                                size: 19,
-                                color: cs.onSurfaceVariant,
-                              ),
-                              const SizedBox(width: 14),
-                              Flexible(
-                                child: Text(
-                                  l10n.labelPreviousValue,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: tt.bodyLarge!.copyWith(
-                                    color: cs.onSurfaceVariant,
-                                    fontSize: 13,
-                                  ),
+                              Text(
+                                l10n.labelPreviousValue,
+                                style: tt.bodySmall!.copyWith(
+                                  color: cs.onSurfaceVariant,
+                                  fontSize: 12,
                                 ),
                               ),
-                              const SizedBox(width: 16),
+                              const SizedBox(width: 6),
+                              Icon(
+                                Icons.arrow_back_rounded,
+                                size: 15,
+                                color: cs.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 4),
                               Text(
                                 entry.previousValue!,
                                 style: tt.bodyMedium!.copyWith(
@@ -474,110 +467,35 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                                 ),
                               ),
                             ],
-                          ),
-                        ],
-                      );
-                    },
+                          );
+                        },
+                      ),
+                      const Spacer(),
+                      Icon(
+                        Icons.label_outline_rounded,
+                        size: 17,
+                        color: cs.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        _typeDescription(_selectedType),
+                        style: tt.bodyMedium!.copyWith(
+                          color: cs.onSurfaceVariant,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 18),
-            _SectionHeader(l10n.labelProperties),
+            _SectionHeader(l10n.colComment.toUpperCase()),
             const SizedBox(height: 7),
-            _OutlinedCard(
-              padding: const EdgeInsets.fromLTRB(8, 7, 8, 8),
-              child: Column(
-                children: [
-                  _OutlineField(
-                    label: l10n.colType,
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedType,
-                        itemHeight: 48,
-                        isExpanded: true,
-                        icon: Icon(
-                          Icons.arrow_drop_down,
-                          color: cs.onSurfaceVariant,
-                          size: 24,
-                        ),
-                        selectedItemBuilder: (ctx) => kRegisterTypes
-                            .map(
-                              (t) => Row(
-                                children: [
-                                  if (AppSettings.instance.showTypeBadges) ...[
-                                    TypeBadge(type: t),
-                                    const SizedBox(width: 12),
-                                  ],
-                                  Expanded(
-                                    child: _TypeNameText(
-                                      type: t,
-                                      isSelected: false,
-                                      compact: true,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                            .toList(),
-                        items: kRegisterTypes
-                            .map(
-                              (t) => DropdownMenuItem(
-                                value: t,
-                                child: Row(
-                                  children: [
-                                    if (AppSettings
-                                        .instance
-                                        .showTypeBadges) ...[
-                                      TypeBadge(type: t),
-                                      const SizedBox(width: 12),
-                                    ],
-                                    Expanded(child: Text(_typeDescription(t))),
-                                  ],
-                                ),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (v) {
-                          if (v != null) {
-                            setState(() {
-                              _selectedType = v;
-                              _hasChanges = true;
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _commentCtrl,
-                    style: tt.bodyLarge?.copyWith(
-                      color: cs.onSurface,
-                      fontSize: 15,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: l10n.colComment,
-                      floatingLabelBehavior: FloatingLabelBehavior.always,
-                      filled: false,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 13,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: BorderSide(
-                          color: cs.outline.withValues(alpha: 0.55),
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: BorderSide(color: cs.primary, width: 1.4),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            _CommentCard(
+              comment: _commentCtrl.text.isEmpty ? null : _commentCtrl.text,
+              onChanged: _saveComment,
             ),
             if (_hasRawWords) ...[
               const SizedBox(height: 18),
@@ -603,10 +521,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                         showDivider: i > 0,
                         onTap: isCurrent
                             ? null
-                            : () => setState(() {
-                                _selectedType = interp.typeName;
-                                _hasChanges = true;
-                              }),
+                            : () => _selectType(interp.typeName),
                       );
                     });
                   }(),
@@ -770,51 +685,6 @@ class _LayoutChoiceSection extends StatelessWidget {
   }
 }
 
-class _SavePillButton extends StatelessWidget {
-  final VoidCallback onPressed;
-  final String label;
-
-  const _SavePillButton({required this.onPressed, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Semantics(
-      button: true,
-      label: label,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(24),
-        onTap: onPressed,
-        child: Ink(
-          height: 42,
-          width: 78,
-          decoration: BoxDecoration(
-            color: cs.primary,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: cs.shadow.withValues(alpha: 0.12),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: cs.onPrimary,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _OutlinedCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -849,53 +719,6 @@ class _OutlinedCard extends StatelessWidget {
         ],
       ),
       child: child,
-    );
-  }
-}
-
-class _OutlineField extends StatelessWidget {
-  final String label;
-  final Widget child;
-
-  const _OutlineField({required this.label, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: label,
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        filled: false,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.55)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: BorderSide(color: cs.primary, width: 1.4),
-        ),
-        isDense: true,
-        contentPadding: const EdgeInsets.fromLTRB(14, 3, 12, 3),
-      ),
-      child: SizedBox(
-        height: 38,
-        child: Row(
-          children: [
-            Expanded(
-              child: DefaultTextStyle.merge(
-                style: TextStyle(
-                  color: cs.onSurface,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
-                child: child,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -1001,13 +824,8 @@ class _InterpretationRow extends StatelessWidget {
 class _TypeNameText extends StatelessWidget {
   final String type;
   final bool isSelected;
-  final bool compact;
 
-  const _TypeNameText({
-    required this.type,
-    required this.isSelected,
-    this.compact = false,
-  });
+  const _TypeNameText({required this.type, required this.isSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -1017,7 +835,7 @@ class _TypeNameText extends StatelessWidget {
     final main = match?.group(1) ?? description;
     final suffix = match?.group(2);
     final color = isSelected ? cs.primary : cs.onSurface;
-    final size = compact ? 15.0 : 14.0;
+    const size = 14.0;
 
     return Text.rich(
       TextSpan(
@@ -1072,3 +890,101 @@ class _Interpretation {
   final String value;
   const _Interpretation(this.typeName, this.value);
 }
+
+class _CommentCard extends StatelessWidget {
+  final String? comment;
+  final ValueChanged<String?> onChanged;
+
+  const _CommentCard({required this.comment, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final hasComment = comment != null && comment!.isNotEmpty;
+    return _OutlinedCard(
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: () => showDialog<void>(
+          context: context,
+          builder: (ctx) {
+            final ctrl = TextEditingController(text: comment ?? '');
+            return _CommentDialog(
+              ctrl: ctrl,
+              onSaved: onChanged,
+            );
+          },
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  hasComment ? comment! : context.l10n.commentHint,
+                  style: tt.bodyLarge?.copyWith(
+                    color: hasComment ? cs.onSurface : cs.onSurfaceVariant,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.edit_outlined, size: 18, color: cs.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CommentDialog extends StatefulWidget {
+  final TextEditingController ctrl;
+  final ValueChanged<String?> onSaved;
+
+  const _CommentDialog({required this.ctrl, required this.onSaved});
+
+  @override
+  State<_CommentDialog> createState() => _CommentDialogState();
+}
+
+class _CommentDialogState extends State<_CommentDialog> {
+  @override
+  void dispose() {
+    widget.ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      title: Text(l10n.colComment),
+      content: TextField(
+        controller: widget.ctrl,
+        autofocus: true,
+        maxLines: null,
+        decoration: InputDecoration(
+          hintText: l10n.commentHint,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        TextButton(
+          onPressed: () {
+            final text = widget.ctrl.text.trim();
+            widget.onSaved(text.isEmpty ? null : text);
+            Navigator.pop(context);
+          },
+          child: Text(l10n.save),
+        ),
+      ],
+    );
+  }
+}
+

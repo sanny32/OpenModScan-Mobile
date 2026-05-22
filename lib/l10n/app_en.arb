@@ -109,6 +109,9 @@
   "colComment": "Comment",
   "@colComment": {},
 
+  "commentHint": "Add a comment",
+  "@commentHint": {},
+
   "btnRead": "Read",
   "@btnRead": {},
 

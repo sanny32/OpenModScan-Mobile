@@ -64,6 +64,16 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
   }
 
+  Future<void> _editNotes() => showDialog<void>(
+    context: context,
+    builder: (_) => _NotesDialog(
+      initial: _device.notes,
+      onSaved: (text) => widget.controller.updateDevice(
+        _device.copyWith(notes: text),
+      ),
+    ),
+  );
+
   @override
   void dispose() {
     widget.controller.removeListener(_onControllerChanged);
@@ -124,36 +134,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
     );
   }
 
-  void _editNotes() {
-    final ctrl = TextEditingController(text: _device.notes);
-    final l10n = context.l10n;
-    showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.labelNotes),
-        content: TextField(
-          controller: ctrl,
-          maxLines: 5,
-          autofocus: true,
-          decoration: InputDecoration(hintText: l10n.notesHint),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, ctrl.text),
-            child: Text(l10n.save),
-          ),
-        ],
-      ),
-    ).then((value) {
-      if (value != null) {
-        widget.controller.updateDevice(_device.copyWith(notes: value));
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -319,41 +299,40 @@ class _DeviceScreenState extends State<DeviceScreen> {
           ),
           const SizedBox(height: 12),
           Card(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.labelNotes,
-                          style: tt.labelMedium!.copyWith(
-                            color: cs.onSurfaceVariant,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: _editNotes,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.labelNotes,
+                            style: tt.labelMedium!.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _device.notes.isEmpty
-                              ? l10n.notesHint
-                              : _device.notes,
-                          style: tt.bodyMedium!.copyWith(
-                            color: _device.notes.isEmpty
-                                ? cs.onSurfaceVariant
-                                : cs.onSurface,
+                          const SizedBox(height: 2),
+                          Text(
+                            _device.notes.isNotEmpty
+                                ? _device.notes
+                                : l10n.notesHint,
+                            style: tt.bodyMedium!.copyWith(
+                              color: _device.notes.isNotEmpty
+                                  ? cs.onSurface
+                                  : cs.onSurfaceVariant,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined),
-                    color: cs.onSurfaceVariant,
-                    onPressed: _editNotes,
-                  ),
-                ],
+                    Icon(Icons.edit_outlined, size: 18, color: cs.onSurfaceVariant),
+                  ],
+                ),
               ),
             ),
           ),
@@ -502,6 +481,62 @@ class _AddRegisterListTile extends StatelessWidget {
         ),
         onTap: onTap,
       ),
+    );
+  }
+}
+
+class _NotesDialog extends StatefulWidget {
+  final String initial;
+  final ValueChanged<String> onSaved;
+
+  const _NotesDialog({required this.initial, required this.onSaved});
+
+  @override
+  State<_NotesDialog> createState() => _NotesDialogState();
+}
+
+class _NotesDialogState extends State<_NotesDialog> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.initial);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      title: Text(l10n.labelNotes),
+      content: TextField(
+        controller: _ctrl,
+        autofocus: true,
+        maxLines: null,
+        decoration: InputDecoration(
+          hintText: l10n.notesHint,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        TextButton(
+          onPressed: () {
+            widget.onSaved(_ctrl.text.trim());
+            Navigator.pop(context);
+          },
+          child: Text(l10n.save),
+        ),
+      ],
     );
   }
 }
