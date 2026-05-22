@@ -388,9 +388,22 @@ class _RegistersScreenState extends State<RegistersScreen>
     final l10n = context.l10n;
     final active = _lists[_activeList];
 
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 70,
+    return ValueListenableBuilder<bool>(
+      valueListenable: AppNavigationService.instance.canGoBack,
+      builder: (context, canGoBack, _) => PopScope(
+        canPop: !canGoBack,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) AppNavigationService.instance.navigateBack(context);
+        },
+        child: Scaffold(
+        appBar: AppBar(
+          toolbarHeight: 70,
+          leading: canGoBack
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => AppNavigationService.instance.navigateBack(context),
+                )
+              : null,
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -515,6 +528,8 @@ class _RegistersScreenState extends State<RegistersScreen>
             ),
           ),
         ],
+      ),
+      ),
       ),
     );
   }

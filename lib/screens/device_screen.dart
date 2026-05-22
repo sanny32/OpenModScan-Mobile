@@ -255,11 +255,13 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 child: _RegisterListTile(
                   list: list,
                   onTap: () {
+                    final device = _device;
                     AppNavigationService.instance.goToRegisters(
-                      _device.name,
+                      device.name,
                       listId: list.id,
+                      backRoute: (_) => DeviceScreen(device: device),
                     );
-                    Navigator.pop(context, _device);
+                    Navigator.pop(context, device);
                   },
                 ),
               );

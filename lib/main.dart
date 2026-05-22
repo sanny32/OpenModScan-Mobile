@@ -80,7 +80,7 @@ class _AppShellState extends State<AppShell> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
         onTap: (i) {
-          AppNavigationService.instance.tabIndex.value = i;
+          AppNavigationService.instance.selectTab(i);
         },
         items: [
           BottomNavigationBarItem(
