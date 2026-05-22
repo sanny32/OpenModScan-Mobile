@@ -129,12 +129,27 @@ class _RegistersScreenState extends State<RegistersScreen>
     final name = AppNavigationService.instance.pendingDevice.value;
     if (name == null || !mounted) return;
     AppNavigationService.instance.pendingDevice.value = null;
-    if (name == _deviceName) return;
+
+    final listId = AppNavigationService.instance.pendingListId.value;
+    AppNavigationService.instance.pendingListId.value = null;
+
+    if (name == _deviceName) {
+      if (listId != null) {
+        final idx = _lists.indexWhere((l) => l.data.id == listId);
+        if (idx >= 0) setState(() => _activeList = idx);
+      }
+      return;
+    }
     for (final l in _lists) { l.dispose(); }
     setState(() {
       _deviceName = name;
-      _activeList = 0;
       _lists = _buildListsFromDevice();
+      if (listId != null) {
+        final idx = _lists.indexWhere((l) => l.data.id == listId);
+        _activeList = idx >= 0 ? idx : 0;
+      } else {
+        _activeList = 0;
+      }
     });
   }
 

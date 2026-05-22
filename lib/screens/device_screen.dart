@@ -4,6 +4,7 @@ import '../models/device_info.dart';
 
 import '../models/register_list.dart';
 import '../services/connection_manager.dart';
+import '../services/device_repository.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection_status_chip.dart';
 import '../services/app_navigation.dart';
@@ -70,6 +71,51 @@ class _DeviceScreenState extends State<DeviceScreen> {
     ).then((updated) {
       if (updated != null) setState(() => _device = updated);
     });
+  }
+
+  Future<void> _saveDevice() async {
+    final all = List.of(DeviceRepository.instance.devices.value);
+    final idx = all.indexWhere((d) => d.name == _device.name);
+    if (idx >= 0) await DeviceRepository.instance.save(all);
+  }
+
+  Future<void> _addRegisterList() async {
+    final defaultName = 'List ${_device.registerLists.length + 1}';
+    final ctrl = TextEditingController(text: defaultName);
+
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.l10n.menuAddRegs),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          decoration: InputDecoration(hintText: context.l10n.dialogListNameHint),
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(context.l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: Text(context.l10n.save),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+    if (name != null && name.isNotEmpty) {
+      setState(() => _device.registerLists.add(RegisterList(name: name)));
+      _saveDevice();
+    }
+  }
+
+  void _deleteRegisterList(int index) {
+    setState(() => _device.registerLists.removeAt(index));
+    _saveDevice();
   }
 
   void _editNotes() {
@@ -188,31 +234,37 @@ class _DeviceScreenState extends State<DeviceScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(l10n.sectionRegisterLists, style: tt.titleMedium),
-              ],
-            ),
+            Text(l10n.sectionRegisterLists, style: tt.titleMedium),
             const SizedBox(height: 8),
-            if (_device.registerLists.isEmpty)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 20),
-                  child: Center(
-                    child: Text(
-                      l10n.noRegisterLists,
-                      style: tt.bodyMedium!
-                          .copyWith(color: cs.onSurfaceVariant),
-                    ),
+            ...List.generate(_device.registerLists.length, (i) {
+              final list = _device.registerLists[i];
+              return Dismissible(
+                key: ValueKey(list.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  margin: const EdgeInsets.only(bottom: 6),
+                  decoration: BoxDecoration(
+                    color: cs.error,
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: Icon(Icons.delete_outline, color: cs.onError),
                 ),
-              )
-            else
-              ..._device.registerLists.map(
-                (list) => _RegisterListTile(list: list),
-              ),
+                onDismissed: (_) => _deleteRegisterList(i),
+                child: _RegisterListTile(
+                  list: list,
+                  onTap: () {
+                    AppNavigationService.instance.goToRegisters(
+                      _device.name,
+                      listId: list.id,
+                    );
+                    Navigator.pop(context, _device);
+                  },
+                ),
+              );
+            }),
+            _AddRegisterListTile(onTap: _addRegisterList),
             const SizedBox(height: 12),
             Card(
               child: ListTile(
@@ -401,9 +453,32 @@ class _ActionCard extends StatelessWidget {
   }
 }
 
+class _AddRegisterListTile extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AddRegisterListTile({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      child: ListTile(
+        leading: Icon(Icons.add, color: cs.primary),
+        title: Text(
+          context.l10n.menuAddRegs,
+          style: tt.titleSmall!.copyWith(color: cs.primary),
+        ),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
 class _RegisterListTile extends StatelessWidget {
   final RegisterList list;
-  const _RegisterListTile({required this.list});
+  final VoidCallback? onTap;
+  const _RegisterListTile({required this.list, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -422,6 +497,7 @@ class _RegisterListTile extends StatelessWidget {
           style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
         ),
         trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+        onTap: onTap,
       ),
     );
   }
