@@ -171,7 +171,12 @@ void main() {
       protocol: ProtocolType.modbusTcp,
       unitId: 1,
       registerLists: [
-        RegisterList(id: 'auto-list', name: 'Auto List', count: 1),
+        RegisterList(
+          id: 'auto-list',
+          name: 'Auto List',
+          count: 1,
+          refreshIntervalMs: 100,
+        ),
       ],
     );
     await DeviceRepository.instance.replaceAll([device]);
@@ -201,7 +206,7 @@ void main() {
 
     expect(connections.holdingReadCount, 1);
 
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.pump();
 
     expect(connections.holdingReadCount, greaterThan(1));

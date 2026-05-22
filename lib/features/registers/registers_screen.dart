@@ -392,6 +392,9 @@ class _RegistersScreenState extends State<RegistersScreen>
                   autoRefresh: active.autoRefresh,
                   onAutoRefreshChanged: (v) =>
                       _updateActiveList(active..autoRefresh = v),
+                  autoRefreshIntervalMs: active.refreshIntervalMs,
+                  refreshIntervalCtrl: active.refreshIntervalCtrl,
+                  onRefreshIntervalCommitted: active.commitRefreshInterval,
                   startAddrCtrl: active.startAddrCtrl,
                   countCtrl: active.countCtrl,
                   registerList: active.data,
@@ -443,6 +446,9 @@ class _RegistersTab extends StatefulWidget {
   final ValueChanged<int> onAddrModeChanged;
   final bool autoRefresh;
   final ValueChanged<bool> onAutoRefreshChanged;
+  final int autoRefreshIntervalMs;
+  final TextEditingController refreshIntervalCtrl;
+  final VoidCallback onRefreshIntervalCommitted;
   final TextEditingController startAddrCtrl;
   final TextEditingController countCtrl;
   final RegisterList registerList;
@@ -467,6 +473,9 @@ class _RegistersTab extends StatefulWidget {
     required this.onAddrModeChanged,
     required this.autoRefresh,
     required this.onAutoRefreshChanged,
+    required this.autoRefreshIntervalMs,
+    required this.refreshIntervalCtrl,
+    required this.onRefreshIntervalCommitted,
     required this.startAddrCtrl,
     required this.countCtrl,
     required this.registerList,
@@ -483,8 +492,6 @@ class _RegistersTab extends StatefulWidget {
 }
 
 class _RegistersTabState extends State<_RegistersTab> {
-  static const _autoRefreshPeriod = Duration(seconds: 1);
-
   var _reading = false;
   var _manualReadInProgress = false;
   String? _lastUpdateTime;
@@ -515,6 +522,7 @@ class _RegistersTabState extends State<_RegistersTab> {
       widget.countCtrl.addListener(_onCtrlChanged);
     }
     if (old.autoRefresh != widget.autoRefresh ||
+        old.autoRefreshIntervalMs != widget.autoRefreshIntervalMs ||
         old.canRead != widget.canRead ||
         old.regType != widget.regType) {
       _syncAutoRefresh(
@@ -537,9 +545,12 @@ class _RegistersTabState extends State<_RegistersTab> {
     _autoRefreshTimer?.cancel();
     if (!widget.autoRefresh) return;
 
-    _autoRefreshTimer = Timer.periodic(_autoRefreshPeriod, (_) {
-      _read(showErrors: false, showProgress: false);
-    });
+    _autoRefreshTimer = Timer.periodic(
+      Duration(milliseconds: widget.autoRefreshIntervalMs),
+      (_) {
+        _read(showErrors: false, showProgress: false);
+      },
+    );
     if (readImmediately) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && widget.autoRefresh) {
@@ -698,9 +709,9 @@ class _RegistersTabState extends State<_RegistersTab> {
                 l10n.labelStart,
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               SizedBox(
-                width: 72,
+                width: 58,
                 child: TextField(
                   controller: widget.startAddrCtrl,
                   keyboardType: TextInputType.number,
@@ -716,14 +727,14 @@ class _RegistersTabState extends State<_RegistersTab> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Text(
                 l10n.labelCount,
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               SizedBox(
-                width: 44,
+                width: 42,
                 child: TextField(
                   controller: widget.countCtrl,
                   keyboardType: TextInputType.number,
@@ -743,18 +754,61 @@ class _RegistersTabState extends State<_RegistersTab> {
                 ),
               ),
               const Spacer(),
-              Text(
-                l10n.labelAutoRefresh,
-                style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
-              ),
-              Transform.scale(
-                scale: 0.8,
-                child: Switch(
-                  value: widget.autoRefresh,
-                  onChanged: widget.onAutoRefreshChanged,
+              Tooltip(
+                message: l10n.labelAutoRefresh,
+                child: Icon(
+                  Icons.update_rounded,
+                  size: 18,
+                  color: cs.onSurfaceVariant,
                 ),
               ),
-              Text('1.0 s', style: tt.bodyMedium),
+              const SizedBox(width: 4),
+              SizedBox(
+                width: 42,
+                height: 32,
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: Switch(
+                    value: widget.autoRefresh,
+                    onChanged: widget.onAutoRefreshChanged,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 2),
+              Focus(
+                onFocusChange: (hasFocus) {
+                  if (!hasFocus) {
+                    widget.onRefreshIntervalCommitted();
+                  }
+                },
+                child: SizedBox(
+                  width: 58,
+                  child: TextField(
+                    controller: widget.refreshIntervalCtrl,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.done,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      _MaxCountFormatter(max: kMaxRegisterRefreshIntervalMs),
+                    ],
+                    style: tt.bodyMedium,
+                    textAlign: TextAlign.center,
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 8,
+                      ),
+                    ),
+                    onEditingComplete: () {
+                      widget.onRefreshIntervalCommitted();
+                      FocusScope.of(context).unfocus();
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text('ms', style: tt.bodyMedium),
             ],
           ),
         ),

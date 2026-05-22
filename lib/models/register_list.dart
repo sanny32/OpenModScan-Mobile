@@ -33,6 +33,10 @@ class RegisterConfig {
   );
 }
 
+const kMinRegisterRefreshIntervalMs = 100;
+const kMaxRegisterRefreshIntervalMs = 60000;
+const kDefaultRegisterRefreshIntervalMs = 1000;
+
 class RegisterList {
   String id;
   String name;
@@ -40,6 +44,7 @@ class RegisterList {
   String coilType;
   int addrMode;
   bool autoRefresh;
+  int refreshIntervalMs;
   bool coilAutoRefresh;
   int startAddress;
   int count;
@@ -54,6 +59,7 @@ class RegisterList {
     this.coilType = '0xxxx',
     this.addrMode = 0,
     this.autoRefresh = true,
+    int refreshIntervalMs = kDefaultRegisterRefreshIntervalMs,
     this.coilAutoRefresh = true,
     this.startAddress = 1,
     this.count = 20,
@@ -61,6 +67,7 @@ class RegisterList {
     this.coilCount = 20,
     List<RegisterConfig>? entries,
   }) : id = id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+       refreshIntervalMs = _clampRegisterRefreshIntervalMs(refreshIntervalMs),
        entries = entries ?? [];
 
   RegisterList copyWith({
@@ -70,6 +77,7 @@ class RegisterList {
     String? coilType,
     int? addrMode,
     bool? autoRefresh,
+    int? refreshIntervalMs,
     bool? coilAutoRefresh,
     int? startAddress,
     int? count,
@@ -83,6 +91,7 @@ class RegisterList {
     coilType: coilType ?? this.coilType,
     addrMode: addrMode ?? this.addrMode,
     autoRefresh: autoRefresh ?? this.autoRefresh,
+    refreshIntervalMs: refreshIntervalMs ?? this.refreshIntervalMs,
     coilAutoRefresh: coilAutoRefresh ?? this.coilAutoRefresh,
     startAddress: startAddress ?? this.startAddress,
     count: count ?? this.count,
@@ -98,6 +107,7 @@ class RegisterList {
     'coilType': coilType,
     'addrMode': addrMode,
     'autoRefresh': autoRefresh,
+    'refreshIntervalMs': refreshIntervalMs,
     'coilAutoRefresh': coilAutoRefresh,
     'startAddress': startAddress,
     'count': count,
@@ -113,6 +123,8 @@ class RegisterList {
     coilType: json['coilType'] as String? ?? '0xxxx',
     addrMode: json['addrMode'] as int? ?? 0,
     autoRefresh: json['autoRefresh'] as bool? ?? true,
+    refreshIntervalMs:
+        json['refreshIntervalMs'] as int? ?? kDefaultRegisterRefreshIntervalMs,
     coilAutoRefresh: json['coilAutoRefresh'] as bool? ?? true,
     startAddress: json['startAddress'] as int? ?? 1,
     count: json['count'] as int? ?? 20,
@@ -122,4 +134,14 @@ class RegisterList {
         .map((e) => RegisterConfig.fromJson(e as Map<String, dynamic>))
         .toList(),
   );
+}
+
+int _clampRegisterRefreshIntervalMs(int value) {
+  if (value < kMinRegisterRefreshIntervalMs) {
+    return kMinRegisterRefreshIntervalMs;
+  }
+  if (value > kMaxRegisterRefreshIntervalMs) {
+    return kMaxRegisterRefreshIntervalMs;
+  }
+  return value;
 }

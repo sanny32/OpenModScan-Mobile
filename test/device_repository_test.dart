@@ -22,6 +22,7 @@ void main() {
         RegisterList(
           id: 'list-a',
           name: 'Holding',
+          refreshIntervalMs: 250,
           entries: [RegisterConfig(address: 40001, typeName: 'Float32')],
         ),
       ],
@@ -32,6 +33,7 @@ void main() {
 
     expect(loaded.single.id, 'device-a');
     expect(loaded.single.registerLists.single.id, 'list-a');
+    expect(loaded.single.registerLists.single.refreshIntervalMs, 250);
     expect(
       loaded.single.registerLists.single.entries.single.typeName,
       'Float32',
