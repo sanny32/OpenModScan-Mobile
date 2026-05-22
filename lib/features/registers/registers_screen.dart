@@ -23,8 +23,6 @@ part 'registers_list_config.dart';
 
 enum _MenuAction {
   selectDevice,
-  addRegs,
-  selectRegsList,
   removeRegs,
   setAllTypes,
 }
@@ -173,10 +171,6 @@ class _RegistersScreenState extends State<RegistersScreen>
     switch (action) {
       case _MenuAction.selectDevice:
         _showSelectDeviceDialog();
-      case _MenuAction.addRegs:
-        _addRegs();
-      case _MenuAction.selectRegsList:
-        _showSelectListDialog();
       case _MenuAction.removeRegs:
         _removeActiveRegs();
       case _MenuAction.setAllTypes:
@@ -184,7 +178,7 @@ class _RegistersScreenState extends State<RegistersScreen>
     }
   }
 
-  Future<void> _addRegs() async {
+  Future<void> _addList() async {
     final result = await showRegisterListDialog(
       context,
       defaultName: 'List ${_lists.length + 1}',
@@ -238,38 +232,6 @@ class _RegistersScreenState extends State<RegistersScreen>
 
   Future<void> _onEntryChanged(int address, String typeName, String? comment) =>
       widget.controller.updateEntry(address, typeName, comment);
-
-  Future<void> _showSelectListDialog() async {
-    final l10n = context.l10n;
-    final cs = Theme.of(context).colorScheme;
-
-    final selected = await showDialog<int>(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: Text(l10n.menuSelectRegsList),
-        children: List.generate(
-          _lists.length,
-          (i) => SimpleDialogOption(
-            onPressed: () => Navigator.pop(ctx, i),
-            child: Row(
-              children: [
-                Icon(Icons.list, size: 20, color: cs.onSurfaceVariant),
-                const SizedBox(width: 12),
-                Expanded(child: Text(_lists[i].name)),
-                if (i == _activeList)
-                  Icon(Icons.check, size: 18, color: cs.primary),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
-    if (selected != null) {
-      setState(() => _activeList = selected);
-      widget.controller.selectList(_lists[selected].data.id);
-    }
-  }
 
   Future<void> _showSetAllTypesDialog() async {
     final l10n = context.l10n;
@@ -363,28 +325,6 @@ class _RegistersScreenState extends State<RegistersScreen>
                   ],
                 ),
               ),
-              const PopupMenuDivider(),
-              PopupMenuItem(
-                value: _MenuAction.addRegs,
-                child: Row(
-                  children: [
-                    Icon(Icons.add, size: 18, color: cs.onSurfaceVariant),
-                    const SizedBox(width: 10),
-                    Text(l10n.menuAddRegs),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                enabled: _lists.length > 1,
-                value: _MenuAction.selectRegsList,
-                child: Row(
-                  children: [
-                    Icon(Icons.list, size: 18, color: cs.onSurfaceVariant),
-                    const SizedBox(width: 10),
-                    Text(l10n.menuSelectRegsList),
-                  ],
-                ),
-              ),
               if (_tabController.index == 0) ...[
                 PopupMenuItem(
                   value: _MenuAction.setAllTypes,
@@ -446,7 +386,9 @@ class _RegistersScreenState extends State<RegistersScreen>
                     setState(() => _activeList = i);
                     widget.controller.selectList(_lists[i].data.id);
                   },
+                  onAddList: _addList,
                   autoRefresh: active.autoRefresh,
+
                   isActive: _screenActive && _activeTab == 0,
                   onAutoRefreshChanged: (v) =>
                       _updateActiveList(active..autoRefresh = v),
@@ -476,6 +418,7 @@ class _RegistersScreenState extends State<RegistersScreen>
                     setState(() => _activeList = i);
                     widget.controller.selectList(_lists[i].data.id);
                   },
+                  onAddList: _addList,
                   autoRefresh: active.coilAutoRefresh,
                   isActive: _screenActive && _activeTab == 1,
                   onAutoRefreshChanged: (v) =>
@@ -529,6 +472,7 @@ class _RegistersTab extends StatefulWidget {
   final List<String> listNames;
   final int activeListIndex;
   final ValueChanged<int> onListChanged;
+  final VoidCallback onAddList;
   final bool autoRefresh;
   final bool isActive;
   final ValueChanged<bool> onAutoRefreshChanged;
@@ -559,6 +503,7 @@ class _RegistersTab extends StatefulWidget {
     required this.listNames,
     required this.activeListIndex,
     required this.onListChanged,
+    required this.onAddList,
     required this.autoRefresh,
     required this.isActive,
     required this.onAutoRefreshChanged,
@@ -745,14 +690,13 @@ class _RegistersTabState extends State<_RegistersTab> {
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
           child: Row(
             children: [
-              if (widget.listNames.length > 1) ...[
-                _ListDropdown(
-                  names: widget.listNames,
-                  activeIndex: widget.activeListIndex,
-                  onChanged: widget.onListChanged,
-                ),
-                const SizedBox(width: 8),
-              ],
+              _ListDropdown(
+                names: widget.listNames,
+                activeIndex: widget.activeListIndex,
+                onChanged: widget.onListChanged,
+                onAdd: widget.onAddList,
+              ),
+              const SizedBox(width: 8),
               SegmentedButton<String>(
                 segments: const [
                   ButtonSegment(value: '4xxxx', label: Text('4xxxx')),
@@ -1011,6 +955,7 @@ class _CoilsTab extends StatefulWidget {
   final List<String> listNames;
   final int activeListIndex;
   final ValueChanged<int> onListChanged;
+  final VoidCallback onAddList;
   final bool autoRefresh;
   final bool isActive;
   final ValueChanged<bool> onAutoRefreshChanged;
@@ -1039,6 +984,7 @@ class _CoilsTab extends StatefulWidget {
     required this.listNames,
     required this.activeListIndex,
     required this.onListChanged,
+    required this.onAddList,
     required this.autoRefresh,
     required this.isActive,
     required this.onAutoRefreshChanged,
@@ -1209,14 +1155,13 @@ class _CoilsTabState extends State<_CoilsTab> {
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
           child: Row(
             children: [
-              if (widget.listNames.length > 1) ...[
-                _ListDropdown(
-                  names: widget.listNames,
-                  activeIndex: widget.activeListIndex,
-                  onChanged: widget.onListChanged,
-                ),
-                const SizedBox(width: 8),
-              ],
+              _ListDropdown(
+                names: widget.listNames,
+                activeIndex: widget.activeListIndex,
+                onChanged: widget.onListChanged,
+                onAdd: widget.onAddList,
+              ),
+              const SizedBox(width: 8),
               SegmentedButton<String>(
                 segments: const [
                   ButtonSegment(value: '0xxxx', label: Text('0xxxx')),
@@ -1568,10 +1513,12 @@ class _ListDropdown extends StatelessWidget {
   final List<String> names;
   final int activeIndex;
   final ValueChanged<int> onChanged;
+  final VoidCallback onAdd;
   const _ListDropdown({
     required this.names,
     required this.activeIndex,
     required this.onChanged,
+    required this.onAdd,
   });
 
   @override
@@ -1579,28 +1526,49 @@ class _ListDropdown extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     return IntrinsicWidth(
-      child: SizedBox(
-        height: 36,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Theme.of(context).dividerColor),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<int>(
-              value: activeIndex,
-              isDense: true,
-              dropdownColor: cs.surfaceContainerHighest,
-              style: tt.bodyMedium!.copyWith(color: cs.onSurface),
-              items: [
-                for (var i = 0; i < names.length; i++)
-                  DropdownMenuItem(value: i, child: Text(names[i])),
-              ],
-              onChanged: (v) {
-                if (v != null) onChanged(v);
-              },
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 100),
+        child: SizedBox(
+          height: 36,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Theme.of(context).dividerColor),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<int>(
+                value: activeIndex,
+                isDense: true,
+                dropdownColor: cs.surfaceContainerHighest,
+                style: tt.bodyMedium!.copyWith(color: cs.onSurface),
+                items: [
+                  for (var i = 0; i < names.length; i++)
+                    DropdownMenuItem(value: i, child: Text(names[i])),
+                  DropdownMenuItem(
+                    value: -1,
+                    child: Row(
+                      children: [
+                        Icon(Icons.add, size: 16, color: cs.primary),
+                        const SizedBox(width: 4),
+                        Text(
+                          'New List',
+                          style: tt.bodyMedium!.copyWith(color: cs.primary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                onChanged: (v) {
+                  if (v == null) return;
+                  if (v == -1) {
+                    onAdd();
+                  } else {
+                    onChanged(v);
+                  }
+                },
+              ),
             ),
           ),
         ),
@@ -1609,7 +1577,6 @@ class _ListDropdown extends StatelessWidget {
   }
 }
 
-// Register write dialog opened from a row tap.
 Future<void> _showWriteRegisterDialog(
   BuildContext context,
   RegisterEntry entry,
