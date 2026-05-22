@@ -11,15 +11,15 @@ import '../widgets/connection_status_chip.dart';
 
 enum _LogFilter { all, tx, rx, errors }
 
-class LogScreen extends StatefulWidget {
+class TrafficScreen extends StatefulWidget {
   final DeviceInfo? device;
-  const LogScreen({super.key, this.device});
+  const TrafficScreen({super.key, this.device});
 
   @override
-  State<LogScreen> createState() => _LogScreenState();
+  State<TrafficScreen> createState() => _TrafficScreenState();
 }
 
-class _LogScreenState extends State<LogScreen> {
+class _TrafficScreenState extends State<TrafficScreen> {
   _LogFilter _filter = _LogFilter.all;
   bool _autoScroll = true;
   bool _clearOnDisconnect = false;

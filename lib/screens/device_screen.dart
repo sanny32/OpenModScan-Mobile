@@ -8,7 +8,7 @@ import '../theme/app_theme.dart';
 import '../widgets/connection_status_chip.dart';
 import '../services/app_navigation.dart';
 import 'device_form_sheet.dart';
-import 'log_screen.dart';
+import 'traffic_screen.dart';
 
 int _regTypeOffset(String t) => switch (t) {
   '4xxxx' => 40000,
@@ -245,7 +245,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                     ? () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (_) => LogScreen(device: _device)),
+                              builder: (_) => TrafficScreen(device: _device)),
                         )
                     : null,
               ),
@@ -426,4 +426,3 @@ class _RegisterListTile extends StatelessWidget {
     );
   }
 }
-

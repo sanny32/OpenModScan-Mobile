@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'l10n/l10n.dart';
 import 'screens/devices_screen.dart';
-import 'screens/log_screen.dart';
 import 'screens/registers_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/traffic_screen.dart';
 import 'services/app_navigation.dart';
 import 'theme/app_theme.dart';
 
@@ -43,7 +43,7 @@ class _AppShellState extends State<AppShell> {
   static const _screens = [
     DevicesScreen(),
     RegistersScreen(),
-    LogScreen(),
+    TrafficScreen(),
     SettingsScreen(),
   ];
 
