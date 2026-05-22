@@ -163,7 +163,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
   void _save() {
     final comment = _commentCtrl.text.trim();
     widget.onSaved?.call(_selectedType, comment.isEmpty ? null : comment);
-    setState(() => _hasChanges = false);
+    Navigator.pop(context);
   }
 
   Future<void> _showWriteDialog() async {
@@ -477,11 +477,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const SizedBox(height: 16),
-                          Divider(
-                            height: 1,
-                            thickness: 1.2,
-                            color: cs.outline,
-                          ),
+                          Divider(height: 1, thickness: 1.2, color: cs.outline),
                           const SizedBox(height: 8),
                           Row(
                             children: [

@@ -376,8 +376,6 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.arrow_back));
-    await tester.pumpAndSettle();
 
     expect(find.text('UInt32'), findsOneWidget);
     expect(find.text('Pressure setpoint'), findsOneWidget);
