@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../l10n/l10n.dart';
 import '../models/device_info.dart';
 
@@ -21,6 +22,8 @@ int _regTypeOffset(String t) => switch (t) {
 String _regTypeLabel(String t) => switch (t) {
   '4xxxx' => 'Holding (4xxxx)',
   '3xxxx' => 'Input (3xxxx)',
+  '1xxxx' => 'Discrete Input (1xxxx)',
+  '0xxxx' => 'Coils (0xxxx)',
   _ => t,
 };
 
@@ -81,34 +84,91 @@ class _DeviceScreenState extends State<DeviceScreen> {
 
   Future<void> _addRegisterList() async {
     final defaultName = 'List ${_device.registerLists.length + 1}';
-    final ctrl = TextEditingController(text: defaultName);
+    final nameCtrl = TextEditingController(text: defaultName);
+    final startCtrl = TextEditingController(text: '1');
+    final countCtrl = TextEditingController(text: '20');
+    String regType = '4xxxx';
 
-    final name = await showDialog<String>(
+    final result = await showDialog<RegisterList>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.menuAddRegs),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          decoration: InputDecoration(hintText: context.l10n.dialogListNameHint),
-          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+          title: Text(context.l10n.menuAddRegs),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.labelName,
+                    hintText: context.l10n.dialogListNameHint,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  initialValue: regType,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.labelRegisterType,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: '4xxxx', child: Text('Holding (4xxxx)')),
+                    DropdownMenuItem(value: '3xxxx', child: Text('Input (3xxxx)')),
+                    DropdownMenuItem(value: '1xxxx', child: Text('Discrete Input (1xxxx)')),
+                    DropdownMenuItem(value: '0xxxx', child: Text('Coils (0xxxx)')),
+                  ],
+                  onChanged: (v) { if (v != null) regType = v; },
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: startCtrl,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        decoration: InputDecoration(labelText: context.l10n.labelStart),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: countCtrl,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        decoration: InputDecoration(labelText: context.l10n.labelCount),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(context.l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty) return;
+                Navigator.pop(ctx, RegisterList(
+                  name: name,
+                  regType: regType,
+                  startAddress: int.tryParse(startCtrl.text) ?? 1,
+                  count: int.tryParse(countCtrl.text) ?? 20,
+                ));
+              },
+              child: Text(context.l10n.save),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(context.l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-            child: Text(context.l10n.save),
-          ),
-        ],
-      ),
     );
 
     if (!mounted) return;
-    if (name != null && name.isNotEmpty) {
-      setState(() => _device.registerLists.add(RegisterList(name: name)));
+    if (result != null) {
+      setState(() => _device.registerLists.add(result));
       _saveDevice();
     }
   }

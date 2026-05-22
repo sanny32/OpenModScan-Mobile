@@ -278,6 +278,9 @@
   "dialogListNameHint": "List name",
   "@dialogListNameHint": {},
 
+  "labelRegisterType": "Register type",
+  "@labelRegisterType": {},
+
   "menuSetAllTypes": "Set type for all",
   "@menuSetAllTypes": {},
 

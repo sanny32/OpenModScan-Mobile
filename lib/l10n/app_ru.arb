@@ -87,6 +87,7 @@
   "menuSelectRegsList": "Сменить список",
   "menuRemoveRegs": "Удалить список",
   "dialogListNameHint": "Имя списка",
+  "labelRegisterType": "Тип регистров",
   "menuSetAllTypes": "Установить тип для всех",
   "settingsTitle": "Настройки",
   "settingsSectionConnection": "Соединение",
