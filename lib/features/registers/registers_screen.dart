@@ -440,6 +440,12 @@ class _RegistersScreenState extends State<RegistersScreen>
                   regType: active.regType,
                   onRegTypeChanged: (v) =>
                       _updateActiveList(active..regType = v),
+                  listNames: _lists.map((l) => l.name).toList(),
+                  activeListIndex: _activeList,
+                  onListChanged: (i) {
+                    setState(() => _activeList = i);
+                    widget.controller.selectList(_lists[i].data.id);
+                  },
                   autoRefresh: active.autoRefresh,
                   isActive: _screenActive && _activeTab == 0,
                   onAutoRefreshChanged: (v) =>
@@ -464,6 +470,12 @@ class _RegistersScreenState extends State<RegistersScreen>
                   coilType: active.coilType,
                   onCoilTypeChanged: (v) =>
                       _updateActiveList(active..coilType = v),
+                  listNames: _lists.map((l) => l.name).toList(),
+                  activeListIndex: _activeList,
+                  onListChanged: (i) {
+                    setState(() => _activeList = i);
+                    widget.controller.selectList(_lists[i].data.id);
+                  },
                   autoRefresh: active.coilAutoRefresh,
                   isActive: _screenActive && _activeTab == 1,
                   onAutoRefreshChanged: (v) =>
@@ -514,6 +526,9 @@ int _regTypeOffset(String regType) => switch (regType) {
 class _RegistersTab extends StatefulWidget {
   final String regType;
   final ValueChanged<String> onRegTypeChanged;
+  final List<String> listNames;
+  final int activeListIndex;
+  final ValueChanged<int> onListChanged;
   final bool autoRefresh;
   final bool isActive;
   final ValueChanged<bool> onAutoRefreshChanged;
@@ -541,6 +556,9 @@ class _RegistersTab extends StatefulWidget {
   const _RegistersTab({
     required this.regType,
     required this.onRegTypeChanged,
+    required this.listNames,
+    required this.activeListIndex,
+    required this.onListChanged,
     required this.autoRefresh,
     required this.isActive,
     required this.onAutoRefreshChanged,
@@ -727,12 +745,22 @@ class _RegistersTabState extends State<_RegistersTab> {
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
           child: Row(
             children: [
-              SizedBox(
-                width: 146,
-                child: _RegTypeDropdown(
-                  value: widget.regType,
-                  onChanged: widget.onRegTypeChanged,
+              if (widget.listNames.length > 1) ...[
+                _ListDropdown(
+                  names: widget.listNames,
+                  activeIndex: widget.activeListIndex,
+                  onChanged: widget.onListChanged,
                 ),
+                const SizedBox(width: 8),
+              ],
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: '4xxxx', label: Text('4xxxx')),
+                  ButtonSegment(value: '3xxxx', label: Text('3xxxx')),
+                ],
+                selected: {widget.regType},
+                onSelectionChanged: (s) => widget.onRegTypeChanged(s.first),
+                style: _segmentedButtonStyle(context),
               ),
               const Spacer(),
               ElevatedButton.icon(
@@ -759,6 +787,9 @@ class _RegistersTabState extends State<_RegistersTab> {
                   ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
               ),
             ],
@@ -888,27 +919,15 @@ class _RegistersTabState extends State<_RegistersTab> {
                 ),
               ),
               Expanded(
-                flex: 7,
-                child: Text(
-                  l10n.colValue,
-                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
-                ),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 62,
-                child: Text(
-                  l10n.colType,
-                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 5,
                 child: Text(
                   l10n.colComment,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                 ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                l10n.colValue,
+                style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(width: 24),
             ],
@@ -989,6 +1008,9 @@ String _bitRangeLabel(AppLocalizations l10n, int start, int end) {
 class _CoilsTab extends StatefulWidget {
   final String coilType;
   final ValueChanged<String> onCoilTypeChanged;
+  final List<String> listNames;
+  final int activeListIndex;
+  final ValueChanged<int> onListChanged;
   final bool autoRefresh;
   final bool isActive;
   final ValueChanged<bool> onAutoRefreshChanged;
@@ -1014,6 +1036,9 @@ class _CoilsTab extends StatefulWidget {
   const _CoilsTab({
     required this.coilType,
     required this.onCoilTypeChanged,
+    required this.listNames,
+    required this.activeListIndex,
+    required this.onListChanged,
     required this.autoRefresh,
     required this.isActive,
     required this.onAutoRefreshChanged,
@@ -1184,12 +1209,22 @@ class _CoilsTabState extends State<_CoilsTab> {
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
           child: Row(
             children: [
-              SizedBox(
-                width: 146,
-                child: _CoilTypeDropdown(
-                  value: widget.coilType,
-                  onChanged: widget.onCoilTypeChanged,
+              if (widget.listNames.length > 1) ...[
+                _ListDropdown(
+                  names: widget.listNames,
+                  activeIndex: widget.activeListIndex,
+                  onChanged: widget.onListChanged,
                 ),
+                const SizedBox(width: 8),
+              ],
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: '0xxxx', label: Text('0xxxx')),
+                  ButtonSegment(value: '1xxxx', label: Text('1xxxx')),
+                ],
+                selected: {widget.coilType},
+                onSelectionChanged: (s) => widget.onCoilTypeChanged(s.first),
+                style: _segmentedButtonStyle(context),
               ),
               const Spacer(),
               ElevatedButton.icon(
@@ -1216,6 +1251,9 @@ class _CoilsTabState extends State<_CoilsTab> {
                   ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
               ),
             ],
@@ -1344,18 +1382,16 @@ class _CoilsTabState extends State<_CoilsTab> {
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                 ),
               ),
-              SizedBox(
-                width: 124,
-                child: Text(
-                  l10n.colValue,
-                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
-                ),
-              ),
               Expanded(
                 child: Text(
                   l10n.colComment,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                 ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                l10n.colValue,
+                style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(width: 24),
             ],
@@ -1450,26 +1486,24 @@ class _StatusRow extends StatelessWidget {
                 style: tt.bodyLarge,
               ),
             ),
-            SizedBox(
-              width: 124,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Transform.scale(
-                  scale: 0.82,
-                  alignment: Alignment.centerLeft,
-                  child: Switch(
-                    value: entry.value,
-                    onChanged: canWrite ? onChanged : null,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ),
-            ),
             Expanded(
               child: Text(
                 entry.comment,
                 style: tt.bodyMedium,
                 overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Transform.scale(
+                scale: 0.82,
+                alignment: Alignment.centerRight,
+                child: Switch(
+                  value: entry.value,
+                  onChanged: canWrite ? onChanged : null,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
             ),
             Icon(Icons.chevron_right, color: cs.onSurfaceVariant, size: 20),
@@ -1497,79 +1531,77 @@ class _MaxCountFormatter extends TextInputFormatter {
   }
 }
 
-class _RegTypeDropdown extends StatelessWidget {
-  final String value;
-  final ValueChanged<String> onChanged;
-  const _RegTypeDropdown({required this.value, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    return SizedBox(
-      height: 36,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Theme.of(context).dividerColor),
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            value: value,
-            isDense: true,
-            isExpanded: true,
-            dropdownColor: cs.surfaceContainerHighest,
-            style: tt.bodyMedium!.copyWith(color: cs.onSurface),
-            items: const [
-              DropdownMenuItem(value: '4xxxx', child: Text('Holding (4xxxx)')),
-              DropdownMenuItem(value: '3xxxx', child: Text('Input (3xxxx)')),
-              DropdownMenuItem(value: '1xxxx', child: Text('Discrete (1xxxx)')),
-              DropdownMenuItem(value: '0xxxx', child: Text('Coils (0xxxx)')),
-            ],
-            onChanged: (v) {
-              if (v != null) onChanged(v);
-            },
-          ),
-        ),
+ButtonStyle _segmentedButtonStyle(BuildContext context) {
+  final cs = Theme.of(context).colorScheme;
+  final tt = Theme.of(context).textTheme;
+  return ButtonStyle(
+    textStyle: WidgetStatePropertyAll(tt.bodyMedium),
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    visualDensity: VisualDensity.compact,
+    padding: const WidgetStatePropertyAll(
+      EdgeInsets.symmetric(horizontal: 12),
+    ),
+    shape: const WidgetStatePropertyAll(
+      RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(6)),
       ),
-    );
-  }
+    ),
+    backgroundColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.selected)) return cs.primary;
+      return cs.surfaceContainerHighest;
+    }),
+    foregroundColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.selected)) return cs.onPrimary;
+      return cs.onSurface;
+    }),
+    iconColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.selected)) return cs.onPrimary;
+      return cs.onSurface;
+    }),
+    side: WidgetStatePropertyAll(
+      BorderSide(color: Theme.of(context).dividerColor),
+    ),
+  );
 }
 
-class _CoilTypeDropdown extends StatelessWidget {
-  final String value;
-  final ValueChanged<String> onChanged;
-  const _CoilTypeDropdown({required this.value, required this.onChanged});
+class _ListDropdown extends StatelessWidget {
+  final List<String> names;
+  final int activeIndex;
+  final ValueChanged<int> onChanged;
+  const _ListDropdown({
+    required this.names,
+    required this.activeIndex,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    return SizedBox(
-      height: 36,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Theme.of(context).dividerColor),
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            value: value,
-            isDense: true,
-            isExpanded: true,
-            dropdownColor: cs.surfaceContainerHighest,
-            style: tt.bodyMedium!.copyWith(color: cs.onSurface),
-            items: const [
-              DropdownMenuItem(value: '0xxxx', child: Text('Coils (0xxxx)')),
-              DropdownMenuItem(value: '1xxxx', child: Text('Discrete (1xxxx)')),
-            ],
-            onChanged: (v) {
-              if (v != null) onChanged(v);
-            },
+    return IntrinsicWidth(
+      child: SizedBox(
+        height: 36,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Theme.of(context).dividerColor),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<int>(
+              value: activeIndex,
+              isDense: true,
+              dropdownColor: cs.surfaceContainerHighest,
+              style: tt.bodyMedium!.copyWith(color: cs.onSurface),
+              items: [
+                for (var i = 0; i < names.length; i++)
+                  DropdownMenuItem(value: i, child: Text(names[i])),
+              ],
+              onChanged: (v) {
+                if (v != null) onChanged(v);
+              },
+            ),
           ),
         ),
       ),
@@ -1716,99 +1748,76 @@ class _RegisterRow extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
             SizedBox(
               width: 72,
-              child: Text('${entry.address}', style: tt.bodyLarge),
-            ),
-            Expanded(
-              flex: 7,
-              child: InkWell(
-                onTap: canWrite
-                    ? () => _showWriteRegisterDialog(context, entry)
-                    : null,
-                borderRadius: BorderRadius.circular(4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _SingleLineScaleDownText(
-                      entry.displayValue ?? entry.value,
-                      style: tt.bodyLarge!.copyWith(
-                        color: appColors.valueColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    ValueListenableBuilder<bool>(
-                      valueListenable:
-                          AppSettings.instance.showLastValuesNotifier,
-                      builder: (_, showLastValues, _) {
-                        if (!showLastValues || entry.previousValue == null) {
-                          return const SizedBox.shrink();
-                        }
-                        return _SingleLineScaleDownText(
-                          entry.previousValue!,
-                          style: tt.bodySmall!.copyWith(
-                            color: cs.onSurfaceVariant,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('${entry.address}', style: tt.bodyLarge),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: AppSettings.instance.showTypeBadgesNotifier,
+                    builder: (_, showBadges, _) => showBadges
+                        ? TypeBadge(type: entry.typeName)
+                        : Text(
+                            entry.typeName,
+                            style: tt.bodySmall!.copyWith(
+                              color: appColors.typeColor,
+                            ),
                           ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 8),
-            ValueListenableBuilder<bool>(
-              valueListenable: AppSettings.instance.showTypeBadgesNotifier,
-              builder: (_, showBadges, _) => SizedBox(
-                width: 62,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: showBadges
-                      ? TypeBadge(type: entry.typeName)
-                      : Text(
-                          entry.typeName,
-                          style: tt.bodyMedium!.copyWith(
-                            color: appColors.typeColor,
-                          ),
-                        ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
             Expanded(
-              flex: 5,
               child: Text(
                 entry.comment ?? '',
-                style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                style: tt.bodyMedium!.copyWith(color: cs.onSurface),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: canWrite
+                  ? () => _showWriteRegisterDialog(context, entry)
+                  : null,
+              borderRadius: BorderRadius.circular(4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    entry.displayValue ?? entry.value,
+                    style: tt.bodyLarge!.copyWith(
+                      color: appColors.valueColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  ValueListenableBuilder<bool>(
+                    valueListenable:
+                        AppSettings.instance.showLastValuesNotifier,
+                    builder: (_, showLastValues, _) {
+                      if (!showLastValues || entry.previousValue == null) {
+                        return const SizedBox.shrink();
+                      }
+                      return Text(
+                        entry.previousValue!,
+                        style: tt.bodySmall!.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 4),
             Icon(Icons.chevron_right, color: cs.onSurfaceVariant, size: 20),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _SingleLineScaleDownText extends StatelessWidget {
-  final String data;
-  final TextStyle? style;
-
-  const _SingleLineScaleDownText(this.data, {this.style});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Text(data, maxLines: 1, softWrap: false, style: style),
       ),
     );
   }

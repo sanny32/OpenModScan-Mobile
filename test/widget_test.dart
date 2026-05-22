@@ -141,7 +141,7 @@ void main() {
     await tester.tap(find.text('Input List'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Input (3xxxx)'), findsWidgets);
+    expect(find.text('3xxxx'), findsWidgets);
     expect(
       find.byWidgetPredicate(
         (widget) => widget is TextField && widget.controller?.text == '37',
@@ -412,6 +412,322 @@ void main() {
 
     expect(app.themeMode, ThemeMode.dark);
     expect(prefs.getString('themeMode'), 'dark');
+  });
+
+  testWidgets('Registers tab shows SegmentedButton with 4xxxx and 3xxxx', (
+    WidgetTester tester,
+  ) async {
+    final device = DeviceInfo(
+      id: 'seg-device',
+      name: 'Seg PLC',
+      host: '127.0.0.30',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [RegisterList(id: 'seg-list', name: 'List 1')],
+    );
+    await DeviceRepository.instance.replaceAll([device]);
+
+    final controller = RegistersController(
+      DeviceRepository.instance,
+      _PollingConnectionRuntime(),
+      const DemoRegisterRuntime(enabled: false),
+    );
+    final returnDeviceId = ValueNotifier<String?>(null);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegistersScreen(
+          controller: controller,
+          returnDeviceId: returnDeviceId,
+          onReturnToDevice: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('4xxxx'), findsOneWidget);
+    expect(find.text('3xxxx'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+    returnDeviceId.dispose();
+  });
+
+  testWidgets('Status tab shows SegmentedButton with 0xxxx and 1xxxx', (
+    WidgetTester tester,
+  ) async {
+    final device = DeviceInfo(
+      id: 'coil-seg-device',
+      name: 'Coil PLC',
+      host: '127.0.0.31',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [RegisterList(id: 'coil-list', name: 'List 1')],
+    );
+    await DeviceRepository.instance.replaceAll([device]);
+
+    final controller = RegistersController(
+      DeviceRepository.instance,
+      _PollingConnectionRuntime(),
+      const DemoRegisterRuntime(enabled: false),
+    );
+    final returnDeviceId = ValueNotifier<String?>(null);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegistersScreen(
+          controller: controller,
+          returnDeviceId: returnDeviceId,
+          onReturnToDevice: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text('Status'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('0xxxx'), findsOneWidget);
+    expect(find.text('1xxxx'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+    returnDeviceId.dispose();
+  });
+
+  testWidgets('List dropdown appears when multiple lists exist', (
+    WidgetTester tester,
+  ) async {
+    final device = DeviceInfo(
+      id: 'multi-list-device',
+      name: 'Multi PLC',
+      host: '127.0.0.32',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [
+        RegisterList(id: 'list-a', name: 'Alpha'),
+        RegisterList(id: 'list-b', name: 'Beta'),
+      ],
+    );
+    await DeviceRepository.instance.replaceAll([device]);
+
+    final controller = RegistersController(
+      DeviceRepository.instance,
+      _PollingConnectionRuntime(),
+      const DemoRegisterRuntime(enabled: false),
+    );
+    final returnDeviceId = ValueNotifier<String?>(null);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegistersScreen(
+          controller: controller,
+          returnDeviceId: returnDeviceId,
+          onReturnToDevice: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Alpha'), findsOneWidget);
+
+    await tester.tap(find.text('Alpha'));
+    await tester.pumpAndSettle();
+    expect(find.text('Beta'), findsWidgets);
+
+    await tester.tap(find.text('Beta').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Beta'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+    returnDeviceId.dispose();
+  });
+
+  testWidgets('List dropdown hidden when only one list exists', (
+    WidgetTester tester,
+  ) async {
+    final device = DeviceInfo(
+      id: 'single-list-device',
+      name: 'Single PLC',
+      host: '127.0.0.33',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [RegisterList(id: 'only-list', name: 'Only List')],
+    );
+    await DeviceRepository.instance.replaceAll([device]);
+
+    final controller = RegistersController(
+      DeviceRepository.instance,
+      _PollingConnectionRuntime(),
+      const DemoRegisterRuntime(enabled: false),
+    );
+    final returnDeviceId = ValueNotifier<String?>(null);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegistersScreen(
+          controller: controller,
+          returnDeviceId: returnDeviceId,
+          onReturnToDevice: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Only List'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+    returnDeviceId.dispose();
+  });
+
+  testWidgets('Register row shows address, type below address, comment, value', (
+    WidgetTester tester,
+  ) async {
+    final device = DeviceInfo(
+      id: 'row-layout-device',
+      name: 'Row PLC',
+      host: '127.0.0.34',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [
+        RegisterList(
+          id: 'row-list',
+          name: 'Row List',
+          startAddress: 1,
+          count: 1,
+          autoRefresh: false,
+          entries: [
+            RegisterConfig(
+              address: 40001,
+              typeName: 'UInt32',
+              comment: 'Speed setpoint',
+            ),
+          ],
+        ),
+      ],
+    );
+    await DeviceRepository.instance.replaceAll([device]);
+
+    final controller = RegistersController(
+      DeviceRepository.instance,
+      _PollingConnectionRuntime(),
+      const DemoRegisterRuntime(enabled: false),
+    );
+    final returnDeviceId = ValueNotifier<String?>(null);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegistersScreen(
+          controller: controller,
+          returnDeviceId: returnDeviceId,
+          onReturnToDevice: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('40001'), findsOneWidget);
+    expect(find.text('UInt32'), findsOneWidget);
+    expect(find.text('Speed setpoint'), findsOneWidget);
+
+    final addressOffset = tester.getTopLeft(find.text('40001'));
+    final typeOffset = tester.getTopLeft(find.text('UInt32'));
+    final commentOffset = tester.getTopLeft(find.text('Speed setpoint'));
+
+    expect(typeOffset.dy, greaterThan(addressOffset.dy));
+    expect(typeOffset.dx, closeTo(addressOffset.dx, 4));
+    expect(commentOffset.dx, greaterThanOrEqualTo(addressOffset.dx + 72));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+    returnDeviceId.dispose();
+  });
+
+  testWidgets('Status row shows comment left, switch right', (
+    WidgetTester tester,
+  ) async {
+    final device = DeviceInfo(
+      id: 'status-row-device',
+      name: 'Status Row PLC',
+      host: '127.0.0.35',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [
+        RegisterList(
+          id: 'status-row-list',
+          name: 'SR List',
+          coilStartAddress: 0,
+          coilCount: 1,
+          coilAutoRefresh: false,
+          statusEntries: [
+            StatusConfig(
+              statusType: '0xxxx',
+              address: 0,
+              comment: 'Pump enable',
+            ),
+          ],
+        ),
+      ],
+    );
+    await DeviceRepository.instance.replaceAll([device]);
+
+    final controller = RegistersController(
+      DeviceRepository.instance,
+      _PollingConnectionRuntime(),
+      const DemoRegisterRuntime(enabled: false),
+    );
+    final returnDeviceId = ValueNotifier<String?>(null);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegistersScreen(
+          controller: controller,
+          returnDeviceId: returnDeviceId,
+          onReturnToDevice: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text('Status'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pump enable'), findsOneWidget);
+    // Two Switches exist: autoRefresh toggle and the row value switch.
+    // The row switch renders after the autoRefresh switch in the tree.
+    expect(find.byType(Switch), findsNWidgets(2));
+
+    final commentOffset = tester.getCenter(find.text('Pump enable'));
+    final rowSwitchOffset = tester.getCenter(find.byType(Switch).last);
+    expect(rowSwitchOffset.dx, greaterThan(commentOffset.dx));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+    returnDeviceId.dispose();
   });
 
   testWidgets('Language setting updates app locale', (
