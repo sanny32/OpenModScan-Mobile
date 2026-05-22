@@ -1151,7 +1151,7 @@ class _RegTypeDropdown extends StatelessWidget {
               DropdownMenuItem(value: '3xxxx', child: Text('Input (3xxxx)')),
               DropdownMenuItem(
                 value: '1xxxx',
-                child: Text('Discrete Input (1xxxx)'),
+                child: Text('Discrete (1xxxx)'),
               ),
               DropdownMenuItem(value: '0xxxx', child: Text('Coils (0xxxx)')),
             ],
