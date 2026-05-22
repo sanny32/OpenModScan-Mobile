@@ -69,10 +69,22 @@ class _RegistersScreenState extends State<RegistersScreen>
     return [_ListConfig(RegisterList(name: 'List 1'))];
   }
 
-  String get _currentListSignature =>
-      '${widget.controller.selectedDeviceId}:'
-      '${widget.controller.lists.map((list) => list.id).join(',')}:'
-      '${widget.controller.activeList?.id}';
+  String get _currentListSignature {
+    final listsSignature = widget.controller.lists
+        .map((list) {
+          final entriesSignature = Object.hashAll(
+            list.entries.map(
+              (entry) =>
+                  Object.hash(entry.address, entry.typeName, entry.comment),
+            ),
+          );
+          return '${list.id}:$entriesSignature';
+        })
+        .join(',');
+    return '${widget.controller.selectedDeviceId}:'
+        '$listsSignature:'
+        '${widget.controller.activeList?.id}';
+  }
 
   @override
   void initState() {
@@ -825,21 +837,23 @@ class _RegistersTabState extends State<_RegistersTab> {
                 ),
               ),
               Expanded(
-                flex: 5,
+                flex: 7,
                 child: Text(
                   l10n.colValue,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                 ),
               ),
+              const SizedBox(width: 8),
               SizedBox(
-                width: 68,
+                width: 62,
                 child: Text(
                   l10n.colType,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                 ),
               ),
+              const SizedBox(width: 8),
               Expanded(
-                flex: 6,
+                flex: 5,
                 child: Text(
                   l10n.colComment,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
@@ -1519,7 +1533,7 @@ class _RegisterRow extends StatelessWidget {
               child: Text('${entry.address}', style: tt.bodyLarge),
             ),
             Expanded(
-              flex: 5,
+              flex: 7,
               child: InkWell(
                 onTap: canWrite
                     ? () => _showWriteRegisterDialog(context, entry)
@@ -1529,7 +1543,7 @@ class _RegisterRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
+                    _SingleLineScaleDownText(
                       entry.displayValue ?? entry.value,
                       style: tt.bodyLarge!.copyWith(
                         color: appColors.valueColor,
@@ -1543,7 +1557,7 @@ class _RegisterRow extends StatelessWidget {
                         if (!showLastValues || entry.previousValue == null) {
                           return const SizedBox.shrink();
                         }
-                        return Text(
+                        return _SingleLineScaleDownText(
                           entry.previousValue!,
                           style: tt.bodySmall!.copyWith(
                             color: cs.onSurfaceVariant,
@@ -1555,10 +1569,11 @@ class _RegisterRow extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(width: 8),
             ValueListenableBuilder<bool>(
               valueListenable: AppSettings.instance.showTypeBadgesNotifier,
               builder: (_, showBadges, _) => SizedBox(
-                width: 68,
+                width: 62,
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: showBadges
@@ -1572,8 +1587,9 @@ class _RegisterRow extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(width: 8),
             Expanded(
-              flex: 6,
+              flex: 5,
               child: Text(
                 entry.comment ?? '',
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
@@ -1583,6 +1599,25 @@ class _RegisterRow extends StatelessWidget {
             Icon(Icons.chevron_right, color: cs.onSurfaceVariant, size: 20),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SingleLineScaleDownText extends StatelessWidget {
+  final String data;
+  final TextStyle? style;
+
+  const _SingleLineScaleDownText(this.data, {this.style});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(data, maxLines: 1, softWrap: false, style: style),
       ),
     );
   }

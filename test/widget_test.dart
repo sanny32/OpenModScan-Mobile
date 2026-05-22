@@ -216,6 +216,82 @@ void main() {
     returnDeviceId.dispose();
   });
 
+  testWidgets('Register detail saves type and comment into the active list', (
+    WidgetTester tester,
+  ) async {
+    final device = DeviceInfo(
+      id: 'edit-device',
+      name: 'Edit PLC',
+      host: '127.0.0.22',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [
+        RegisterList(
+          id: 'edit-list',
+          name: 'Edit List',
+          count: 1,
+          autoRefresh: false,
+        ),
+      ],
+    );
+    await DeviceRepository.instance.replaceAll([device]);
+
+    final controller = RegistersController(
+      DeviceRepository.instance,
+      _PollingConnectionRuntime(),
+      const DemoRegisterRuntime(enabled: false),
+    );
+    final returnDeviceId = ValueNotifier<String?>(null);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegistersScreen(
+          controller: controller,
+          returnDeviceId: returnDeviceId,
+          onReturnToDevice: () {},
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('40001'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DropdownButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('UInt32 (32 bit)').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField && widget.decoration?.labelText == 'Comment',
+      ),
+      'Pressure setpoint',
+    );
+    await tester.pump();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+
+    expect(find.text('UInt32'), findsOneWidget);
+    expect(find.text('Pressure setpoint'), findsOneWidget);
+    final entry = DeviceRepository.instance
+        .findById(device.id)!
+        .registerLists
+        .single
+        .entries
+        .single;
+    expect(entry.typeName, 'UInt32');
+    expect(entry.comment, 'Pressure setpoint');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+    returnDeviceId.dispose();
+  });
+
   testWidgets('Theme setting updates app theme', (WidgetTester tester) async {
     await tester.pumpWidget(const OModScanApp());
 
