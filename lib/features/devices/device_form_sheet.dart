@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../l10n/l10n.dart';
-import '../models/device_info.dart';
+import '../../l10n/l10n.dart';
+import '../../models/device_info.dart';
 
 class DeviceFormSheet extends StatefulWidget {
   /// Null → add mode ("Connect to Device" / "Connect").
@@ -36,10 +36,10 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
     _hostCtrl = TextEditingController(text: d?.host ?? '');
     _portCtrl = TextEditingController(text: (d?.port ?? 502).toString());
     _unitCtrl = TextEditingController(text: (d?.unitId ?? 1).toString());
-    _timeoutCtrl =
-        TextEditingController(text: (d?.timeout ?? 1000).toString());
-    _reconnectCtrl =
-        TextEditingController(text: (d?.reconnectDelay ?? 3000).toString());
+    _timeoutCtrl = TextEditingController(text: (d?.timeout ?? 1000).toString());
+    _reconnectCtrl = TextEditingController(
+      text: (d?.reconnectDelay ?? 3000).toString(),
+    );
     _notesCtrl = TextEditingController(text: d?.notes ?? '');
   }
 
@@ -56,19 +56,22 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
   }
 
   void _submit() {
-    final base = widget.initial ?? DeviceInfo(
-      name: '',
-      host: '',
-      port: 502,
-      protocol: ProtocolType.modbusTcp,
-      unitId: 1,
-    );
+    final base =
+        widget.initial ??
+        DeviceInfo(
+          name: '',
+          host: '',
+          port: 502,
+          protocol: ProtocolType.modbusTcp,
+          unitId: 1,
+        );
     final updated = base.copyWith(
       name: _nameCtrl.text.trim().isEmpty ? base.name : _nameCtrl.text.trim(),
       host: _hostCtrl.text.trim().isEmpty ? base.host : _hostCtrl.text.trim(),
       port: int.tryParse(_portCtrl.text) ?? base.port,
-      protocol:
-          _connType == 0 ? ProtocolType.modbusTcp : ProtocolType.modbusRtuIp,
+      protocol: _connType == 0
+          ? ProtocolType.modbusTcp
+          : ProtocolType.modbusRtuIp,
       unitId: int.tryParse(_unitCtrl.text) ?? base.unitId,
       timeout: int.tryParse(_timeoutCtrl.text) ?? base.timeout,
       reconnectDelay: int.tryParse(_reconnectCtrl.text) ?? base.reconnectDelay,
@@ -90,8 +93,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
       builder: (_, scrollController) => Container(
         decoration: BoxDecoration(
           color: cs.surface,
-          borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         ),
         child: Column(
           children: [
@@ -105,8 +107,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
               ),
             ),
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
               child: Row(
                 children: [
                   TextButton(
@@ -121,10 +122,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                     ),
                   ),
                   if (!_isEdit)
-                    TextButton(
-                      onPressed: _submit,
-                      child: Text(l10n.save),
-                    )
+                    TextButton(onPressed: _submit, child: Text(l10n.save))
                   else
                     const SizedBox(width: 72),
                 ],
@@ -188,8 +186,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                           children: [
                             _label(context, l10n.labelPort),
                             const SizedBox(height: 6),
-                            _field(_portCtrl,
-                                type: TextInputType.number),
+                            _field(_portCtrl, type: TextInputType.number),
                           ],
                         ),
                       ),
@@ -246,10 +243,10 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                       textStyle: tt.titleMedium,
                       minimumSize: const Size(double.infinity, 52),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    child:
-                        Text(_isEdit ? l10n.save : l10n.connect),
+                    child: Text(_isEdit ? l10n.save : l10n.connect),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -264,34 +261,32 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
   Widget _label(BuildContext context, String t) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    return Text(t,
-        style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant));
+    return Text(t, style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant));
   }
 
-  Widget _field(TextEditingController c, {TextInputType? type}) =>
-      TextField(
-        controller: c,
-        keyboardType: type,
-        decoration: const InputDecoration(
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        ),
-      );
+  Widget _field(TextEditingController c, {TextInputType? type}) => TextField(
+    controller: c,
+    keyboardType: type,
+    decoration: const InputDecoration(
+      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+    ),
+  );
 
   Widget _fieldSuffix(
-          TextEditingController c, String suffix, BuildContext context) =>
-      TextField(
-        controller: c,
-        keyboardType: TextInputType.number,
-        decoration: InputDecoration(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          suffixText: suffix,
-          suffixStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
-              color:
-                  Theme.of(context).colorScheme.onSurfaceVariant),
-        ),
-      );
+    TextEditingController c,
+    String suffix,
+    BuildContext context,
+  ) => TextField(
+    controller: c,
+    keyboardType: TextInputType.number,
+    decoration: InputDecoration(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      suffixText: suffix,
+      suffixStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    ),
+  );
 }
 
 class _TypeCard extends StatelessWidget {
@@ -336,31 +331,30 @@ class _TypeCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color:
-                        selected ? cs.primary : cs.onSurfaceVariant,
+                    color: selected ? cs.primary : cs.onSurfaceVariant,
                     width: 2,
                   ),
-                  color:
-                      selected ? cs.primary : Colors.transparent,
+                  color: selected ? cs.primary : Colors.transparent,
                 ),
                 child: selected
-                    ? Icon(Icons.circle,
-                        size: 8, color: cs.onPrimary)
+                    ? Icon(Icons.circle, size: 8, color: cs.onPrimary)
                     : null,
               ),
             ),
             const SizedBox(height: 4),
             Icon(icon, size: 34, color: cs.primary),
             const SizedBox(height: 8),
-            Text(label,
-                style: tt.labelLarge!
-                    .copyWith(fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center),
+            Text(
+              label,
+              style: tt.labelLarge!.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 2),
-            Text(sub,
-                style: tt.labelSmall!
-                    .copyWith(color: cs.onSurfaceVariant),
-                textAlign: TextAlign.center),
+            Text(
+              sub,
+              style: tt.labelSmall!.copyWith(color: cs.onSurfaceVariant),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),

@@ -12,8 +12,9 @@ class ConnectionStatusChip extends StatelessWidget {
     final appColors = Theme.of(context).extension<AppColors>()!;
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
-    final color =
-        connected ? appColors.connectedColor : appColors.disconnectedColor;
+    final color = connected
+        ? appColors.connectedColor
+        : appColors.disconnectedColor;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

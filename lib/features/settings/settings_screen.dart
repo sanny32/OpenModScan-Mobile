@@ -1,19 +1,38 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../l10n/l10n.dart';
-import '../models/app_settings.dart';
+import '../../l10n/l10n.dart';
+import '../../models/app_settings.dart';
+import 'settings_controller.dart';
 import 'about_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final SettingsController controller;
+
+  const SettingsScreen({super.key, required this.controller});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final _s = AppSettings.instance;
+  AppSettings get _s => widget.controller.settings;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_rebuild);
+  }
+
+  void _rebuild() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_rebuild);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,8 +73,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       .map((value) => '$value')
                       .toList(),
                   selected: '${_s.readFailureAttempts}',
-                  onSelected: (value) =>
-                      setState(() => _s.readFailureAttempts = int.parse(value)),
+                  onSelected: (value) => widget.controller
+                      .setReadFailureAttempts(int.parse(value)),
                 ),
               ),
               _divider(),
@@ -83,7 +102,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: 'AddressBase',
                   options: AppSettings.addressBases,
                   selected: _s.addressBase,
-                  onSelected: (value) => setState(() => _s.addressBase = value),
+                  onSelected: widget.controller.setAddressBase,
                 ),
               ),
               _divider(),
@@ -95,8 +114,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: l10n.labelRegisterOrder,
                   options: AppSettings.registerOrders,
                   selected: _s.registerOrder,
-                  onSelected: (value) =>
-                      setState(() => _s.registerOrder = value),
+                  onSelected: widget.controller.setRegisterOrder,
                 ),
               ),
               _divider(),
@@ -108,7 +126,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: l10n.labelByteOrder,
                   options: AppSettings.byteOrders,
                   selected: _s.byteOrder,
-                  onSelected: (value) => setState(() => _s.byteOrder = value),
+                  onSelected: widget.controller.setByteOrder,
                 ),
               ),
               _divider(),
@@ -116,21 +134,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 icon: Icons.edit_outlined,
                 label: l10n.settingsConfirmBeforeWrite,
                 value: _s.confirmBeforeWrite,
-                onChanged: (v) => setState(() => _s.confirmBeforeWrite = v),
+                onChanged: widget.controller.setConfirmBeforeWrite,
               ),
               _divider(),
               _toggleTile(
                 icon: Icons.show_chart,
                 label: l10n.settingsShowLastValues,
                 value: _s.showLastValues,
-                onChanged: (v) => setState(() => _s.showLastValues = v),
+                onChanged: widget.controller.setShowLastValues,
               ),
               _divider(),
               _toggleTile(
                 icon: Icons.label_outline,
                 label: l10n.settingsShowTypeBadges,
                 value: _s.showTypeBadges,
-                onChanged: (v) => setState(() => _s.showTypeBadges = v),
+                onChanged: widget.controller.setShowTypeBadges,
               ),
             ],
           ),
@@ -141,14 +159,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 icon: Icons.save_outlined,
                 label: l10n.settingsSaveLogToFile,
                 value: _s.saveLogToFile,
-                onChanged: (v) => setState(() => _s.saveLogToFile = v),
+                onChanged: widget.controller.setSaveLogToFile,
               ),
               _divider(),
               _toggleTile(
                 icon: Icons.delete_outline,
                 label: l10n.settingsClearLogOnDisconnect,
                 value: _s.clearLogOnDisconnect,
-                onChanged: (v) => setState(() => _s.clearLogOnDisconnect = v),
+                onChanged: widget.controller.setClearLogOnDisconnect,
               ),
               _divider(),
               _navTile(
@@ -171,8 +189,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   selected: _s.theme,
                   optionLabel: (value) => _themeOptionLabel(l10n, value),
                   onSelected: (value) async {
-                    await _s.setTheme(value);
-                    if (mounted) setState(() {});
+                    await widget.controller.setTheme(value);
                   },
                 ),
               ),
@@ -187,8 +204,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   selected: _s.language,
                   optionLabel: (value) => _languageOptionLabel(l10n, value),
                   onSelected: (value) async {
-                    await _s.setLanguage(value);
-                    if (mounted) setState(() {});
+                    await widget.controller.setLanguage(value);
                   },
                 ),
               ),
@@ -378,8 +394,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await AppSettings.instance.resetToDefaults();
-              if (mounted) setState(() {});
+              await widget.controller.resetToDefaults();
             },
             child: Text(l10n.settingsResetDefaults),
           ),

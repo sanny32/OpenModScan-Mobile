@@ -13,7 +13,7 @@ const kRegisterTypes = [
 
 class RegisterEntry {
   final int address;
-  final String value;        // raw uint16 as decimal string
+  final String value; // raw uint16 as decimal string
   final String? displayValue; // type-formatted value for display in list
   final String? previousValue;
   final String typeName;

@@ -16,7 +16,7 @@ class DiscoveredDevice {
   String get address => '$host:$port';
 
   String get protocolName => switch (protocol) {
-        ProtocolType.modbusTcp => 'Modbus TCP',
-        ProtocolType.modbusRtuIp => 'Modbus RTU/IP',
-      };
+    ProtocolType.modbusTcp => 'Modbus TCP',
+    ProtocolType.modbusRtuIp => 'Modbus RTU/IP',
+  };
 }

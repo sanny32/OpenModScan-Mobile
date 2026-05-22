@@ -3,6 +3,9 @@ import 'register_list.dart';
 enum ProtocolType { modbusTcp, modbusRtuIp }
 
 class DeviceInfo {
+  static int _idSequence = 0;
+
+  final String id;
   final String name;
   final String host;
   final int port;
@@ -14,6 +17,7 @@ class DeviceInfo {
   final List<RegisterList> registerLists;
 
   DeviceInfo({
+    String? id,
     required this.name,
     required this.host,
     required this.port,
@@ -23,9 +27,14 @@ class DeviceInfo {
     this.reconnectDelay = 3000,
     this.notes = '',
     List<RegisterList>? registerLists,
-  }) : registerLists = registerLists ?? [];
+  }) : id = id ?? _nextId(),
+       registerLists = registerLists ?? [];
+
+  static String _nextId() =>
+      'device-${DateTime.now().microsecondsSinceEpoch}-${_idSequence++}';
 
   DeviceInfo copyWith({
+    String? id,
     String? name,
     String? host,
     int? port,
@@ -37,6 +46,7 @@ class DeviceInfo {
     List<RegisterList>? registerLists,
   }) {
     return DeviceInfo(
+      id: id ?? this.id,
       name: name ?? this.name,
       host: host ?? this.host,
       port: port ?? this.port,
@@ -54,30 +64,33 @@ class DeviceInfo {
   String get protocolName => 'Modbus TCP';
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'host': host,
-        'port': port,
-        'protocol': protocol.name,
-        'unitId': unitId,
-        'timeout': timeout,
-        'reconnectDelay': reconnectDelay,
-        'notes': notes,
-        'registerLists': registerLists.map((l) => l.toJson()).toList(),
-      };
+    'id': id,
+    'name': name,
+    'host': host,
+    'port': port,
+    'protocol': protocol.name,
+    'unitId': unitId,
+    'timeout': timeout,
+    'reconnectDelay': reconnectDelay,
+    'notes': notes,
+    'registerLists': registerLists.map((l) => l.toJson()).toList(),
+  };
 
   factory DeviceInfo.fromJson(Map<String, dynamic> json) => DeviceInfo(
-        name: json['name'] as String,
-        host: json['host'] as String,
-        port: json['port'] as int,
-        protocol: ProtocolType.values.firstWhere(
-            (e) => e.name == json['protocol'],
-            orElse: () => ProtocolType.modbusTcp),
-        unitId: json['unitId'] as int,
-        timeout: json['timeout'] as int,
-        reconnectDelay: json['reconnectDelay'] as int,
-        notes: (json['notes'] as String?) ?? '',
-        registerLists: (json['registerLists'] as List<dynamic>? ?? [])
-            .map((e) => RegisterList.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+    id: json['id'] as String?,
+    name: json['name'] as String,
+    host: json['host'] as String,
+    port: json['port'] as int,
+    protocol: ProtocolType.values.firstWhere(
+      (e) => e.name == json['protocol'],
+      orElse: () => ProtocolType.modbusTcp,
+    ),
+    unitId: json['unitId'] as int,
+    timeout: json['timeout'] as int,
+    reconnectDelay: json['reconnectDelay'] as int,
+    notes: (json['notes'] as String?) ?? '',
+    registerLists: (json['registerLists'] as List<dynamic>? ?? [])
+        .map((e) => RegisterList.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 }

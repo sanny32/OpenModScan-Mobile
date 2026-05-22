@@ -1,77 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../l10n/l10n.dart';
-import '../models/device_info.dart';
-import '../models/mock_data.dart';
-import '../models/app_settings.dart';
-import '../models/register_entry.dart';
-import '../models/register_list.dart';
-import '../services/app_navigation.dart';
-import '../services/connection_manager.dart';
-import '../services/device_repository.dart';
-import '../theme/app_theme.dart';
-import '../widgets/connection_info_bar.dart';
-import '../widgets/connection_status_chip.dart';
-import '../utils/modbus_format.dart';
-import '../widgets/type_badge.dart';
+import '../../l10n/l10n.dart';
+import '../../models/device_info.dart';
+import '../../models/app_settings.dart';
+import '../../models/register_entry.dart';
+import '../../models/register_list.dart';
+import '../../models/status_entry.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/connection_info_bar.dart';
+import '../../widgets/connection_status_chip.dart';
+import '../../utils/modbus_format.dart';
+import '../../widgets/type_badge.dart';
+import 'register_list_dialogs.dart';
+import 'registers_controller.dart';
 import 'register_detail_screen.dart';
 import 'status_detail_screen.dart';
 
-enum _MenuAction { selectDevice, addRegs, selectRegsList, removeRegs, setAllTypes }
+part 'registers_list_config.dart';
 
-class _ListConfig {
-  final RegisterList data;
-  late final TextEditingController startAddrCtrl;
-  late final TextEditingController countCtrl;
-  late final TextEditingController coilStartAddrCtrl;
-  late final TextEditingController coilCountCtrl;
-
-  String get name => data.name;
-  set name(String v) => data.name = v;
-
-  String get regType => data.regType;
-  set regType(String v) => data.regType = v;
-
-  String get coilType => data.coilType;
-  set coilType(String v) => data.coilType = v;
-
-  int get addrMode => data.addrMode;
-  set addrMode(int v) => data.addrMode = v;
-
-  bool get autoRefresh => data.autoRefresh;
-  set autoRefresh(bool v) => data.autoRefresh = v;
-
-  bool get coilAutoRefresh => data.coilAutoRefresh;
-  set coilAutoRefresh(bool v) => data.coilAutoRefresh = v;
-
-  _ListConfig(this.data) {
-    startAddrCtrl = TextEditingController(text: data.startAddress.toString());
-    countCtrl = TextEditingController(text: data.count.toString());
-    coilStartAddrCtrl = TextEditingController(
-      text: data.coilStartAddress.toString().padLeft(5, '0'),
-    );
-    coilCountCtrl = TextEditingController(text: data.coilCount.toString());
-
-    startAddrCtrl.addListener(
-        () => data.startAddress = int.tryParse(startAddrCtrl.text) ?? 1);
-    countCtrl.addListener(
-        () => data.count = int.tryParse(countCtrl.text) ?? 20);
-    coilStartAddrCtrl.addListener(
-        () => data.coilStartAddress = int.tryParse(coilStartAddrCtrl.text) ?? 0);
-    coilCountCtrl.addListener(
-        () => data.coilCount = int.tryParse(coilCountCtrl.text) ?? 20);
-  }
-
-  void dispose() {
-    startAddrCtrl.dispose();
-    countCtrl.dispose();
-    coilStartAddrCtrl.dispose();
-    coilCountCtrl.dispose();
-  }
+enum _MenuAction {
+  selectDevice,
+  addRegs,
+  selectRegsList,
+  removeRegs,
+  setAllTypes,
 }
 
 class RegistersScreen extends StatefulWidget {
-  const RegistersScreen({super.key});
+  final RegistersController controller;
+
+  const RegistersScreen({super.key, required this.controller});
 
   @override
   State<RegistersScreen> createState() => _RegistersScreenState();
@@ -81,88 +39,64 @@ class _RegistersScreenState extends State<RegistersScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late List<_ListConfig> _lists;
+  String _listSignature = '';
   int _activeList = 0;
-  String _deviceName = mockDevice.name;
-  final Map<int, (String, String?)> _runtimeValues = {};
 
-  DeviceInfo? get _selectedDevice {
-    final devs = DeviceRepository.instance.devices.value;
-    for (final d in devs) {
-      if (d.name == _deviceName) return d;
-    }
-    return null;
-  }
+  DeviceInfo? get _selectedDevice => widget.controller.selectedDevice;
 
   List<_ListConfig> _buildListsFromDevice() {
-    final device = _selectedDevice;
-    if (device != null && device.registerLists.isNotEmpty) {
-      return device.registerLists.map(_ListConfig.new).toList();
+    final lists = widget.controller.lists;
+    if (lists.isNotEmpty) {
+      return lists
+          .map(
+            (list) => _ListConfig(
+              list,
+              onChanged: (updated) => widget.controller.updateList(updated),
+            ),
+          )
+          .toList();
     }
-    final defaultList = RegisterList(name: 'List 1');
-    device?.registerLists.add(defaultList);
-    return [_ListConfig(defaultList)];
+    return [_ListConfig(RegisterList(name: 'List 1'))];
   }
 
-  Future<void> _saveDevice() async {
-    final device = _selectedDevice;
-    if (device == null) return;
-    final all = List.of(DeviceRepository.instance.devices.value);
-    final idx = all.indexWhere((d) => d.name == device.name);
-    if (idx >= 0) await DeviceRepository.instance.save(all);
-  }
+  String get _currentListSignature =>
+      '${widget.controller.selectedDeviceId}:'
+      '${widget.controller.lists.map((list) => list.id).join(',')}';
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _lists = _buildListsFromDevice();
-    DeviceRepository.instance.devices.addListener(_onChanged);
-    ConnectionManager.instance.clients.addListener(_onChanged);
-    AppNavigationService.instance.pendingDevice.addListener(_onPendingDevice);
+    _listSignature = _currentListSignature;
+    widget.controller.addListener(_onChanged);
+    widget.controller.ensureSelectedList();
   }
 
   void _onChanged() {
-    if (mounted) setState(() {});
-  }
-
-  void _onPendingDevice() {
-    final name = AppNavigationService.instance.pendingDevice.value;
-    if (name == null || !mounted) return;
-    AppNavigationService.instance.pendingDevice.value = null;
-
-    final listId = AppNavigationService.instance.pendingListId.value;
-    AppNavigationService.instance.pendingListId.value = null;
-
-    final sameDevice = name == _deviceName;
-    if (!sameDevice) _deviceName = name;
-
-    final newLists = _buildListsFromDevice();
-    int newActive = 0;
-    if (listId != null) {
-      final idx = newLists.indexWhere((l) => l.data.id == listId);
-      newActive = idx >= 0 ? idx : 0;
-    } else if (sameDevice) {
-      newActive = _activeList.clamp(0, newLists.length - 1);
+    if (!mounted) return;
+    final signature = _currentListSignature;
+    if (signature != _listSignature) {
+      for (final list in _lists) {
+        list.dispose();
+      }
+      _lists = _buildListsFromDevice();
+      _activeList = widget.controller.activeListIndex.clamp(
+        0,
+        _lists.length - 1,
+      );
+      _listSignature = signature;
+      final activeType = _lists[_activeList].data.regType;
+      if (activeType == '0xxxx' || activeType == '1xxxx') {
+        _tabController.animateTo(1);
+      }
     }
-
-    for (final l in _lists) { l.dispose(); }
-    setState(() {
-      _lists = newLists;
-      _activeList = newActive;
-    });
-
-    if (listId != null) {
-      final regType = newLists[newActive].data.regType;
-      final targetTab = (regType == '0xxxx' || regType == '1xxxx') ? 1 : 0;
-      _tabController.animateTo(targetTab);
-    }
+    setState(() {});
   }
 
   @override
   void dispose() {
-    AppNavigationService.instance.pendingDevice.removeListener(_onPendingDevice);
-    DeviceRepository.instance.devices.removeListener(_onChanged);
-    ConnectionManager.instance.clients.removeListener(_onChanged);
+    widget.controller.removeListener(_onChanged);
     _tabController.dispose();
     for (final list in _lists) {
       list.dispose();
@@ -186,119 +120,25 @@ class _RegistersScreenState extends State<RegistersScreen>
   }
 
   Future<void> _addRegs() async {
-    final defaultName = 'List ${_lists.length + 1}';
-    final nameCtrl = TextEditingController(text: defaultName);
-    final startCtrl = TextEditingController(text: '1');
-    final countCtrl = TextEditingController(text: '20');
-    String regType = '4xxxx';
-
-    final result = await showDialog<RegisterList>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.menuAddRegs),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: context.l10n.labelName,
-                  hintText: context.l10n.dialogListNameHint,
-                ),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: regType,
-                decoration: InputDecoration(
-                  labelText: context.l10n.labelRegisterType,
-                ),
-                items: const [
-                  DropdownMenuItem(value: '4xxxx', child: Text('Holding (4xxxx)')),
-                  DropdownMenuItem(value: '3xxxx', child: Text('Input (3xxxx)')),
-                  DropdownMenuItem(value: '1xxxx', child: Text('Discrete Input (1xxxx)')),
-                  DropdownMenuItem(value: '0xxxx', child: Text('Coils (0xxxx)')),
-                ],
-                onChanged: (v) { if (v != null) regType = v; },
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: startCtrl,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: InputDecoration(labelText: context.l10n.labelStart),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: countCtrl,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: InputDecoration(labelText: context.l10n.labelCount),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(context.l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              final name = nameCtrl.text.trim();
-              if (name.isEmpty) return;
-              Navigator.pop(ctx, RegisterList(
-                name: name,
-                regType: regType,
-                startAddress: int.tryParse(startCtrl.text) ?? 1,
-                count: int.tryParse(countCtrl.text) ?? 20,
-              ));
-            },
-            child: Text(context.l10n.save),
-          ),
-        ],
-      ),
+    final result = await showRegisterListDialog(
+      context,
+      defaultName: 'List ${_lists.length + 1}',
     );
 
     if (!mounted) return;
     if (result != null) {
-      _selectedDevice?.registerLists.add(result);
-      setState(() {
-        _lists.add(_ListConfig(result));
-        _activeList = _lists.length - 1;
-      });
-      _saveDevice();
+      await widget.controller.addList(result);
     }
   }
 
-  void _removeActiveRegs() {
-    if (_lists.length <= 1) return;
-    _selectedDevice?.registerLists.removeAt(_activeList);
-    setState(() {
-      _lists[_activeList].dispose();
-      _lists.removeAt(_activeList);
-      if (_activeList >= _lists.length) {
-        _activeList = _lists.length - 1;
-      }
-    });
-    _saveDevice();
+  Future<void> _removeActiveRegs() async {
+    await widget.controller.removeActiveList();
   }
 
   Future<void> _showSelectDeviceDialog() async {
     final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
-    final connected = DeviceRepository.instance.devices.value
-        .where((d) => ConnectionManager.instance.isConnected(d))
-        .toList();
+    final connected = widget.controller.connectedDevices;
 
     final selected = await showDialog<String>(
       context: context,
@@ -307,13 +147,13 @@ class _RegistersScreenState extends State<RegistersScreen>
         children: connected
             .map(
               (d) => SimpleDialogOption(
-                onPressed: () => Navigator.pop(ctx, d.name),
+                onPressed: () => Navigator.pop(ctx, d.id),
                 child: Row(
                   children: [
                     Icon(Icons.memory, size: 20, color: cs.onSurfaceVariant),
                     const SizedBox(width: 12),
                     Expanded(child: Text(d.name)),
-                    if (d.name == _deviceName)
+                    if (d.id == widget.controller.selectedDeviceId)
                       Icon(Icons.check, size: 18, color: cs.primary),
                   ],
                 ),
@@ -323,36 +163,16 @@ class _RegistersScreenState extends State<RegistersScreen>
       ),
     );
 
-    if (selected != null && selected != _deviceName) {
-      for (final l in _lists) {
-        l.dispose();
-      }
-      setState(() {
-        _deviceName = selected;
-        _activeList = 0;
-        _lists = _buildListsFromDevice();
-      });
+    if (selected != null && selected != widget.controller.selectedDeviceId) {
+      await widget.controller.selectDevice(selected);
     }
   }
 
-  void _onValueWritten(int address, String value) {
-    final prev = _runtimeValues[address]?.$1 ?? '';
-    setState(() => _runtimeValues[address] = (value, prev.isEmpty ? null : prev));
-  }
+  Future<void> _onValueWritten(int address, String value) =>
+      widget.controller.writeValue(address, value);
 
-  void _onEntryChanged(int address, String typeName, String? comment) {
-    final list = _lists[_activeList].data;
-    final idx = list.entries.indexWhere((e) => e.address == address);
-    if (idx >= 0) {
-      list.entries[idx] = RegisterConfig(
-          address: address, typeName: typeName, comment: comment);
-    } else {
-      list.entries.add(
-          RegisterConfig(address: address, typeName: typeName, comment: comment));
-    }
-    setState(() {});
-    _saveDevice();
-  }
+  Future<void> _onEntryChanged(int address, String typeName, String? comment) =>
+      widget.controller.updateEntry(address, typeName, comment);
 
   Future<void> _showSelectListDialog() async {
     final l10n = context.l10n;
@@ -382,6 +202,7 @@ class _RegistersScreenState extends State<RegistersScreen>
 
     if (selected != null) {
       setState(() => _activeList = selected);
+      widget.controller.selectList(_lists[selected].data.id);
     }
   }
 
@@ -393,52 +214,39 @@ class _RegistersScreenState extends State<RegistersScreen>
       context: context,
       builder: (ctx) => SimpleDialog(
         title: Text(l10n.menuSetAllTypes),
-        children: kRegisterTypes.map((t) => SimpleDialogOption(
-          onPressed: () => Navigator.pop(ctx, t),
-          child: Row(
-            children: [
-              ValueListenableBuilder<bool>(
-                valueListenable: AppSettings.instance.showTypeBadgesNotifier,
-                builder: (_, showBadges, _) => showBadges
-                    ? Row(mainAxisSize: MainAxisSize.min, children: [
-                        TypeBadge(type: t),
-                        const SizedBox(width: 10),
-                      ])
-                    : const SizedBox.shrink(),
+        children: kRegisterTypes
+            .map(
+              (t) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(ctx, t),
+                child: Row(
+                  children: [
+                    ValueListenableBuilder<bool>(
+                      valueListenable:
+                          AppSettings.instance.showTypeBadgesNotifier,
+                      builder: (_, showBadges, _) => showBadges
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                TypeBadge(type: t),
+                                const SizedBox(width: 10),
+                              ],
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    Expanded(
+                      child: Text(t, style: TextStyle(color: cs.onSurface)),
+                    ),
+                  ],
+                ),
               ),
-              Expanded(
-                child: Text(t, style: TextStyle(color: cs.onSurface)),
-              ),
-            ],
-          ),
-        )).toList(),
+            )
+            .toList(),
       ),
     );
 
-    if (selected != null) _onSetAllTypes(selected);
-  }
-
-  void _onSetAllTypes(String typeName) {
-    final config = _lists[_activeList];
-    final list = config.data;
-    final offset = _regTypeOffset(config.regType);
-    final startAddr = offset + list.startAddress;
-
-    for (var i = 0; i < list.count; i++) {
-      final addr = startAddr + i;
-      final idx = list.entries.indexWhere((e) => e.address == addr);
-      if (idx >= 0) {
-        list.entries[idx] = RegisterConfig(
-          address: addr,
-          typeName: typeName,
-          comment: list.entries[idx].comment,
-        );
-      } else {
-        list.entries.add(RegisterConfig(address: addr, typeName: typeName));
-      }
+    if (selected != null) {
+      await widget.controller.setAllTypes(selected);
     }
-    setState(() {});
-    _saveDevice();
   }
 
   @override
@@ -448,31 +256,21 @@ class _RegistersScreenState extends State<RegistersScreen>
     final l10n = context.l10n;
     final active = _lists[_activeList];
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: AppNavigationService.instance.canGoBack,
-      builder: (context, canGoBack, _) => PopScope(
-        canPop: !canGoBack,
-        onPopInvokedWithResult: (didPop, _) {
-          if (!didPop) AppNavigationService.instance.navigateBack(context);
-        },
-        child: Scaffold(
-        appBar: AppBar(
-          toolbarHeight: 70,
-          leading: canGoBack
-              ? IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => AppNavigationService.instance.navigateBack(context),
-                )
-              : null,
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 70,
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(_deviceName, style: tt.titleMedium),
+            Text(
+              _selectedDevice?.name ?? l10n.navRegisters,
+              style: tt.titleMedium,
+            ),
             const SizedBox(height: 2),
             ConnectionStatusChip(
               connected:
                   _selectedDevice != null &&
-                  ConnectionManager.instance.isConnected(_selectedDevice!),
+                  widget.controller.isConnected(_selectedDevice!),
             ),
           ],
         ),
@@ -518,7 +316,11 @@ class _RegistersScreenState extends State<RegistersScreen>
                   value: _MenuAction.setAllTypes,
                   child: Row(
                     children: [
-                      Icon(Icons.style_outlined, size: 18, color: cs.onSurfaceVariant),
+                      Icon(
+                        Icons.style_outlined,
+                        size: 18,
+                        color: cs.onSurfaceVariant,
+                      ),
                       const SizedBox(width: 10),
                       Text(l10n.menuSetAllTypes),
                     ],
@@ -562,36 +364,44 @@ class _RegistersScreenState extends State<RegistersScreen>
               children: [
                 _RegistersTab(
                   regType: active.regType,
-                  onRegTypeChanged: (v) => setState(() => active.regType = v),
+                  onRegTypeChanged: (v) =>
+                      _updateActiveList(active..regType = v),
                   addrMode: active.addrMode,
-                  onAddrModeChanged: (v) => setState(() => active.addrMode = v),
+                  onAddrModeChanged: (v) =>
+                      _updateActiveList(active..addrMode = v),
                   autoRefresh: active.autoRefresh,
                   onAutoRefreshChanged: (v) =>
-                      setState(() => active.autoRefresh = v),
+                      _updateActiveList(active..autoRefresh = v),
                   startAddrCtrl: active.startAddrCtrl,
                   countCtrl: active.countCtrl,
                   registerList: active.data,
-                  runtimeValues: _runtimeValues,
+                  runtimeValues: widget.controller.runtimeValues,
+                  referenceRegisters: widget.controller.referenceRegisters,
                   onEntryChanged: _onEntryChanged,
                   onValueWritten: _onValueWritten,
                 ),
                 _CoilsTab(
                   coilType: active.coilType,
-                  onCoilTypeChanged: (v) => setState(() => active.coilType = v),
+                  onCoilTypeChanged: (v) =>
+                      _updateActiveList(active..coilType = v),
                   autoRefresh: active.coilAutoRefresh,
                   onAutoRefreshChanged: (v) =>
-                      setState(() => active.coilAutoRefresh = v),
+                      _updateActiveList(active..coilAutoRefresh = v),
                   startAddrCtrl: active.coilStartAddrCtrl,
                   countCtrl: active.coilCountCtrl,
+                  referenceStatuses: widget.controller.referenceStatuses,
                 ),
               ],
             ),
           ),
         ],
       ),
-      ),
-      ),
     );
+  }
+
+  void _updateActiveList(_ListConfig active) {
+    setState(() {});
+    widget.controller.updateList(active.data);
   }
 }
 
@@ -613,7 +423,10 @@ class _RegistersTab extends StatefulWidget {
   final TextEditingController countCtrl;
   final RegisterList registerList;
   final Map<int, (String, String?)> runtimeValues;
-  final void Function(int address, String typeName, String? comment) onEntryChanged;
+  final List<RegisterEntry> Function(int startAddress, int count)
+  referenceRegisters;
+  final void Function(int address, String typeName, String? comment)
+  onEntryChanged;
   final void Function(int address, String value) onValueWritten;
 
   const _RegistersTab({
@@ -627,6 +440,7 @@ class _RegistersTab extends StatefulWidget {
     required this.countCtrl,
     required this.registerList,
     required this.runtimeValues,
+    required this.referenceRegisters,
     required this.onEntryChanged,
     required this.onValueWritten,
   });
@@ -677,9 +491,12 @@ class _RegistersTabState extends State<_RegistersTab> {
     final rawCount = int.tryParse(widget.countCtrl.text);
     final count = (rawCount == null || rawCount < 1) ? 20 : rawCount;
     final endAddr = startAddr + count - 1;
-    final mockByAddress = {for (final e in mockRegisters) e.address: e};
+    final mockByAddress = {
+      for (final e in widget.referenceRegisters(startAddr, count + 3))
+        e.address: e,
+    };
     final configByAddress = {
-      for (final e in widget.registerList.entries) e.address: e
+      for (final e in widget.registerList.entries) e.address: e,
     };
     // Build raw uint16 map for visible + 3 extra addresses (needed for 64-bit types).
     final rawInts = <int, int>{};
@@ -687,8 +504,7 @@ class _RegistersTabState extends State<_RegistersTab> {
       final addr = startAddr + i;
       final runtime = widget.runtimeValues[addr];
       final mock = mockByAddress[addr];
-      rawInts[addr] =
-          int.tryParse(runtime?.$1 ?? mock?.value ?? '') ?? 0;
+      rawInts[addr] = int.tryParse(runtime?.$1 ?? mock?.value ?? '') ?? 0;
     }
     final visibleRegisters = List.generate(count, (i) {
       final addr = startAddr + i;
@@ -920,6 +736,8 @@ class _CoilsTab extends StatefulWidget {
   final ValueChanged<bool> onAutoRefreshChanged;
   final TextEditingController startAddrCtrl;
   final TextEditingController countCtrl;
+  final List<StatusEntry> Function(int startAddress, int count)
+  referenceStatuses;
 
   const _CoilsTab({
     required this.coilType,
@@ -928,6 +746,7 @@ class _CoilsTab extends StatefulWidget {
     required this.onAutoRefreshChanged,
     required this.startAddrCtrl,
     required this.countCtrl,
+    required this.referenceStatuses,
   });
 
   @override
@@ -935,14 +754,16 @@ class _CoilsTab extends StatefulWidget {
 }
 
 class _CoilsTabState extends State<_CoilsTab> {
-  late List<BitEntry> _items;
+  late List<StatusEntry> _items;
 
   bool get _canWrite => widget.coilType == '0xxxx';
 
   @override
   void initState() {
     super.initState();
-    _items = List.of(mockStatusEntries);
+    final start = int.tryParse(widget.startAddrCtrl.text) ?? 0;
+    final count = int.tryParse(widget.countCtrl.text) ?? 20;
+    _items = List.of(widget.referenceStatuses(start, count));
   }
 
   @override
@@ -1099,7 +920,7 @@ class _CoilsTabState extends State<_CoilsTab> {
           child: ListView.separated(
             itemCount: _items.length,
             separatorBuilder: (_, _) => Divider(height: 1, color: dividerColor),
-            itemBuilder: (context, i) => _BitRow(
+            itemBuilder: (context, i) => _StatusRow(
               entry: _items[i],
               displayAddress: start + _items[i].address,
               canWrite: _canWrite,
@@ -1133,13 +954,13 @@ class _CoilsTabState extends State<_CoilsTab> {
   }
 }
 
-class _BitRow extends StatelessWidget {
-  final BitEntry entry;
+class _StatusRow extends StatelessWidget {
+  final StatusEntry entry;
   final int displayAddress;
   final bool canWrite;
   final ValueChanged<bool>? onChanged;
 
-  const _BitRow({
+  const _StatusRow({
     required this.entry,
     required this.displayAddress,
     required this.canWrite,
@@ -1249,7 +1070,10 @@ class _RegTypeDropdown extends StatelessWidget {
             items: const [
               DropdownMenuItem(value: '4xxxx', child: Text('Holding (4xxxx)')),
               DropdownMenuItem(value: '3xxxx', child: Text('Input (3xxxx)')),
-              DropdownMenuItem(value: '1xxxx', child: Text('Discrete Input (1xxxx)')),
+              DropdownMenuItem(
+                value: '1xxxx',
+                child: Text('Discrete Input (1xxxx)'),
+              ),
               DropdownMenuItem(value: '0xxxx', child: Text('Coils (0xxxx)')),
             ],
             onChanged: (v) {
@@ -1468,7 +1292,8 @@ Future<void> _showWriteRegisterDialog(
 class _RegisterRow extends StatelessWidget {
   final RegisterEntry entry;
   final bool canWrite;
-  final void Function(int address, String typeName, String? comment)? onEntryChanged;
+  final void Function(int address, String typeName, String? comment)?
+  onEntryChanged;
   final void Function(int address, String value)? onValueWritten;
 
   const _RegisterRow({
@@ -1491,7 +1316,8 @@ class _RegisterRow extends StatelessWidget {
             entry: entry,
             canWrite: canWrite,
             onSaved: onEntryChanged != null
-                ? (type, comment) => onEntryChanged!(entry.address, type, comment)
+                ? (type, comment) =>
+                      onEntryChanged!(entry.address, type, comment)
                 : null,
             onValueWritten: onValueWritten != null
                 ? (v) => onValueWritten!(entry.address, v)
@@ -1545,8 +1371,9 @@ class _RegisterRow extends StatelessWidget {
                       ? TypeBadge(type: entry.typeName)
                       : Text(
                           entry.typeName,
-                          style: tt.bodyMedium!
-                              .copyWith(color: appColors.typeColor),
+                          style: tt.bodyMedium!.copyWith(
+                            color: appColors.typeColor,
+                          ),
                         ),
                 ),
               ),

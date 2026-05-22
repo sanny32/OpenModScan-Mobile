@@ -2,13 +2,12 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../l10n/l10n.dart';
-import '../models/app_settings.dart';
-import '../models/register_entry.dart';
-import '../theme/app_theme.dart';
-import '../utils/modbus_format.dart';
-import '../widgets/type_badge.dart';
-
+import '../../l10n/l10n.dart';
+import '../../models/app_settings.dart';
+import '../../models/register_entry.dart';
+import '../../theme/app_theme.dart';
+import '../../utils/modbus_format.dart';
+import '../../widgets/type_badge.dart';
 
 String _typeDescription(String type) {
   switch (type) {
@@ -36,7 +35,6 @@ String _typeDescription(String type) {
       return type;
   }
 }
-
 
 String _displayTimestamp(String timestamp) {
   if (RegExp(r'\.\d+$').hasMatch(timestamp)) return timestamp;
@@ -83,7 +81,9 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
         : AppSettings.byteOrders.first;
     _commentCtrl = TextEditingController(text: widget.entry.comment ?? '');
     _commentCtrl.addListener(_onTextChanged);
-    AppSettings.instance.showTypeBadgesNotifier.addListener(_onBadgeSettingChanged);
+    AppSettings.instance.showTypeBadgesNotifier.addListener(
+      _onBadgeSettingChanged,
+    );
   }
 
   void _onBadgeSettingChanged() => setState(() {});
@@ -96,7 +96,9 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
   void dispose() {
     _commentCtrl.removeListener(_onTextChanged);
     _commentCtrl.dispose();
-    AppSettings.instance.showTypeBadgesNotifier.removeListener(_onBadgeSettingChanged);
+    AppSettings.instance.showTypeBadgesNotifier.removeListener(
+      _onBadgeSettingChanged,
+    );
     super.dispose();
   }
 
@@ -546,7 +548,9 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                                 value: t,
                                 child: Row(
                                   children: [
-                                    if (AppSettings.instance.showTypeBadges) ...[
+                                    if (AppSettings
+                                        .instance
+                                        .showTypeBadges) ...[
                                       TypeBadge(type: t),
                                       const SizedBox(width: 12),
                                     ],
@@ -918,7 +922,6 @@ class _OutlineField extends StatelessWidget {
   }
 }
 
-
 class _InterpretationRow extends StatelessWidget {
   final _Interpretation interpretation;
   final bool selected;
@@ -965,12 +968,16 @@ class _InterpretationRow extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     ValueListenableBuilder<bool>(
-                      valueListenable: AppSettings.instance.showTypeBadgesNotifier,
+                      valueListenable:
+                          AppSettings.instance.showTypeBadgesNotifier,
                       builder: (_, showBadges, _) => showBadges
-                          ? Row(mainAxisSize: MainAxisSize.min, children: [
-                              TypeBadge(type: interpretation.typeName),
-                              const SizedBox(width: 12),
-                            ])
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                TypeBadge(type: interpretation.typeName),
+                                const SizedBox(width: 12),
+                              ],
+                            )
                           : const SizedBox.shrink(),
                     ),
                     Expanded(

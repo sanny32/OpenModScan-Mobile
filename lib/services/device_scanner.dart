@@ -1,81 +1,56 @@
 import 'package:flutter/foundation.dart';
-import '../models/discovered_device.dart';
-import '../models/device_info.dart';
+import '../runtime/runtime_ports.dart';
 import 'discovered_device_list.dart';
 
-enum ScannerState { idle, scanning, done }
-
-class ScanParameters {
-  final String subnet;
-  final int port;
-  final int unitId;
-  final Duration timeout;
-  final int concurrency;
-
-  const ScanParameters({
-    required this.subnet,
-    this.port = 502,
-    this.unitId = 1,
-    this.timeout = const Duration(milliseconds: 500),
-    this.concurrency = 20,
-  });
-}
-
-class DeviceScanner extends ChangeNotifier {
+class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
   static final DeviceScanner instance = DeviceScanner._();
 
   DeviceScanner._() {
     discoveredDevices.addListener(notifyListeners);
   }
 
+  @override
   final DiscoveredDeviceList discoveredDevices = DiscoveredDeviceList();
 
-  ScannerState _state = ScannerState.idle;
+  ScannerStateView _state = ScannerStateView.idle;
   int _scanned = 0;
   int _total = 0;
   bool _cancelled = false;
 
-  ScannerState get state => _state;
+  @override
+  ScannerStateView get state => _state;
   int get scannedCount => _scanned;
   int get totalCount => _total;
   double get progress => _total == 0 ? 0.0 : _scanned / _total;
 
-  Future<void> startScan(ScanParameters params) async {
-    if (_state == ScannerState.scanning) return;
+  @override
+  Future<void> startScan(DeviceScanRequest params) async {
+    if (_state == ScannerStateView.scanning) return;
 
     _cancelled = false;
     _scanned = 0;
     _total = 254;
-    _state = ScannerState.scanning;
+    _state = ScannerStateView.scanning;
     notifyListeners();
 
     // TODO: replace with real TCP scan once ModbusClient is implemented
     await Future.delayed(const Duration(seconds: 2));
 
     if (!_cancelled) {
-      discoveredDevices.add(DiscoveredDevice(
-        host: '${params.subnet}.50',
-        port: params.port,
-        unitId: params.unitId,
-        protocol: ProtocolType.modbusTcp,
-      ));
-      discoveredDevices.add(DiscoveredDevice(
-        host: '${params.subnet}.51',
-        port: params.port,
-        unitId: params.unitId,
-        protocol: ProtocolType.modbusTcp,
-      ));
+      discoveredDevices.add(params.discoveredDevice('${params.subnet}.50'));
+      discoveredDevices.add(params.discoveredDevice('${params.subnet}.51'));
       _scanned = _total;
-      _state = ScannerState.done;
+      _state = ScannerStateView.done;
     } else {
-      _state = ScannerState.idle;
+      _state = ScannerStateView.idle;
     }
 
     notifyListeners();
   }
 
+  @override
   void stopScan() {
-    if (_state != ScannerState.scanning) return;
+    if (_state != ScannerStateView.scanning) return;
     _cancelled = true;
   }
 }

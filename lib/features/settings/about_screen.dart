@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../l10n/l10n.dart';
+import '../../l10n/l10n.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -79,12 +79,7 @@ class AboutScreen extends StatelessWidget {
                   l10n.appTitle,
                 ),
                 _divider(context),
-                _infoTile(
-                  context,
-                  Icons.code,
-                  l10n.aboutVersion,
-                  _appVersion,
-                ),
+                _infoTile(context, Icons.code, l10n.aboutVersion, _appVersion),
                 _divider(context),
                 _infoTile(
                   context,
@@ -156,10 +151,10 @@ class AboutScreen extends StatelessWidget {
   }
 
   Widget _divider(BuildContext context) => Divider(
-        height: 1,
-        indent: 56,
-        color: Theme.of(context).dividerTheme.color,
-      );
+    height: 1,
+    indent: 56,
+    color: Theme.of(context).dividerTheme.color,
+  );
 
   Widget _infoTile(
     BuildContext context,
@@ -177,7 +172,10 @@ class AboutScreen extends StatelessWidget {
           const SizedBox(width: 16),
           Text(label, style: tt.bodyLarge),
           const Spacer(),
-          Text(value, style: tt.bodyLarge?.copyWith(color: cs.onSurfaceVariant)),
+          Text(
+            value,
+            style: tt.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
+          ),
         ],
       ),
     );

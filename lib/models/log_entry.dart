@@ -17,4 +17,3 @@ class LogEntry {
     this.type = LogEntryType.normal,
   });
 }
-

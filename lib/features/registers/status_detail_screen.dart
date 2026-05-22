@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../l10n/l10n.dart';
+import '../../l10n/l10n.dart';
 
 class StatusDetailScreen extends StatefulWidget {
   final int address;
@@ -76,16 +76,10 @@ class _StatusDetailScreenState extends State<StatusDetailScreen> {
         ),
         actions: [
           if (_hasChanges) ...[
-            TextButton(
-              onPressed: _save,
-              child: Text(l10n.save),
-            ),
+            TextButton(onPressed: _save, child: Text(l10n.save)),
             const SizedBox(width: 6),
           ],
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {},
-          ),
+          IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
           const SizedBox(width: 2),
         ],
       ),

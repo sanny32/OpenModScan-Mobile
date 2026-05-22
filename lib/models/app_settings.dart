@@ -7,6 +7,21 @@ class AppSettings {
 
   static const _themeModeKey = 'themeMode';
   static const _localeKey = 'locale';
+  static const _connectionTypeKey = 'connectionType';
+  static const _timeoutKey = 'timeout';
+  static const _reconnectDelayKey = 'reconnectDelay';
+  static const _readFailureAttemptsKey = 'readFailureAttempts';
+  static const _defaultUnitIdKey = 'defaultUnitId';
+  static const _defaultReadQtyKey = 'defaultReadQty';
+  static const _addressBaseKey = 'addressBase';
+  static const _registerOrderKey = 'registerOrder';
+  static const _byteOrderKey = 'byteOrder';
+  static const _confirmBeforeWriteKey = 'confirmBeforeWrite';
+  static const _showLastValuesKey = 'showLastValues';
+  static const _showTypeBadgesKey = 'showTypeBadges';
+  static const _saveLogToFileKey = 'saveLogToFile';
+  static const _clearLogOnDisconnectKey = 'clearLogOnDisconnect';
+  static const _maxLogEntriesKey = 'maxLogEntries';
   static const registerOrders = ['MSRF', 'LSRF'];
   static const byteOrders = ['Direct', 'Swapped'];
   static const addressBases = ['0-based', '1-based'];
@@ -43,6 +58,21 @@ class AppSettings {
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
+    connectionType = prefs.getString(_connectionTypeKey) ?? 'Modbus TCP';
+    timeout = prefs.getInt(_timeoutKey) ?? 1000;
+    reconnectDelay = prefs.getInt(_reconnectDelayKey) ?? 3000;
+    readFailureAttempts = prefs.getInt(_readFailureAttemptsKey) ?? 3;
+    defaultUnitId = prefs.getInt(_defaultUnitIdKey) ?? 1;
+    defaultReadQty = prefs.getInt(_defaultReadQtyKey) ?? 20;
+    addressBase = prefs.getString(_addressBaseKey) ?? addressBases.first;
+    registerOrder = prefs.getString(_registerOrderKey) ?? registerOrders.first;
+    byteOrder = prefs.getString(_byteOrderKey) ?? byteOrders.first;
+    confirmBeforeWrite = prefs.getBool(_confirmBeforeWriteKey) ?? true;
+    showLastValues = prefs.getBool(_showLastValuesKey) ?? true;
+    showTypeBadgesNotifier.value = prefs.getBool(_showTypeBadgesKey) ?? false;
+    saveLogToFile = prefs.getBool(_saveLogToFileKey) ?? false;
+    clearLogOnDisconnect = prefs.getBool(_clearLogOnDisconnectKey) ?? false;
+    maxLogEntries = prefs.getInt(_maxLogEntriesKey) ?? 1000;
     themeModeNotifier.value = _themeModeFromValue(
       prefs.getString(_themeModeKey),
     );
@@ -55,6 +85,51 @@ class AppSettings {
 
   Future<void> setLanguage(String value) async {
     await _setLocale(_localeFromValue(value));
+  }
+
+  Future<void> setReadFailureAttempts(int value) async {
+    readFailureAttempts = value;
+    await _saveEditableValues();
+  }
+
+  Future<void> setAddressBase(String value) async {
+    addressBase = value;
+    await _saveEditableValues();
+  }
+
+  Future<void> setRegisterOrder(String value) async {
+    registerOrder = value;
+    await _saveEditableValues();
+  }
+
+  Future<void> setByteOrder(String value) async {
+    byteOrder = value;
+    await _saveEditableValues();
+  }
+
+  Future<void> setConfirmBeforeWrite(bool value) async {
+    confirmBeforeWrite = value;
+    await _saveEditableValues();
+  }
+
+  Future<void> setShowLastValues(bool value) async {
+    showLastValues = value;
+    await _saveEditableValues();
+  }
+
+  Future<void> setShowTypeBadges(bool value) async {
+    showTypeBadges = value;
+    await _saveEditableValues();
+  }
+
+  Future<void> setSaveLogToFile(bool value) async {
+    saveLogToFile = value;
+    await _saveEditableValues();
+  }
+
+  Future<void> setClearLogOnDisconnect(bool value) async {
+    clearLogOnDisconnect = value;
+    await _saveEditableValues();
   }
 
   Future<void> resetToDefaults() async {
@@ -73,8 +148,28 @@ class AppSettings {
     saveLogToFile = false;
     clearLogOnDisconnect = false;
     maxLogEntries = 1000;
+    await _saveEditableValues();
     await _setThemeMode(ThemeMode.system);
     await _setLocale(null);
+  }
+
+  Future<void> _saveEditableValues() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_connectionTypeKey, connectionType);
+    await prefs.setInt(_timeoutKey, timeout);
+    await prefs.setInt(_reconnectDelayKey, reconnectDelay);
+    await prefs.setInt(_readFailureAttemptsKey, readFailureAttempts);
+    await prefs.setInt(_defaultUnitIdKey, defaultUnitId);
+    await prefs.setInt(_defaultReadQtyKey, defaultReadQty);
+    await prefs.setString(_addressBaseKey, addressBase);
+    await prefs.setString(_registerOrderKey, registerOrder);
+    await prefs.setString(_byteOrderKey, byteOrder);
+    await prefs.setBool(_confirmBeforeWriteKey, confirmBeforeWrite);
+    await prefs.setBool(_showLastValuesKey, showLastValues);
+    await prefs.setBool(_showTypeBadgesKey, showTypeBadges);
+    await prefs.setBool(_saveLogToFileKey, saveLogToFile);
+    await prefs.setBool(_clearLogOnDisconnectKey, clearLogOnDisconnect);
+    await prefs.setInt(_maxLogEntriesKey, maxLogEntries);
   }
 
   Future<void> _setThemeMode(ThemeMode value) async {
