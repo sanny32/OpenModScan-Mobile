@@ -1,5 +1,23 @@
 package io.github.sanny32.omodscan_mobile
 
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
 
-class MainActivity : FlutterActivity()
+class MainActivity : FlutterActivity() {
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, BUILD_INFO_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "getPackageBuildDate" -> result.success(getString(R.string.omodscan_build_date_utc))
+                    else -> result.notImplemented()
+                }
+            }
+    }
+
+    private companion object {
+        const val BUILD_INFO_CHANNEL = "io.github.sanny32.omodscan_mobile/build_info"
+    }
+}

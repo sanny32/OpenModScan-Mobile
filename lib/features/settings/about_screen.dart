@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../theme/app_theme.dart';
 import '../../l10n/l10n.dart';
+import '../../services/build_info_service.dart';
 
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
 
+  @override
+  State<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends State<AboutScreen> {
   static const _appVersion = '1.0.0 (1)';
-  static const _buildDate = 'May 25, 2025 10:30';
   static const _websiteUrl = 'https://openmodscan.com';
   static const _emailUrl = 'mailto:support@openmodscan.com';
   static const _docsUrl = 'https://docs.openmodscan.com';
   static const _issuesUrl = 'https://github.com/openmodscan/mobile/issues';
+
+  late final Future<DateTime?> _packageBuildDate = const BuildInfoService()
+      .packageBuildDate();
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +90,7 @@ class AboutScreen extends StatelessWidget {
                   context,
                   Icons.calendar_today_outlined,
                   l10n.aboutBuildDate,
-                  _buildDate,
+                  _buildDateValue(context),
                 ),
                 _divider(context),
                 _infoTile(
@@ -146,6 +155,22 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildDateValue(BuildContext context) => FutureBuilder<DateTime?>(
+    future: _packageBuildDate,
+    builder: (context, snapshot) {
+      final buildDate = snapshot.data;
+      final label = buildDate == null
+          ? '-'
+          : DateFormat('MMM d, y HH:mm').format(buildDate.toLocal());
+      return Text(
+        label,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      );
+    },
+  );
+
   Widget _divider(BuildContext context) => Divider(
     height: 1,
     indent: 56,
@@ -156,7 +181,7 @@ class AboutScreen extends StatelessWidget {
     BuildContext context,
     IconData icon,
     String label,
-    String value,
+    Object value,
   ) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
@@ -168,10 +193,13 @@ class AboutScreen extends StatelessWidget {
           const SizedBox(width: 16),
           Text(label, style: tt.bodyLarge),
           const Spacer(),
-          Text(
-            value,
-            style: tt.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
-          ),
+          if (value is Widget)
+            value
+          else
+            Text(
+              value.toString(),
+              style: tt.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
+            ),
         ],
       ),
     );
