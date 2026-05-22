@@ -332,8 +332,26 @@
   "settingsTheme": "Theme",
   "@settingsTheme": {},
 
+  "settingsThemeSystem": "System",
+  "@settingsThemeSystem": {},
+
+  "settingsThemeLight": "Light",
+  "@settingsThemeLight": {},
+
+  "settingsThemeDark": "Dark",
+  "@settingsThemeDark": {},
+
   "settingsLanguage": "Language",
   "@settingsLanguage": {},
+
+  "settingsLanguageSystem": "System",
+  "@settingsLanguageSystem": {},
+
+  "settingsLanguageEnglish": "English",
+  "@settingsLanguageEnglish": {},
+
+  "settingsLanguageRussian": "Russian",
+  "@settingsLanguageRussian": {},
 
   "settingsSectionOther": "Other",
   "@settingsSectionOther": {},

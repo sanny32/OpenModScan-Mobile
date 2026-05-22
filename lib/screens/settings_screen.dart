@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
@@ -52,9 +54,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       .map((value) => '$value')
                       .toList(),
                   selected: '${_s.readFailureAttempts}',
-                  onSelected: (value) => setState(
-                    () => _s.readFailureAttempts = int.parse(value),
-                  ),
+                  onSelected: (value) =>
+                      setState(() => _s.readFailureAttempts = int.parse(value)),
                 ),
               ),
               _divider(),
@@ -163,13 +164,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _navTile(
                 icon: Icons.light_mode_outlined,
                 label: l10n.settingsTheme,
-                value: _s.theme,
+                value: _themeOptionLabel(l10n, _s.theme),
+                onTap: () => _showChoiceSheet(
+                  title: l10n.settingsTheme,
+                  options: AppSettings.themeOptions,
+                  selected: _s.theme,
+                  optionLabel: (value) => _themeOptionLabel(l10n, value),
+                  onSelected: (value) async {
+                    await _s.setTheme(value);
+                    if (mounted) setState(() {});
+                  },
+                ),
               ),
               _divider(),
               _navTile(
                 icon: Icons.language,
                 label: l10n.settingsLanguage,
-                value: _s.language,
+                value: _languageOptionLabel(l10n, _s.language),
+                onTap: () => _showChoiceSheet(
+                  title: l10n.settingsLanguage,
+                  options: AppSettings.languageOptions,
+                  selected: _s.language,
+                  optionLabel: (value) => _languageOptionLabel(l10n, value),
+                  onSelected: (value) async {
+                    await _s.setLanguage(value);
+                    if (mounted) setState(() {});
+                  },
+                ),
               ),
             ],
           ),
@@ -279,7 +300,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String title,
     required List<String> options,
     required String selected,
-    required ValueChanged<String> onSelected,
+    String Function(String)? optionLabel,
+    required FutureOr<void> Function(String) onSelected,
   }) async {
     final cs = Theme.of(context).colorScheme;
 
@@ -302,19 +324,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             for (final option in options)
               ListTile(
-                title: Text(option),
+                title: Text(optionLabel?.call(option) ?? option),
                 trailing: option == selected
                     ? Icon(Icons.check, color: cs.primary)
                     : null,
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(ctx);
-                  onSelected(option);
+                  await onSelected(option);
                 },
               ),
           ],
         ),
       ),
     );
+  }
+
+  String _themeOptionLabel(AppLocalizations l10n, String option) {
+    switch (option) {
+      case 'Light':
+        return l10n.settingsThemeLight;
+      case 'Dark':
+        return l10n.settingsThemeDark;
+      case 'System':
+      default:
+        return l10n.settingsThemeSystem;
+    }
+  }
+
+  String _languageOptionLabel(AppLocalizations l10n, String option) {
+    switch (option) {
+      case 'English':
+        return l10n.settingsLanguageEnglish;
+      case 'Russian':
+        return l10n.settingsLanguageRussian;
+      case 'System':
+      default:
+        return l10n.settingsLanguageSystem;
+    }
   }
 
   void _confirmReset() {
@@ -330,9 +376,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(l10n.cancel),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              setState(() => AppSettings.instance.resetToDefaults());
+              await AppSettings.instance.resetToDefaults();
+              if (mounted) setState(() {});
             },
             child: Text(l10n.settingsResetDefaults),
           ),

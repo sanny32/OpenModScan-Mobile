@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'l10n/l10n.dart';
+import 'models/app_settings.dart';
 import 'screens/devices_screen.dart';
 import 'screens/registers_screen.dart';
 import 'screens/settings_screen.dart';
@@ -7,8 +8,9 @@ import 'screens/traffic_screen.dart';
 import 'services/app_navigation.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppSettings.instance.load();
   runApp(const OModScanApp());
 }
 
@@ -17,15 +19,22 @@ class OModScanApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'OpenModScan Mobile',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: const AppShell(),
-      debugShowCheckedModeBanner: false,
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: AppSettings.instance.themeModeNotifier,
+      builder: (context, themeMode, child) => ValueListenableBuilder<Locale?>(
+        valueListenable: AppSettings.instance.localeNotifier,
+        builder: (context, locale, child) => MaterialApp(
+          title: 'OpenModScan Mobile',
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeMode,
+          locale: locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const AppShell(),
+          debugShowCheckedModeBanner: false,
+        ),
+      ),
     );
   }
 }
