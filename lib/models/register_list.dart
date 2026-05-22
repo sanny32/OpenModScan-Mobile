@@ -77,7 +77,6 @@ class RegisterList {
   String name;
   String regType;
   String coilType;
-  int addrMode;
   bool autoRefresh;
   int refreshIntervalMs;
   bool coilAutoRefresh;
@@ -94,7 +93,6 @@ class RegisterList {
     required this.name,
     this.regType = '4xxxx',
     this.coilType = '0xxxx',
-    this.addrMode = 0,
     this.autoRefresh = true,
     int refreshIntervalMs = kDefaultRegisterRefreshIntervalMs,
     this.coilAutoRefresh = true,
@@ -118,7 +116,6 @@ class RegisterList {
     String? name,
     String? regType,
     String? coilType,
-    int? addrMode,
     bool? autoRefresh,
     int? refreshIntervalMs,
     bool? coilAutoRefresh,
@@ -134,7 +131,6 @@ class RegisterList {
     name: name ?? this.name,
     regType: regType ?? this.regType,
     coilType: coilType ?? this.coilType,
-    addrMode: addrMode ?? this.addrMode,
     autoRefresh: autoRefresh ?? this.autoRefresh,
     refreshIntervalMs: refreshIntervalMs ?? this.refreshIntervalMs,
     coilAutoRefresh: coilAutoRefresh ?? this.coilAutoRefresh,
@@ -152,7 +148,6 @@ class RegisterList {
     'name': name,
     'regType': regType,
     'coilType': coilType,
-    'addrMode': addrMode,
     'autoRefresh': autoRefresh,
     'refreshIntervalMs': refreshIntervalMs,
     'coilAutoRefresh': coilAutoRefresh,
@@ -170,7 +165,6 @@ class RegisterList {
     name: json['name'] as String? ?? 'List 1',
     regType: json['regType'] as String? ?? '4xxxx',
     coilType: json['coilType'] as String? ?? '0xxxx',
-    addrMode: json['addrMode'] as int? ?? 0,
     autoRefresh: json['autoRefresh'] as bool? ?? true,
     refreshIntervalMs:
         json['refreshIntervalMs'] as int? ?? kDefaultRegisterRefreshIntervalMs,

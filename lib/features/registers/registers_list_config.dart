@@ -19,9 +19,6 @@ class _ListConfig {
   String get coilType => data.coilType;
   set coilType(String value) => data.coilType = value;
 
-  int get addrMode => data.addrMode;
-  set addrMode(int value) => data.addrMode = value;
-
   bool get autoRefresh => data.autoRefresh;
   set autoRefresh(bool value) => data.autoRefresh = value;
 

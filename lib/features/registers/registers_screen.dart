@@ -440,9 +440,6 @@ class _RegistersScreenState extends State<RegistersScreen>
                   regType: active.regType,
                   onRegTypeChanged: (v) =>
                       _updateActiveList(active..regType = v),
-                  addrMode: active.addrMode,
-                  onAddrModeChanged: (v) =>
-                      _updateActiveList(active..addrMode = v),
                   autoRefresh: active.autoRefresh,
                   isActive: _screenActive && _activeTab == 0,
                   onAutoRefreshChanged: (v) =>
@@ -517,8 +514,6 @@ int _regTypeOffset(String regType) => switch (regType) {
 class _RegistersTab extends StatefulWidget {
   final String regType;
   final ValueChanged<String> onRegTypeChanged;
-  final int addrMode;
-  final ValueChanged<int> onAddrModeChanged;
   final bool autoRefresh;
   final bool isActive;
   final ValueChanged<bool> onAutoRefreshChanged;
@@ -546,8 +541,6 @@ class _RegistersTab extends StatefulWidget {
   const _RegistersTab({
     required this.regType,
     required this.onRegTypeChanged,
-    required this.addrMode,
-    required this.onAddrModeChanged,
     required this.autoRefresh,
     required this.isActive,
     required this.onAutoRefreshChanged,
@@ -734,23 +727,14 @@ class _RegistersTabState extends State<_RegistersTab> {
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
           child: Row(
             children: [
-              Expanded(
+              SizedBox(
+                width: 146,
                 child: _RegTypeDropdown(
                   value: widget.regType,
                   onChanged: widget.onRegTypeChanged,
                 ),
               ),
-              const SizedBox(width: 8),
-              _AddrValueToggle(
-                selected: widget.addrMode,
-                onChanged: widget.onAddrModeChanged,
-              ),
-              IconButton(
-                icon: const Icon(Icons.filter_list, size: 20),
-                onPressed: () {},
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              ),
+              const Spacer(),
               ElevatedButton.icon(
                 icon: _manualReadInProgress
                     ? const SizedBox.square(
@@ -1200,20 +1184,14 @@ class _CoilsTabState extends State<_CoilsTab> {
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
           child: Row(
             children: [
-              Expanded(
+              SizedBox(
+                width: 146,
                 child: _CoilTypeDropdown(
                   value: widget.coilType,
                   onChanged: widget.onCoilTypeChanged,
                 ),
               ),
-              const SizedBox(width: 8),
-              _AddrValueToggle(selected: 0, onChanged: (_) {}),
-              IconButton(
-                icon: const Icon(Icons.filter_list, size: 20),
-                onPressed: () {},
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              ),
+              const Spacer(),
               ElevatedButton.icon(
                 icon: _manualReadInProgress
                     ? const SizedBox.square(
@@ -1592,68 +1570,6 @@ class _CoilTypeDropdown extends StatelessWidget {
             onChanged: (v) {
               if (v != null) onChanged(v);
             },
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AddrValueToggle extends StatelessWidget {
-  final int selected;
-  final ValueChanged<int> onChanged;
-  const _AddrValueToggle({required this.selected, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _Btn(
-            label: context.l10n.colAddress,
-            active: selected == 0,
-            onTap: () => onChanged(0),
-          ),
-          _Btn(
-            label: context.l10n.colValue,
-            active: selected == 1,
-            onTap: () => onChanged(1),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Btn extends StatelessWidget {
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-  const _Btn({required this.label, required this.active, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: active ? cs.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: tt.bodySmall!.copyWith(
-            color: active ? cs.onPrimary : cs.onSurfaceVariant,
           ),
         ),
       ),
