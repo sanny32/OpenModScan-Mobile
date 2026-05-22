@@ -825,6 +825,7 @@ class _RegistersTabState extends State<_RegistersTab> {
                 ),
               ),
               Expanded(
+                flex: 5,
                 child: Text(
                   l10n.colValue,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
@@ -837,8 +838,8 @@ class _RegistersTabState extends State<_RegistersTab> {
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                 ),
               ),
-              SizedBox(
-                width: 80,
+              Expanded(
+                flex: 6,
                 child: Text(
                   l10n.colComment,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
@@ -1518,6 +1519,7 @@ class _RegisterRow extends StatelessWidget {
               child: Text('${entry.address}', style: tt.bodyLarge),
             ),
             Expanded(
+              flex: 5,
               child: InkWell(
                 onTap: canWrite
                     ? () => _showWriteRegisterDialog(context, entry)
@@ -1570,8 +1572,8 @@ class _RegisterRow extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(
-              width: 80,
+            Expanded(
+              flex: 6,
               child: Text(
                 entry.comment ?? '',
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
