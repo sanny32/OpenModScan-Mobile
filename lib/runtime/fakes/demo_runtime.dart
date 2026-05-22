@@ -5,8 +5,13 @@ import '../runtime_ports.dart';
 import 'demo_fixtures.dart';
 
 class DemoRegisterRuntime implements RegisterRuntime {
+  final bool enabled;
+
+  const DemoRegisterRuntime({this.enabled = true});
+
   @override
   List<RegisterEntry> registersForRange(int startAddress, int count) {
+    if (!enabled) return const [];
     final endAddress = startAddress + count - 1;
     return demoRegisters
         .where(
@@ -18,6 +23,7 @@ class DemoRegisterRuntime implements RegisterRuntime {
 
   @override
   List<StatusEntry> statusesForRange(int startAddress, int count) {
+    if (!enabled) return const [];
     final endAddress = startAddress + count - 1;
     return demoStatuses
         .where(
@@ -36,6 +42,11 @@ class DemoRegisterRuntime implements RegisterRuntime {
 }
 
 class DemoTrafficLogSource implements TrafficLogSource {
+  final bool enabled;
+
+  const DemoTrafficLogSource({this.enabled = true});
+
   @override
-  List<LogEntry> entriesFor(String? deviceId) => demoLogEntries;
+  List<LogEntry> entriesFor(String? deviceId) =>
+      enabled ? demoLogEntries : const [];
 }

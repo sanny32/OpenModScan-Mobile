@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_flags.dart';
 import 'features/devices/devices_controller.dart';
 import 'features/devices/device_screen.dart';
 import 'features/devices/devices_screen.dart';
@@ -21,7 +22,9 @@ import 'theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppSettings.instance.load();
-  await DeviceRepository.instance.initialize(seedDevices: demoDevices);
+  await DeviceRepository.instance.initialize(
+    seedDevices: AppFlags.demoData ? demoDevices : const [],
+  );
   runApp(const OModScanApp());
 }
 
@@ -72,8 +75,8 @@ class _AppShellState extends State<AppShell> {
   @override
   void initState() {
     super.initState();
-    final registerRuntime = DemoRegisterRuntime();
-    final trafficLogs = DemoTrafficLogSource();
+    final registerRuntime = DemoRegisterRuntime(enabled: AppFlags.demoData);
+    final trafficLogs = DemoTrafficLogSource(enabled: AppFlags.demoData);
 
     _devicesController = DevicesController(
       DeviceRepository.instance,

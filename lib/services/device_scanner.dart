@@ -1,11 +1,14 @@
 import 'package:flutter/foundation.dart';
+import '../app_flags.dart';
 import '../runtime/runtime_ports.dart';
 import 'discovered_device_list.dart';
 
 class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
-  static final DeviceScanner instance = DeviceScanner._();
+  static final DeviceScanner instance = DeviceScanner._(AppFlags.demoData);
 
-  DeviceScanner._() {
+  final bool _includeDemoResults;
+
+  DeviceScanner._(this._includeDemoResults) {
     discoveredDevices.addListener(notifyListeners);
   }
 
@@ -37,8 +40,11 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
     await Future.delayed(const Duration(seconds: 2));
 
     if (!_cancelled) {
-      discoveredDevices.add(params.discoveredDevice('${params.subnet}.50'));
-      discoveredDevices.add(params.discoveredDevice('${params.subnet}.51'));
+      // Real scan results will replace this fixture branch with Modbus runtime.
+      if (_includeDemoResults) {
+        discoveredDevices.add(params.discoveredDevice('${params.subnet}.50'));
+        discoveredDevices.add(params.discoveredDevice('${params.subnet}.51'));
+      }
       _scanned = _total;
       _state = ScannerStateView.done;
     } else {
