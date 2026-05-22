@@ -13,7 +13,6 @@ class AboutScreen extends StatefulWidget {
 }
 
 class _AboutScreenState extends State<AboutScreen> {
-  static const _appVersion = '1.0.0 (1)';
   static const _websiteUrl = 'https://openmodscan.com';
   static const _emailUrl = 'mailto:support@openmodscan.com';
   static const _docsUrl = 'https://docs.openmodscan.com';
@@ -21,6 +20,8 @@ class _AboutScreenState extends State<AboutScreen> {
 
   late final Future<DateTime?> _packageBuildDate = const BuildInfoService()
       .packageBuildDate();
+  late final Future<PackageVersion?> _packageVersion = const BuildInfoService()
+      .packageVersion();
 
   @override
   Widget build(BuildContext context) {
@@ -65,8 +66,9 @@ class _AboutScreenState extends State<AboutScreen> {
           ),
           const SizedBox(height: 4),
           Center(
-            child: Text(
-              'Version $_appVersion',
+            child: _packageVersionValue(
+              context,
+              prefix: '${l10n.aboutVersion} ',
               style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
             ),
           ),
@@ -84,7 +86,12 @@ class _AboutScreenState extends State<AboutScreen> {
                   l10n.appTitle,
                 ),
                 _divider(context),
-                _infoTile(context, Icons.code, l10n.aboutVersion, _appVersion),
+                _infoTile(
+                  context,
+                  Icons.code,
+                  l10n.aboutVersion,
+                  _packageVersionValue(context),
+                ),
                 _divider(context),
                 _infoTile(
                   context,
@@ -169,6 +176,22 @@ class _AboutScreenState extends State<AboutScreen> {
         ),
       );
     },
+  );
+
+  Widget _packageVersionValue(
+    BuildContext context, {
+    String prefix = '',
+    TextStyle? style,
+  }) => FutureBuilder<PackageVersion?>(
+    future: _packageVersion,
+    builder: (context, snapshot) => Text(
+      '$prefix${snapshot.data?.display ?? '-'}',
+      style:
+          style ??
+          Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+    ),
   );
 
   Widget _divider(BuildContext context) => Divider(
