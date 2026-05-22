@@ -42,6 +42,23 @@ void main() {
     expect(find.byType(DeviceScreen), findsOneWidget);
   });
 
+  testWidgets('Deleted device snackbar disappears after timeout', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const OModScanApp());
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.text('PLC #1'), const Offset(-500, 0));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Device deleted'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Device deleted'), findsNothing);
+  });
+
   testWidgets('Register list dialog closes without disposed controllers', (
     WidgetTester tester,
   ) async {

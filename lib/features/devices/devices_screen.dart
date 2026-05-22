@@ -71,6 +71,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
       ..showSnackBar(
         SnackBar(
           content: Text(context.l10n.deviceDeleted),
+          persist: false,
           action: SnackBarAction(
             label: context.l10n.undo,
             onPressed: () {
