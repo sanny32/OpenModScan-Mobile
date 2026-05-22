@@ -1429,13 +1429,21 @@ class _RegisterRow extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    if (entry.previousValue != null)
-                      Text(
-                        entry.previousValue!,
-                        style: tt.bodySmall!.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
+                    ValueListenableBuilder<bool>(
+                      valueListenable:
+                          AppSettings.instance.showLastValuesNotifier,
+                      builder: (_, showLastValues, _) {
+                        if (!showLastValues || entry.previousValue == null) {
+                          return const SizedBox.shrink();
+                        }
+                        return Text(
+                          entry.previousValue!,
+                          style: tt.bodySmall!.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),

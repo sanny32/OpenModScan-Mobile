@@ -466,41 +466,59 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                       ),
                     ),
                   ),
-                  if (entry.previousValue != null) ...[
-                    const SizedBox(height: 16),
-                    Divider(height: 1, thickness: 1.2, color: cs.outline),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.arrow_back_rounded,
-                          size: 19,
-                          color: cs.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 14),
-                        Flexible(
-                          child: Text(
-                            l10n.labelPreviousValue,
-                            overflow: TextOverflow.ellipsis,
-                            style: tt.bodyLarge!.copyWith(
-                              color: cs.onSurfaceVariant,
-                              fontSize: 13,
-                            ),
+                  ValueListenableBuilder<bool>(
+                    valueListenable:
+                        AppSettings.instance.showLastValuesNotifier,
+                    builder: (_, showLastValues, _) {
+                      if (!showLastValues || entry.previousValue == null) {
+                        return const SizedBox.shrink();
+                      }
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(height: 16),
+                          Divider(
+                            height: 1,
+                            thickness: 1.2,
+                            color: cs.outline,
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Text(
-                          entry.previousValue!,
-                          style: tt.bodyMedium!.copyWith(
-                            color: cs.onSurfaceVariant,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            fontFeatures: const [FontFeature.tabularFigures()],
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.arrow_back_rounded,
+                                size: 19,
+                                color: cs.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 14),
+                              Flexible(
+                                child: Text(
+                                  l10n.labelPreviousValue,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: tt.bodyLarge!.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Text(
+                                entry.previousValue!,
+                                style: tt.bodyMedium!.copyWith(
+                                  color: cs.onSurfaceVariant,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      );
+                    },
+                  ),
                 ],
               ),
             ),

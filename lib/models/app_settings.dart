@@ -39,14 +39,17 @@ class AppSettings {
   String registerOrder = registerOrders.first;
   String byteOrder = byteOrders.first;
   bool confirmBeforeWrite = true;
-  bool showLastValues = true;
   bool saveLogToFile = false;
   bool clearLogOnDisconnect = false;
   int maxLogEntries = 1000;
 
+  final showLastValuesNotifier = ValueNotifier<bool>(true);
   final showTypeBadgesNotifier = ValueNotifier<bool>(false);
   final themeModeNotifier = ValueNotifier<ThemeMode>(ThemeMode.system);
   final localeNotifier = ValueNotifier<Locale?>(null);
+
+  bool get showLastValues => showLastValuesNotifier.value;
+  set showLastValues(bool v) => showLastValuesNotifier.value = v;
 
   bool get showTypeBadges => showTypeBadgesNotifier.value;
   set showTypeBadges(bool v) => showTypeBadgesNotifier.value = v;
@@ -58,25 +61,32 @@ class AppSettings {
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
-    connectionType = prefs.getString(_connectionTypeKey) ?? 'Modbus TCP';
+    connectionType = _getString(prefs, _connectionTypeKey) ?? 'Modbus TCP';
     timeout = prefs.getInt(_timeoutKey) ?? 1000;
     reconnectDelay = prefs.getInt(_reconnectDelayKey) ?? 3000;
     readFailureAttempts = prefs.getInt(_readFailureAttemptsKey) ?? 3;
     defaultUnitId = prefs.getInt(_defaultUnitIdKey) ?? 1;
     defaultReadQty = prefs.getInt(_defaultReadQtyKey) ?? 20;
-    addressBase = prefs.getString(_addressBaseKey) ?? addressBases.first;
-    registerOrder = prefs.getString(_registerOrderKey) ?? registerOrders.first;
-    byteOrder = prefs.getString(_byteOrderKey) ?? byteOrders.first;
+    addressBase = _getString(prefs, _addressBaseKey) ?? addressBases.first;
+    registerOrder = _getString(prefs, _registerOrderKey) ?? registerOrders.first;
+    byteOrder = _getString(prefs, _byteOrderKey) ?? byteOrders.first;
     confirmBeforeWrite = prefs.getBool(_confirmBeforeWriteKey) ?? true;
-    showLastValues = prefs.getBool(_showLastValuesKey) ?? true;
+    showLastValuesNotifier.value = prefs.getBool(_showLastValuesKey) ?? true;
     showTypeBadgesNotifier.value = prefs.getBool(_showTypeBadgesKey) ?? false;
     saveLogToFile = prefs.getBool(_saveLogToFileKey) ?? false;
     clearLogOnDisconnect = prefs.getBool(_clearLogOnDisconnectKey) ?? false;
     maxLogEntries = prefs.getInt(_maxLogEntriesKey) ?? 1000;
     themeModeNotifier.value = _themeModeFromValue(
-      prefs.getString(_themeModeKey),
+      _getString(prefs, _themeModeKey),
     );
-    localeNotifier.value = _localeFromValue(prefs.getString(_localeKey));
+    localeNotifier.value = _localeFromValue(_getString(prefs, _localeKey));
+  }
+
+  // Guards against keys that were previously stored as a different type.
+  String? _getString(SharedPreferences prefs, String key) {
+    final value = prefs.get(key);
+    if (value is String) return value;
+    return null;
   }
 
   Future<void> setTheme(String value) async {
