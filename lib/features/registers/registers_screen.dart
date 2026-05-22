@@ -682,6 +682,10 @@ class _RegistersTabState extends State<_RegistersTab> {
             ? mock?.timestamp
             : _formatTimestamp(runtime!.$3!),
         date: runtime?.$3 == null ? mock?.date : _formatDate(runtime!.$3!),
+        rawWords: {
+          for (var j = 0; j <= 3; j++)
+            if (rawInts.containsKey(addr + j)) addr + j: rawInts[addr + j]!,
+        },
       );
     });
 

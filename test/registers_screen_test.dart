@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omodscan_mobile/features/devices/device_screen.dart';
+import 'package:omodscan_mobile/features/registers/register_detail_screen.dart';
 import 'package:omodscan_mobile/features/registers/registers_controller.dart';
 import 'package:omodscan_mobile/features/registers/registers_screen.dart';
 import 'package:omodscan_mobile/l10n/l10n.dart';
@@ -8,6 +9,7 @@ import 'package:omodscan_mobile/main.dart';
 import 'package:omodscan_mobile/models/app_settings.dart';
 import 'package:omodscan_mobile/models/device_info.dart';
 import 'package:omodscan_mobile/models/register_list.dart';
+import 'package:omodscan_mobile/models/register_entry.dart';
 import 'package:omodscan_mobile/runtime/fakes/demo_fixtures.dart';
 import 'package:omodscan_mobile/runtime/fakes/demo_runtime.dart';
 import 'package:omodscan_mobile/services/device_repository.dart';
@@ -629,5 +631,55 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     controller.dispose();
     returnDeviceId.dispose();
+  });
+
+  testWidgets('Register detail shows correct Int32 value from two words', (
+    WidgetTester tester,
+  ) async {
+    // Default register order is MSRF: hi = rawWords[addr], lo = rawWords[addr+1]
+    // combined = (1 << 16) | 34964 = 100500
+    const entry = RegisterEntry(
+      address: 40007,
+      value: '1',
+      typeName: 'Int32',
+      rawWords: {40007: 1, 40008: 34964},
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegisterDetailScreen(entry: entry, canWrite: false),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('100500'), findsWidgets);
+  });
+
+  testWidgets('Register detail interpretations use rawWords for multi-word types', (
+    WidgetTester tester,
+  ) async {
+    // MSRF: hi = rawWords[addr]=1, lo = rawWords[addr+1]=2 → UInt32 = (1<<16)|2 = 65538
+    const entry = RegisterEntry(
+      address: 40001,
+      value: '1',
+      typeName: 'UInt32',
+      rawWords: {40001: 1, 40002: 2},
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegisterDetailScreen(entry: entry, canWrite: false),
+      ),
+    );
+    await tester.pump();
+
+    // UInt32 row in interpretations list and header both show 65538
+    expect(find.text('65538'), findsWidgets);
   });
 }

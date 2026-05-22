@@ -20,6 +20,8 @@ class RegisterEntry {
   final String? comment;
   final String? timestamp;
   final String? date;
+  // Raw uint16 values for this and neighbouring registers (needed for multi-word types).
+  final Map<int, int> rawWords;
 
   const RegisterEntry({
     required this.address,
@@ -30,5 +32,6 @@ class RegisterEntry {
     this.comment,
     this.timestamp,
     this.date,
+    this.rawWords = const {},
   });
 }

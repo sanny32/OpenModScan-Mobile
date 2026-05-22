@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../l10n/l10n.dart';
@@ -102,62 +100,29 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     super.dispose();
   }
 
-  int? get _rawUInt16 {
-    final v = int.tryParse(widget.entry.value);
-    if (v != null && v >= 0 && v <= 65535) return v;
-    return null;
-  }
+  bool get _hasRawWords => widget.entry.rawWords.isNotEmpty;
 
-  List<_Interpretation> _buildInterpretations(int raw) {
-    final r = _byteOrder == 'Swapped'
-        ? ((raw & 0xFF) << 8) | ((raw >> 8) & 0xFF)
-        : raw;
-
-    final uint16 = r;
-    final int16 = r > 32767 ? r - 65536 : r;
-    final uint32 = _registerOrder == 'MSRF' ? r << 16 : r;
-    final int32 = uint32 > 0x7FFFFFFF ? uint32 - 0x100000000 : uint32;
-    final uint64 = _registerOrder == 'MSRF' ? r << 48 : r;
-    final int64 = uint64;
-
-    final bdF32 = ByteData(4);
-    _registerOrder == 'MSRF'
-        ? bdF32.setUint16(0, r, Endian.big)
-        : bdF32.setUint16(2, r, Endian.big);
-    final float32 = bdF32.getFloat32(0, Endian.big);
-
-    final bdF64 = ByteData(8);
-    _registerOrder == 'MSRF'
-        ? bdF64.setUint16(0, r, Endian.big)
-        : bdF64.setUint16(6, r, Endian.big);
-    final float64 = bdF64.getFloat64(0, Endian.big);
-
-    final hex = '0x${r.toRadixString(16).toUpperCase().padLeft(4, '0')}';
-    final bin = r.toRadixString(2).padLeft(16, '0');
-    final binFmt =
-        '${bin.substring(0, 4)} ${bin.substring(4, 8)} '
-        '${bin.substring(8, 12)} ${bin.substring(12)}';
-
+  List<_Interpretation> _buildInterpretations() {
+    final addr = widget.entry.address;
+    final words = widget.entry.rawWords;
+    String v(String type) => computeDisplayValue(
+      addr,
+      type,
+      words,
+      registerOrder: _registerOrder,
+      byteOrder: _byteOrder,
+    );
     return [
-      _Interpretation('UInt16', uint16.toString()),
-      _Interpretation('Int16', int16.toString()),
-      _Interpretation('UInt32', uint32.toString()),
-      _Interpretation('Int32', int32.toString()),
-      _Interpretation('UInt64', uint64.toString()),
-      _Interpretation('Int64', int64.toString()),
-      _Interpretation('Float32', formatFloat(float32)),
-      _Interpretation('Float64', formatFloat(float64)),
-      _Interpretation('Hex', hex),
-      _Interpretation('Binary', binFmt),
+      for (final type in kRegisterTypes) _Interpretation(type, v(type)),
     ];
   }
 
-  String _displayValueForType(int? raw, String type, String fallback) {
-    if (raw == null) return fallback;
-    for (final interpretation in _buildInterpretations(raw)) {
-      if (interpretation.typeName == type) return interpretation.value;
+  String _displayValueForType(String type) {
+    if (!_hasRawWords) return widget.entry.displayValue ?? widget.entry.value;
+    for (final interp in _buildInterpretations()) {
+      if (interp.typeName == type) return interp.value;
     }
-    return fallback;
+    return widget.entry.value;
   }
 
   void _save() {
@@ -336,9 +301,8 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>()!;
-    final raw = _rawUInt16;
     final entry = widget.entry;
-    final currentValue = _displayValueForType(raw, _selectedType, entry.value);
+    final currentValue = _displayValueForType(_selectedType);
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerHighest,
@@ -615,7 +579,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                 ],
               ),
             ),
-            if (raw != null) ...[
+            if (_hasRawWords) ...[
               const SizedBox(height: 18),
               _InterpretationsHeader(
                 title: l10n.labelInterpretations,
@@ -629,7 +593,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                 clip: true,
                 child: Column(
                   children: () {
-                    final items = _buildInterpretations(raw);
+                    final items = _buildInterpretations();
                     return List.generate(items.length, (i) {
                       final interp = items[i];
                       final isCurrent = interp.typeName == _selectedType;
