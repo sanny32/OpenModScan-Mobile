@@ -60,6 +60,9 @@ class RegistersController extends ChangeNotifier {
       _registerRuntime.statusesForRange(startAddress, count);
 
   Future<void> selectTarget(RegistersRouteArgs target) async {
+    if (_selectedDeviceId != target.deviceId) {
+      _runtimeValues.clear();
+    }
     _selectedDeviceId = target.deviceId;
     _selectedListId = target.registerListId;
     await ensureSelectedList();
@@ -68,6 +71,7 @@ class RegistersController extends ChangeNotifier {
 
   Future<void> selectDevice(String deviceId) async {
     if (_selectedDeviceId == deviceId) return;
+    _runtimeValues.clear();
     _selectedDeviceId = deviceId;
     _selectedListId = null;
     await ensureSelectedList();
@@ -168,6 +172,44 @@ class RegistersController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> readRegisters({
+    required String regType,
+    required int startAddress,
+    required int count,
+  }) async {
+    final device = selectedDevice;
+    if (device == null) {
+      throw StateError('Select a device before reading registers.');
+    }
+    if (!_connectionRuntime.isConnected(device)) {
+      throw StateError('${device.name} is not connected.');
+    }
+
+    final modbusStartAddress = _modbusRegisterAddress(regType, startAddress);
+    final values = switch (regType) {
+      '4xxxx' => await _connectionRuntime.readHoldingRegisters(
+        device,
+        startAddress: modbusStartAddress,
+        count: count,
+      ),
+      '3xxxx' => await _connectionRuntime.readInputRegisters(
+        device,
+        startAddress: modbusStartAddress,
+        count: count,
+      ),
+      _ => throw UnsupportedError(
+        'Reading $regType registers is not implemented.',
+      ),
+    };
+
+    for (var index = 0; index < values.length; index++) {
+      final address = startAddress + index;
+      final previous = _runtimeValues[address]?.$1;
+      _runtimeValues[address] = (values[index].toString(), previous);
+    }
+    notifyListeners();
+  }
+
   void _selectFallbackDevice() {
     if (_selectedDeviceId != null || devices.isEmpty) return;
     _selectedDeviceId = devices.first.id;
@@ -204,3 +246,11 @@ int _regTypeOffset(String regType) => switch (regType) {
   '1xxxx' => 10000,
   _ => 0,
 };
+
+int _modbusRegisterAddress(String regType, int displayAddress) {
+  final registerNumber = displayAddress - _regTypeOffset(regType);
+  if (registerNumber < 0) {
+    throw RangeError.value(displayAddress, 'startAddress');
+  }
+  return registerNumber == 0 ? 0 : registerNumber - 1;
+}

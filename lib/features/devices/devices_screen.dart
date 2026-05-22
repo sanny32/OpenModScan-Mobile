@@ -49,14 +49,24 @@ class _DevicesScreenState extends State<DevicesScreen> {
       unitId: discovered?.unitId ?? 1,
     );
 
-    final device = await showModalBottomSheet<DeviceInfo>(
+    final result = await showModalBottomSheet<DeviceFormResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => DeviceFormSheet(initial: initial, addMode: true),
     );
-    if (device != null && mounted) {
-      await widget.controller.addDevice(device);
+    if (result != null && mounted) {
+      await widget.controller.addDevice(result.device);
+      if (!result.connectAfterSave) return;
+
+      try {
+        await widget.controller.toggleConnection(result.device);
+      } catch (error) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(content: Text('$error')));
+      }
     }
   }
 

@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import '../../l10n/l10n.dart';
 import '../../models/device_info.dart';
 
+class DeviceFormResult {
+  final DeviceInfo device;
+  final bool connectAfterSave;
+
+  const DeviceFormResult(this.device, {this.connectAfterSave = false});
+}
+
 class DeviceFormSheet extends StatefulWidget {
   /// Null → add mode ("Connect to Device" / "Connect").
   /// Non-null → edit mode ("Edit Device" / "Save").
@@ -56,7 +63,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
     super.dispose();
   }
 
-  void _submit() {
+  void _submit({bool connectAfterSave = false}) {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
       setState(() => _showNameError = true);
@@ -84,7 +91,10 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
       reconnectDelay: int.tryParse(_reconnectCtrl.text) ?? base.reconnectDelay,
       notes: _notesCtrl.text,
     );
-    Navigator.pop(context, updated);
+    Navigator.pop(
+      context,
+      DeviceFormResult(updated, connectAfterSave: connectAfterSave),
+    );
   }
 
   @override
@@ -251,7 +261,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: _submit,
+                    onPressed: () => _submit(connectAfterSave: !_isEdit),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: cs.primary,
                       foregroundColor: cs.onPrimary,

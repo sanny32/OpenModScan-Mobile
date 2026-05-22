@@ -36,4 +36,26 @@ class ConnectionManager implements ConnectionRuntime {
     clients.value = Map.of(clients.value)..remove(device.id);
     _connectedDeviceIds.value = clients.value.keys.toSet();
   }
+
+  @override
+  Future<List<int>> readHoldingRegisters(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  }) => _clientFor(device).readHoldingRegisters(startAddress, count);
+
+  @override
+  Future<List<int>> readInputRegisters(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  }) => _clientFor(device).readInputRegisters(startAddress, count);
+
+  ModbusClient _clientFor(DeviceInfo device) {
+    final client = clients.value[device.id];
+    if (client == null || !client.isConnected) {
+      throw StateError('${device.name} is not connected.');
+    }
+    return client;
+  }
 }

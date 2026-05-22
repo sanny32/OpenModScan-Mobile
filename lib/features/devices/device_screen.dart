@@ -45,6 +45,7 @@ class DeviceScreen extends StatefulWidget {
 
 class _DeviceScreenState extends State<DeviceScreen> {
   late DeviceInfo _device;
+  var _connectionBusy = false;
 
   bool get _connected => widget.controller.isConnected(_device);
 
@@ -69,17 +70,31 @@ class _DeviceScreenState extends State<DeviceScreen> {
     super.dispose();
   }
 
-  Future<void> _toggleConnection() =>
-      widget.controller.toggleConnection(_device);
+  Future<void> _toggleConnection() async {
+    if (_connectionBusy) return;
+    setState(() => _connectionBusy = true);
+    try {
+      await widget.controller.toggleConnection(_device);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text('$error')));
+    } finally {
+      if (mounted) {
+        setState(() => _connectionBusy = false);
+      }
+    }
+  }
 
   void _editDevice() {
-    showModalBottomSheet<DeviceInfo>(
+    showModalBottomSheet<DeviceFormResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => DeviceFormSheet(initial: _device),
-    ).then((updated) {
-      if (updated != null) widget.controller.updateDevice(updated);
+    ).then((result) {
+      if (result != null) widget.controller.updateDevice(result.device);
     });
   }
 
@@ -175,7 +190,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
           _PlcCard(device: _device, connected: _connected),
           const SizedBox(height: 12),
           OutlinedButton(
-            onPressed: _toggleConnection,
+            onPressed: _connectionBusy ? null : _toggleConnection,
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: _connected ? cs.error : cs.primary),
               foregroundColor: _connected ? cs.error : cs.primary,
@@ -184,7 +199,12 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: Text(_connected ? l10n.disconnect : l10n.connect),
+            child: _connectionBusy
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(_connected ? l10n.disconnect : l10n.connect),
           ),
           const SizedBox(height: 16),
           Row(

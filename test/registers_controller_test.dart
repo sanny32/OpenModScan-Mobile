@@ -59,10 +59,59 @@ void main() {
     expect(registers.statusesForRange(0, 10), isEmpty);
     expect(logs.entriesFor('device-b'), isEmpty);
   });
+
+  test('reads holding registers into runtime values', () async {
+    final repository = DeviceRepository.instance;
+    final device = DeviceInfo(
+      id: 'device-c',
+      name: 'PLC C',
+      host: '127.0.0.3',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [RegisterList(id: 'list-c', name: 'List 1')],
+    );
+    await repository.replaceAll([device]);
+
+    final connections = _TestConnectionRuntime()..holdingValues = [17, 23];
+    await connections.connect(device);
+    final controller = RegistersController(
+      repository,
+      connections,
+      const DemoRegisterRuntime(enabled: false),
+    );
+    await controller.selectTarget(
+      const RegistersRouteArgs(deviceId: 'device-c', registerListId: 'list-c'),
+    );
+
+    await controller.readRegisters(
+      regType: '4xxxx',
+      startAddress: 40001,
+      count: 2,
+    );
+
+    expect(connections.lastHoldingStartAddress, 0);
+    expect(connections.lastHoldingCount, 2);
+    expect(controller.runtimeValues[40001], ('17', null));
+    expect(controller.runtimeValues[40002], ('23', null));
+
+    connections.holdingValues = [19, 29];
+    await controller.readRegisters(
+      regType: '4xxxx',
+      startAddress: 40001,
+      count: 2,
+    );
+    expect(controller.runtimeValues[40001], ('19', '17'));
+
+    controller.dispose();
+  });
 }
 
 class _TestConnectionRuntime implements ConnectionRuntime {
   final _ids = ValueNotifier<Set<String>>(const {});
+  var holdingValues = <int>[];
+  int? lastHoldingStartAddress;
+  int? lastHoldingCount;
 
   @override
   ValueListenable<Set<String>> get connectedDeviceIds => _ids;
@@ -79,4 +128,22 @@ class _TestConnectionRuntime implements ConnectionRuntime {
 
   @override
   bool isConnected(DeviceInfo device) => _ids.value.contains(device.id);
+
+  @override
+  Future<List<int>> readHoldingRegisters(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  }) async {
+    lastHoldingStartAddress = startAddress;
+    lastHoldingCount = count;
+    return holdingValues.take(count).toList();
+  }
+
+  @override
+  Future<List<int>> readInputRegisters(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  }) async => const [];
 }

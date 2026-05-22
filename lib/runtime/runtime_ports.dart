@@ -15,6 +15,18 @@ abstract interface class ConnectionRuntime {
   Future<void> connect(DeviceInfo device);
 
   Future<void> disconnect(DeviceInfo device);
+
+  Future<List<int>> readHoldingRegisters(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  });
+
+  Future<List<int>> readInputRegisters(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  });
 }
 
 abstract interface class RegisterRuntime {

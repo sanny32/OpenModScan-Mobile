@@ -395,6 +395,10 @@ class _RegistersScreenState extends State<RegistersScreen>
                   registerList: active.data,
                   runtimeValues: widget.controller.runtimeValues,
                   referenceRegisters: widget.controller.referenceRegisters,
+                  canRead:
+                      _selectedDevice != null &&
+                      widget.controller.isConnected(_selectedDevice!),
+                  onRead: widget.controller.readRegisters,
                   onEntryChanged: _onEntryChanged,
                   onValueWritten: _onValueWritten,
                 ),
@@ -443,6 +447,13 @@ class _RegistersTab extends StatefulWidget {
   final Map<int, (String, String?)> runtimeValues;
   final List<RegisterEntry> Function(int startAddress, int count)
   referenceRegisters;
+  final bool canRead;
+  final Future<void> Function({
+    required String regType,
+    required int startAddress,
+    required int count,
+  })
+  onRead;
   final void Function(int address, String typeName, String? comment)
   onEntryChanged;
   final void Function(int address, String value) onValueWritten;
@@ -459,6 +470,8 @@ class _RegistersTab extends StatefulWidget {
     required this.registerList,
     required this.runtimeValues,
     required this.referenceRegisters,
+    required this.canRead,
+    required this.onRead,
     required this.onEntryChanged,
     required this.onValueWritten,
   });
@@ -468,7 +481,13 @@ class _RegistersTab extends StatefulWidget {
 }
 
 class _RegistersTabState extends State<_RegistersTab> {
+  var _reading = false;
+  String? _lastUpdateTime;
+
   void _onCtrlChanged() => setState(() {});
+
+  bool get _supportsRegisterRead =>
+      widget.regType == '4xxxx' || widget.regType == '3xxxx';
 
   @override
   void initState() {
@@ -495,6 +514,41 @@ class _RegistersTabState extends State<_RegistersTab> {
     widget.startAddrCtrl.removeListener(_onCtrlChanged);
     widget.countCtrl.removeListener(_onCtrlChanged);
     super.dispose();
+  }
+
+  Future<void> _read() async {
+    if (_reading || !widget.canRead || !_supportsRegisterRead) return;
+
+    final offset = _regTypeOffset(widget.regType);
+    final rawStart = int.tryParse(widget.startAddrCtrl.text) ?? 1;
+    final rawCount = int.tryParse(widget.countCtrl.text);
+    final count = (rawCount == null || rawCount < 1) ? 20 : rawCount;
+
+    setState(() => _reading = true);
+    try {
+      await widget.onRead(
+        regType: widget.regType,
+        startAddress: offset + rawStart,
+        count: count,
+      );
+      if (!mounted) return;
+      final now = DateTime.now();
+      setState(() {
+        _lastUpdateTime =
+            '${now.hour.toString().padLeft(2, '0')}:'
+            '${now.minute.toString().padLeft(2, '0')}:'
+            '${now.second.toString().padLeft(2, '0')}';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text('$error')));
+    } finally {
+      if (mounted) {
+        setState(() => _reading = false);
+      }
+    }
   }
 
   @override
@@ -567,9 +621,16 @@ class _RegistersTabState extends State<_RegistersTab> {
                 constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               ),
               ElevatedButton.icon(
-                icon: const Icon(Icons.refresh, size: 15),
+                icon: _reading
+                    ? const SizedBox.square(
+                        dimension: 15,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh, size: 15),
                 label: Text(l10n.btnRead),
-                onPressed: () {},
+                onPressed: widget.canRead && _supportsRegisterRead && !_reading
+                    ? _read
+                    : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: cs.primary,
                   foregroundColor: cs.onPrimary,
@@ -713,7 +774,7 @@ class _RegistersTabState extends State<_RegistersTab> {
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
               Text(
-                l10n.registersLastUpdate('10:42:35'),
+                l10n.registersLastUpdate(_lastUpdateTime ?? '--:--:--'),
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
             ],
