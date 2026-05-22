@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../theme/app_theme.dart';
 import '../../l10n/l10n.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -17,6 +18,7 @@ class AboutScreen extends StatelessWidget {
     final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final appColors = Theme.of(context).extension<AppColors>()!;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.aboutTitle)),
@@ -41,18 +43,12 @@ class AboutScreen extends StatelessWidget {
               text: TextSpan(
                 children: [
                   TextSpan(
-                    text: 'OpenModScan',
-                    style: tt.titleLarge?.copyWith(
-                      color: cs.onSurface,
-                      fontSize: 22,
-                    ),
+                    text: l10n.appBarName,
+                    style: tt.titleLarge!.copyWith(color: cs.onSurface),
                   ),
                   TextSpan(
-                    text: ' Mobile',
-                    style: tt.titleLarge?.copyWith(
-                      color: cs.primary,
-                      fontSize: 22,
-                    ),
+                    text: l10n.appBarNameSuffix,
+                    style: tt.titleLarge!.copyWith(color: appColors.brandGreen),
                   ),
                 ],
               ),

@@ -59,6 +59,27 @@ void main() {
     expect(find.text('Device deleted'), findsNothing);
   });
 
+  testWidgets('New device name is prefilled and required', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const OModScanApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+
+    final nameField = find.byWidgetPredicate(
+      (widget) => widget is TextField && widget.controller?.text == 'Device #6',
+    );
+    expect(nameField, findsOneWidget);
+
+    await tester.enterText(nameField, '');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Name is required'), findsOneWidget);
+  });
+
   testWidgets('Register list dialog closes without disposed controllers', (
     WidgetTester tester,
   ) async {

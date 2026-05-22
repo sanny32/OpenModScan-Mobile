@@ -209,6 +209,9 @@
   "labelName": "Name",
   "@labelName": {},
 
+  "nameRequired": "Name is required",
+  "@nameRequired": {},
+
   "labelHost": "Host / IP address",
   "@labelHost": {},
 

@@ -24,6 +24,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
   late final TextEditingController _timeoutCtrl;
   late final TextEditingController _reconnectCtrl;
   late final TextEditingController _notesCtrl;
+  var _showNameError = false;
 
   bool get _isEdit => widget.initial != null && !widget.addMode;
 
@@ -56,6 +57,12 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
   }
 
   void _submit() {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) {
+      setState(() => _showNameError = true);
+      return;
+    }
+
     final base =
         widget.initial ??
         DeviceInfo(
@@ -66,7 +73,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
           unitId: 1,
         );
     final updated = base.copyWith(
-      name: _nameCtrl.text.trim().isEmpty ? base.name : _nameCtrl.text.trim(),
+      name: name,
       host: _hostCtrl.text.trim().isEmpty ? base.host : _hostCtrl.text.trim(),
       port: int.tryParse(_portCtrl.text) ?? base.port,
       protocol: _connType == 0
@@ -162,7 +169,15 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                   const SizedBox(height: 20),
                   _label(context, l10n.labelName),
                   const SizedBox(height: 6),
-                  _field(_nameCtrl),
+                  _field(
+                    _nameCtrl,
+                    errorText: _showNameError ? l10n.nameRequired : null,
+                    onChanged: (value) {
+                      if (_showNameError && value.trim().isNotEmpty) {
+                        setState(() => _showNameError = false);
+                      }
+                    },
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,11 +279,18 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
     return Text(t, style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant));
   }
 
-  Widget _field(TextEditingController c, {TextInputType? type}) => TextField(
+  Widget _field(
+    TextEditingController c, {
+    TextInputType? type,
+    String? errorText,
+    ValueChanged<String>? onChanged,
+  }) => TextField(
     controller: c,
     keyboardType: type,
-    decoration: const InputDecoration(
-      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+    onChanged: onChanged,
+    decoration: InputDecoration(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      errorText: errorText,
     ),
   );
 

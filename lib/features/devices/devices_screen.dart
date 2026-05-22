@@ -41,15 +41,13 @@ class _DevicesScreenState extends State<DevicesScreen> {
   List<DeviceInfo> get _filtered => widget.controller.filteredDevices;
 
   void _openConnect([DiscoveredDevice? discovered]) async {
-    final initial = discovered == null
-        ? null
-        : DeviceInfo(
-            name: 'Device #${widget.controller.devices.length + 1}',
-            host: discovered.host,
-            port: discovered.port,
-            protocol: discovered.protocol,
-            unitId: discovered.unitId,
-          );
+    final initial = DeviceInfo(
+      name: 'Device #${widget.controller.devices.length + 1}',
+      host: discovered?.host ?? '',
+      port: discovered?.port ?? 502,
+      protocol: discovered?.protocol ?? ProtocolType.modbusTcp,
+      unitId: discovered?.unitId ?? 1,
+    );
 
     final device = await showModalBottomSheet<DeviceInfo>(
       context: context,
