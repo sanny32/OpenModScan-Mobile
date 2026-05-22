@@ -160,7 +160,7 @@ void main() {
     expect(find.byType(DeviceScreen), findsOneWidget);
   });
 
-  testWidgets('Register map auto refresh reads connected registers', (
+  testWidgets('Register map auto refresh reads only while visible', (
     WidgetTester tester,
   ) async {
     final device = DeviceInfo(
@@ -189,6 +189,90 @@ void main() {
       const DemoRegisterRuntime(enabled: false),
     );
     final returnDeviceId = ValueNotifier<String?>(null);
+    final screenActive = ValueNotifier(true);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegistersScreen(
+          controller: controller,
+          returnDeviceId: returnDeviceId,
+          screenActive: screenActive,
+          onReturnToDevice: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(connections.holdingReadCount, 1);
+
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
+
+    expect(connections.holdingReadCount, greaterThan(1));
+
+    screenActive.value = false;
+    await tester.pump();
+    final hiddenScreenReadCount = connections.holdingReadCount;
+
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump();
+
+    expect(connections.holdingReadCount, hiddenScreenReadCount);
+
+    screenActive.value = true;
+    await tester.pump();
+    await tester.pump();
+
+    expect(connections.holdingReadCount, greaterThan(hiddenScreenReadCount));
+
+    await tester.tap(find.text('Status'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    final inactiveTabReadCount = connections.holdingReadCount;
+
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump();
+
+    expect(connections.holdingReadCount, inactiveTabReadCount);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+    returnDeviceId.dispose();
+    screenActive.dispose();
+  });
+
+  testWidgets('Status map auto refresh reads connected coils', (
+    WidgetTester tester,
+  ) async {
+    final device = DeviceInfo(
+      id: 'status-device',
+      name: 'Status PLC',
+      host: '127.0.0.23',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [
+        RegisterList(
+          id: 'status-list',
+          name: 'Status List',
+          coilCount: 1,
+          coilRefreshIntervalMs: 100,
+        ),
+      ],
+    );
+    await DeviceRepository.instance.replaceAll([device]);
+
+    final connections = _PollingConnectionRuntime();
+    await connections.connect(device);
+    final controller = RegistersController(
+      DeviceRepository.instance,
+      connections,
+      const DemoRegisterRuntime(enabled: false),
+    );
+    final returnDeviceId = ValueNotifier<String?>(null);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -202,14 +286,33 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
-    expect(connections.holdingReadCount, 1);
+    expect(connections.coilReadCount, 0);
+
+    await tester.tap(find.text('Status'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(connections.coilReadCount, greaterThan(0));
+    final firstReadCount = connections.coilReadCount;
 
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump();
 
-    expect(connections.holdingReadCount, greaterThan(1));
+    expect(connections.coilReadCount, greaterThan(firstReadCount));
+
+    final holdingReadsBeforeReturn = connections.holdingReadCount;
+    await tester.tap(find.text('Registers'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    final inactiveStatusReadCount = connections.coilReadCount;
+
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump();
+
+    expect(connections.holdingReadCount, greaterThan(holdingReadsBeforeReturn));
+    expect(connections.coilReadCount, inactiveStatusReadCount);
 
     await tester.pumpWidget(const SizedBox.shrink());
     controller.dispose();
@@ -364,6 +467,7 @@ class _RegisterListDialogHarness extends StatelessWidget {
 class _PollingConnectionRuntime implements ConnectionRuntime {
   final _ids = ValueNotifier<Set<String>>(const {});
   var holdingReadCount = 0;
+  var coilReadCount = 0;
 
   @override
   ValueListenable<Set<String>> get connectedDeviceIds => _ids;
@@ -397,4 +501,21 @@ class _PollingConnectionRuntime implements ConnectionRuntime {
     required int startAddress,
     required int count,
   }) async => List.filled(count, 0);
+
+  @override
+  Future<List<bool>> readCoils(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  }) async {
+    coilReadCount++;
+    return List.filled(count, coilReadCount.isOdd);
+  }
+
+  @override
+  Future<List<bool>> readDiscreteInputs(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  }) async => List.filled(count, false);
 }

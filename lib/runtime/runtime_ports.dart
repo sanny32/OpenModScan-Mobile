@@ -27,6 +27,18 @@ abstract interface class ConnectionRuntime {
     required int startAddress,
     required int count,
   });
+
+  Future<List<bool>> readCoils(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  });
+
+  Future<List<bool>> readDiscreteInputs(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  });
 }
 
 abstract interface class RegisterRuntime {

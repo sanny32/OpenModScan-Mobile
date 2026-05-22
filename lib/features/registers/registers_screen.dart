@@ -32,12 +32,14 @@ enum _MenuAction {
 class RegistersScreen extends StatefulWidget {
   final RegistersController controller;
   final ValueListenable<String?> returnDeviceId;
+  final ValueListenable<bool>? screenActive;
   final VoidCallback onReturnToDevice;
 
   const RegistersScreen({
     super.key,
     required this.controller,
     required this.returnDeviceId,
+    this.screenActive,
     required this.onReturnToDevice,
   });
 
@@ -51,8 +53,10 @@ class _RegistersScreenState extends State<RegistersScreen>
   late List<_ListConfig> _lists;
   String _listSignature = '';
   int _activeList = 0;
+  var _activeTab = 0;
 
   DeviceInfo? get _selectedDevice => widget.controller.selectedDevice;
+  bool get _screenActive => widget.screenActive?.value ?? true;
 
   List<_ListConfig> _buildListsFromDevice() {
     final lists = widget.controller.lists;
@@ -78,7 +82,13 @@ class _RegistersScreenState extends State<RegistersScreen>
                   Object.hash(entry.address, entry.typeName, entry.comment),
             ),
           );
-          return '${list.id}:$entriesSignature';
+          final statusEntriesSignature = Object.hashAll(
+            list.statusEntries.map(
+              (entry) =>
+                  Object.hash(entry.statusType, entry.address, entry.comment),
+            ),
+          );
+          return '${list.id}:$entriesSignature:$statusEntriesSignature';
         })
         .join(',');
     return '${widget.controller.selectedDeviceId}:'
@@ -92,8 +102,37 @@ class _RegistersScreenState extends State<RegistersScreen>
     _tabController = TabController(length: 2, vsync: this);
     _lists = _buildListsFromDevice();
     _listSignature = _currentListSignature;
+    _tabController.addListener(_onTabChanged);
+    _tabController.animation?.addListener(_onTabAnimationChanged);
     widget.controller.addListener(_onChanged);
+    widget.screenActive?.addListener(_onScreenActiveChanged);
     widget.controller.ensureSelectedList();
+  }
+
+  @override
+  void didUpdateWidget(RegistersScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.screenActive != widget.screenActive) {
+      oldWidget.screenActive?.removeListener(_onScreenActiveChanged);
+      widget.screenActive?.addListener(_onScreenActiveChanged);
+    }
+  }
+
+  void _onTabChanged() {
+    _setActiveTab(_tabController.index);
+  }
+
+  void _onTabAnimationChanged() {
+    if (_tabController.indexIsChanging) return;
+
+    final index = _tabController.animation?.value.round();
+    if (index != null) {
+      _setActiveTab(index.clamp(0, _tabController.length - 1));
+    }
+  }
+
+  void _onScreenActiveChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onChanged() {
@@ -120,6 +159,9 @@ class _RegistersScreenState extends State<RegistersScreen>
   @override
   void dispose() {
     widget.controller.removeListener(_onChanged);
+    widget.screenActive?.removeListener(_onScreenActiveChanged);
+    _tabController.animation?.removeListener(_onTabAnimationChanged);
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     for (final list in _lists) {
       list.dispose();
@@ -402,6 +444,7 @@ class _RegistersScreenState extends State<RegistersScreen>
                   onAddrModeChanged: (v) =>
                       _updateActiveList(active..addrMode = v),
                   autoRefresh: active.autoRefresh,
+                  isActive: _screenActive && _activeTab == 0,
                   onAutoRefreshChanged: (v) =>
                       _updateActiveList(active..autoRefresh = v),
                   autoRefreshIntervalMs: active.refreshIntervalMs,
@@ -411,6 +454,7 @@ class _RegistersScreenState extends State<RegistersScreen>
                   countCtrl: active.countCtrl,
                   registerList: active.data,
                   runtimeValues: widget.controller.runtimeValues,
+                  lastReadAt: widget.controller.lastRegisterReadAt,
                   referenceRegisters: widget.controller.referenceRegisters,
                   canRead:
                       _selectedDevice != null &&
@@ -424,11 +468,24 @@ class _RegistersScreenState extends State<RegistersScreen>
                   onCoilTypeChanged: (v) =>
                       _updateActiveList(active..coilType = v),
                   autoRefresh: active.coilAutoRefresh,
+                  isActive: _screenActive && _activeTab == 1,
                   onAutoRefreshChanged: (v) =>
                       _updateActiveList(active..coilAutoRefresh = v),
+                  autoRefreshIntervalMs: active.coilRefreshIntervalMs,
+                  refreshIntervalCtrl: active.coilRefreshIntervalCtrl,
+                  onRefreshIntervalCommitted: active.commitCoilRefreshInterval,
                   startAddrCtrl: active.coilStartAddrCtrl,
                   countCtrl: active.coilCountCtrl,
+                  registerList: active.data,
+                  runtimeValues: widget.controller.runtimeStatusValues,
+                  lastReadAt: widget.controller.lastStatusReadAt,
                   referenceStatuses: widget.controller.referenceStatuses,
+                  canRead:
+                      _selectedDevice != null &&
+                      widget.controller.isConnected(_selectedDevice!),
+                  onRead: widget.controller.readStatuses,
+                  onEntryChanged: (address, comment) => widget.controller
+                      .updateStatusEntry(active.coilType, address, comment),
                 ),
               ],
             ),
@@ -441,6 +498,12 @@ class _RegistersScreenState extends State<RegistersScreen>
   void _updateActiveList(_ListConfig active) {
     setState(() {});
     widget.controller.updateList(active.data);
+  }
+
+  void _setActiveTab(int index) {
+    if (_activeTab != index) {
+      setState(() => _activeTab = index);
+    }
   }
 }
 
@@ -457,6 +520,7 @@ class _RegistersTab extends StatefulWidget {
   final int addrMode;
   final ValueChanged<int> onAddrModeChanged;
   final bool autoRefresh;
+  final bool isActive;
   final ValueChanged<bool> onAutoRefreshChanged;
   final int autoRefreshIntervalMs;
   final TextEditingController refreshIntervalCtrl;
@@ -465,6 +529,7 @@ class _RegistersTab extends StatefulWidget {
   final TextEditingController countCtrl;
   final RegisterList registerList;
   final Map<int, (String, String?, DateTime?)> runtimeValues;
+  final DateTime? lastReadAt;
   final List<RegisterEntry> Function(int startAddress, int count)
   referenceRegisters;
   final bool canRead;
@@ -484,6 +549,7 @@ class _RegistersTab extends StatefulWidget {
     required this.addrMode,
     required this.onAddrModeChanged,
     required this.autoRefresh,
+    required this.isActive,
     required this.onAutoRefreshChanged,
     required this.autoRefreshIntervalMs,
     required this.refreshIntervalCtrl,
@@ -492,6 +558,7 @@ class _RegistersTab extends StatefulWidget {
     required this.countCtrl,
     required this.registerList,
     required this.runtimeValues,
+    required this.lastReadAt,
     required this.referenceRegisters,
     required this.canRead,
     required this.onRead,
@@ -506,7 +573,6 @@ class _RegistersTab extends StatefulWidget {
 class _RegistersTabState extends State<_RegistersTab> {
   var _reading = false;
   var _manualReadInProgress = false;
-  String? _lastUpdateTime;
   Timer? _autoRefreshTimer;
 
   void _onCtrlChanged() => setState(() {});
@@ -534,13 +600,16 @@ class _RegistersTabState extends State<_RegistersTab> {
       widget.countCtrl.addListener(_onCtrlChanged);
     }
     if (old.autoRefresh != widget.autoRefresh ||
+        old.isActive != widget.isActive ||
         old.autoRefreshIntervalMs != widget.autoRefreshIntervalMs ||
         old.canRead != widget.canRead ||
         old.regType != widget.regType) {
       _syncAutoRefresh(
         readImmediately:
             widget.autoRefresh &&
-            (!old.autoRefresh || !old.canRead && widget.canRead),
+            (!old.autoRefresh ||
+                !old.isActive && widget.isActive ||
+                !old.canRead && widget.canRead),
       );
     }
   }
@@ -555,7 +624,7 @@ class _RegistersTabState extends State<_RegistersTab> {
 
   void _syncAutoRefresh({bool readImmediately = false}) {
     _autoRefreshTimer?.cancel();
-    if (!widget.autoRefresh) return;
+    if (!widget.autoRefresh || !widget.isActive) return;
 
     _autoRefreshTimer = Timer.periodic(
       Duration(milliseconds: widget.autoRefreshIntervalMs),
@@ -565,7 +634,7 @@ class _RegistersTabState extends State<_RegistersTab> {
     );
     if (readImmediately) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && widget.autoRefresh) {
+        if (mounted && widget.autoRefresh && widget.isActive) {
           _read(showErrors: false, showProgress: false);
         }
       });
@@ -573,7 +642,12 @@ class _RegistersTabState extends State<_RegistersTab> {
   }
 
   Future<void> _read({bool showErrors = true, bool showProgress = true}) async {
-    if (_reading || !widget.canRead || !_supportsRegisterRead) return;
+    if (_reading ||
+        !widget.isActive ||
+        !widget.canRead ||
+        !_supportsRegisterRead) {
+      return;
+    }
 
     final offset = _regTypeOffset(widget.regType);
     final rawStart = int.tryParse(widget.startAddrCtrl.text) ?? 1;
@@ -591,13 +665,6 @@ class _RegistersTabState extends State<_RegistersTab> {
         count: count,
       );
       if (!mounted) return;
-      final now = DateTime.now();
-      setState(() {
-        _lastUpdateTime =
-            '${now.hour.toString().padLeft(2, '0')}:'
-            '${now.minute.toString().padLeft(2, '0')}:'
-            '${now.second.toString().padLeft(2, '0')}';
-      });
     } catch (error) {
       if (!mounted || !showErrors) return;
       ScaffoldMessenger.of(context)
@@ -887,7 +954,11 @@ class _RegistersTabState extends State<_RegistersTab> {
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
               Text(
-                l10n.registersLastUpdate(_lastUpdateTime ?? '--:--:--'),
+                l10n.registersLastUpdate(
+                  widget.lastReadAt == null
+                      ? '--:--:--'
+                      : _formatTimestamp(widget.lastReadAt!),
+                ),
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
             ],
@@ -935,20 +1006,45 @@ class _CoilsTab extends StatefulWidget {
   final String coilType;
   final ValueChanged<String> onCoilTypeChanged;
   final bool autoRefresh;
+  final bool isActive;
   final ValueChanged<bool> onAutoRefreshChanged;
+  final int autoRefreshIntervalMs;
+  final TextEditingController refreshIntervalCtrl;
+  final VoidCallback onRefreshIntervalCommitted;
   final TextEditingController startAddrCtrl;
   final TextEditingController countCtrl;
+  final RegisterList registerList;
+  final Map<(String, int), (bool, bool?, DateTime?)> runtimeValues;
+  final DateTime? lastReadAt;
   final List<StatusEntry> Function(int startAddress, int count)
   referenceStatuses;
+  final bool canRead;
+  final Future<void> Function({
+    required String statusType,
+    required int startAddress,
+    required int count,
+  })
+  onRead;
+  final void Function(int address, String? comment) onEntryChanged;
 
   const _CoilsTab({
     required this.coilType,
     required this.onCoilTypeChanged,
     required this.autoRefresh,
+    required this.isActive,
     required this.onAutoRefreshChanged,
+    required this.autoRefreshIntervalMs,
+    required this.refreshIntervalCtrl,
+    required this.onRefreshIntervalCommitted,
     required this.startAddrCtrl,
     required this.countCtrl,
+    required this.registerList,
+    required this.runtimeValues,
+    required this.lastReadAt,
     required this.referenceStatuses,
+    required this.canRead,
+    required this.onRead,
+    required this.onEntryChanged,
   });
 
   @override
@@ -956,16 +1052,111 @@ class _CoilsTab extends StatefulWidget {
 }
 
 class _CoilsTabState extends State<_CoilsTab> {
-  late List<StatusEntry> _items;
+  final _manualValues = <int, bool>{};
+  var _reading = false;
+  var _manualReadInProgress = false;
+  Timer? _autoRefreshTimer;
 
   bool get _canWrite => widget.coilType == '0xxxx';
+
+  bool get _supportsStatusRead =>
+      widget.coilType == '0xxxx' || widget.coilType == '1xxxx';
+
+  void _onCtrlChanged() => setState(() {});
 
   @override
   void initState() {
     super.initState();
+    widget.startAddrCtrl.addListener(_onCtrlChanged);
+    widget.countCtrl.addListener(_onCtrlChanged);
+    _syncAutoRefresh(readImmediately: true);
+  }
+
+  @override
+  void didUpdateWidget(_CoilsTab old) {
+    super.didUpdateWidget(old);
+    if (old.startAddrCtrl != widget.startAddrCtrl) {
+      old.startAddrCtrl.removeListener(_onCtrlChanged);
+      widget.startAddrCtrl.addListener(_onCtrlChanged);
+    }
+    if (old.countCtrl != widget.countCtrl) {
+      old.countCtrl.removeListener(_onCtrlChanged);
+      widget.countCtrl.addListener(_onCtrlChanged);
+    }
+    if (old.autoRefresh != widget.autoRefresh ||
+        old.isActive != widget.isActive ||
+        old.autoRefreshIntervalMs != widget.autoRefreshIntervalMs ||
+        old.canRead != widget.canRead ||
+        old.coilType != widget.coilType) {
+      _syncAutoRefresh(
+        readImmediately:
+            widget.autoRefresh &&
+            (!old.autoRefresh ||
+                !old.isActive && widget.isActive ||
+                !old.canRead && widget.canRead),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.startAddrCtrl.removeListener(_onCtrlChanged);
+    widget.countCtrl.removeListener(_onCtrlChanged);
+    _autoRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _syncAutoRefresh({bool readImmediately = false}) {
+    _autoRefreshTimer?.cancel();
+    if (!widget.autoRefresh || !widget.isActive) return;
+
+    _autoRefreshTimer = Timer.periodic(
+      Duration(milliseconds: widget.autoRefreshIntervalMs),
+      (_) => _read(showErrors: false, showProgress: false),
+    );
+    if (readImmediately) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && widget.autoRefresh && widget.isActive) {
+          _read(showErrors: false, showProgress: false);
+        }
+      });
+    }
+  }
+
+  Future<void> _read({bool showErrors = true, bool showProgress = true}) async {
+    if (_reading ||
+        !widget.isActive ||
+        !widget.canRead ||
+        !_supportsStatusRead) {
+      return;
+    }
+
     final start = int.tryParse(widget.startAddrCtrl.text) ?? 0;
-    final count = int.tryParse(widget.countCtrl.text) ?? 20;
-    _items = List.of(widget.referenceStatuses(start, count));
+    final rawCount = int.tryParse(widget.countCtrl.text);
+    final count = rawCount == null || rawCount < 1 ? 20 : rawCount;
+
+    _reading = true;
+    if (showProgress) {
+      setState(() => _manualReadInProgress = true);
+    }
+    try {
+      await widget.onRead(
+        statusType: widget.coilType,
+        startAddress: start,
+        count: count,
+      );
+      if (!mounted) return;
+    } catch (error) {
+      if (!mounted || !showErrors) return;
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text('$error')));
+    } finally {
+      _reading = false;
+      if (mounted && showProgress) {
+        setState(() => _manualReadInProgress = false);
+      }
+    }
   }
 
   @override
@@ -978,6 +1169,30 @@ class _CoilsTabState extends State<_CoilsTab> {
     final rawCount = int.tryParse(widget.countCtrl.text);
     final count = rawCount == null || rawCount < 1 ? 20 : rawCount;
     final end = start + count - 1;
+    final references = {
+      for (final e in widget.referenceStatuses(start, count)) e.address: e,
+    };
+    final configByAddress = {
+      for (final e in widget.registerList.statusEntries)
+        if (e.statusType == widget.coilType) e.address: e,
+    };
+    final visibleStatuses = List.generate(count, (i) {
+      final address = start + i;
+      final reference = references[address];
+      final runtime = widget.runtimeValues[(widget.coilType, address)];
+      final value =
+          runtime?.$1 ?? _manualValues[address] ?? reference?.value ?? false;
+      return StatusEntry(
+        address: address,
+        value: value,
+        previousValue: runtime?.$2 ?? reference?.previousValue,
+        comment: configByAddress[address]?.comment ?? reference?.comment ?? '',
+        timestamp: runtime?.$3 == null
+            ? reference?.timestamp
+            : _formatTimestamp(runtime!.$3!),
+        date: runtime?.$3 == null ? reference?.date : _formatDate(runtime!.$3!),
+      );
+    });
 
     return Column(
       children: [
@@ -1000,9 +1215,19 @@ class _CoilsTabState extends State<_CoilsTab> {
                 constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               ),
               ElevatedButton.icon(
-                icon: const Icon(Icons.refresh, size: 15),
+                icon: _manualReadInProgress
+                    ? const SizedBox.square(
+                        dimension: 15,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh, size: 15),
                 label: Text(l10n.btnRead),
-                onPressed: () {},
+                onPressed:
+                    widget.canRead &&
+                        _supportsStatusRead &&
+                        !_manualReadInProgress
+                    ? _read
+                    : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: cs.primary,
                   foregroundColor: cs.onPrimary,
@@ -1026,9 +1251,9 @@ class _CoilsTabState extends State<_CoilsTab> {
                 l10n.labelStart,
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               SizedBox(
-                width: 72,
+                width: 58,
                 child: TextField(
                   controller: widget.startAddrCtrl,
                   keyboardType: TextInputType.number,
@@ -1042,17 +1267,16 @@ class _CoilsTabState extends State<_CoilsTab> {
                       vertical: 8,
                     ),
                   ),
-                  onChanged: (_) => setState(() {}),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Text(
                 l10n.labelCount,
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               SizedBox(
-                width: 44,
+                width: 42,
                 child: TextField(
                   controller: widget.countCtrl,
                   keyboardType: TextInputType.number,
@@ -1069,22 +1293,64 @@ class _CoilsTabState extends State<_CoilsTab> {
                       vertical: 8,
                     ),
                   ),
-                  onChanged: (_) => setState(() {}),
                 ),
               ),
               const Spacer(),
-              Text(
-                l10n.labelAutoRefresh,
-                style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
-              ),
-              Transform.scale(
-                scale: 0.8,
-                child: Switch(
-                  value: widget.autoRefresh,
-                  onChanged: widget.onAutoRefreshChanged,
+              Tooltip(
+                message: l10n.labelAutoRefresh,
+                child: Icon(
+                  Icons.update_rounded,
+                  size: 18,
+                  color: cs.onSurfaceVariant,
                 ),
               ),
-              Text('1.0 s', style: tt.bodyMedium),
+              const SizedBox(width: 4),
+              SizedBox(
+                width: 42,
+                height: 32,
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: Switch(
+                    value: widget.autoRefresh,
+                    onChanged: widget.onAutoRefreshChanged,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 2),
+              Focus(
+                onFocusChange: (hasFocus) {
+                  if (!hasFocus) {
+                    widget.onRefreshIntervalCommitted();
+                  }
+                },
+                child: SizedBox(
+                  width: 58,
+                  child: TextField(
+                    controller: widget.refreshIntervalCtrl,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.done,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      _MaxCountFormatter(max: kMaxRegisterRefreshIntervalMs),
+                    ],
+                    style: tt.bodyMedium,
+                    textAlign: TextAlign.center,
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 8,
+                      ),
+                    ),
+                    onEditingComplete: () {
+                      widget.onRefreshIntervalCommitted();
+                      FocusScope.of(context).unfocus();
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text('ms', style: tt.bodyMedium),
             ],
           ),
         ),
@@ -1120,16 +1386,16 @@ class _CoilsTabState extends State<_CoilsTab> {
         Divider(height: 1, color: dividerColor),
         Expanded(
           child: ListView.separated(
-            itemCount: _items.length,
+            itemCount: visibleStatuses.length,
             separatorBuilder: (_, _) => Divider(height: 1, color: dividerColor),
             itemBuilder: (context, i) => _StatusRow(
-              entry: _items[i],
-              displayAddress: start + _items[i].address,
+              entry: visibleStatuses[i],
               canWrite: _canWrite,
+              onEntryChanged: widget.onEntryChanged,
               onChanged: _canWrite
-                  ? (value) => setState(
-                      () => _items[i] = _items[i].copyWith(value: value),
-                    )
+                  ? (value) => setState(() {
+                      _manualValues[visibleStatuses[i].address] = value;
+                    })
                   : null,
             ),
           ),
@@ -1145,7 +1411,11 @@ class _CoilsTabState extends State<_CoilsTab> {
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
               Text(
-                l10n.registersLastUpdate('10:42:35'),
+                l10n.registersLastUpdate(
+                  widget.lastReadAt == null
+                      ? '--:--:--'
+                      : _formatTimestamp(widget.lastReadAt!),
+                ),
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
             ],
@@ -1158,15 +1428,15 @@ class _CoilsTabState extends State<_CoilsTab> {
 
 class _StatusRow extends StatelessWidget {
   final StatusEntry entry;
-  final int displayAddress;
   final bool canWrite;
   final ValueChanged<bool>? onChanged;
+  final void Function(int address, String? comment)? onEntryChanged;
 
   const _StatusRow({
     required this.entry,
-    required this.displayAddress,
     required this.canWrite,
     required this.onChanged,
+    required this.onEntryChanged,
   });
 
   @override
@@ -1179,10 +1449,15 @@ class _StatusRow extends StatelessWidget {
         context,
         MaterialPageRoute(
           builder: (_) => StatusDetailScreen(
-            address: displayAddress,
+            address: entry.address,
             initialValue: entry.value,
             comment: entry.comment,
             canWrite: canWrite,
+            timestamp: entry.timestamp,
+            date: entry.date,
+            onSaved: onEntryChanged == null
+                ? null
+                : (comment) => onEntryChanged!(entry.address, comment),
           ),
         ),
       ),
@@ -1193,7 +1468,7 @@ class _StatusRow extends StatelessWidget {
             SizedBox(
               width: 72,
               child: Text(
-                displayAddress.toString().padLeft(5, '0'),
+                entry.address.toString().padLeft(5, '0'),
                 style: tt.bodyLarge,
               ),
             ),

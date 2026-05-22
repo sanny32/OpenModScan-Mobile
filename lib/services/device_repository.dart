@@ -128,4 +128,30 @@ class DeviceRepository {
     }
     await updateRegisterList(deviceId, list.copyWith(entries: entries));
   }
+
+  Future<void> upsertStatusConfig(
+    String deviceId,
+    String listId,
+    StatusConfig config,
+  ) async {
+    final device = findById(deviceId);
+    if (device == null) return;
+    final indexOfList = device.registerLists.indexWhere(
+      (item) => item.id == listId,
+    );
+    if (indexOfList == -1) return;
+    final list = device.registerLists[indexOfList];
+    final entries = List.of(list.statusEntries);
+    final index = entries.indexWhere(
+      (item) =>
+          item.statusType == config.statusType &&
+          item.address == config.address,
+    );
+    if (index == -1) {
+      entries.add(config);
+    } else {
+      entries[index] = config;
+    }
+    await updateRegisterList(deviceId, list.copyWith(statusEntries: entries));
+  }
 }

@@ -5,6 +5,7 @@ import '../models/device_info.dart';
 
 class ModbusClient {
   static const _maxRegistersPerRead = 125;
+  static const _maxBitsPerRead = 2000;
 
   final DeviceInfo device;
   modbus_tcp.ModbusClientTcp? _tcpClient;
@@ -53,6 +54,12 @@ class ModbusClient {
         quantity,
       );
 
+  Future<List<bool>> readCoils(int startAddress, int quantity) =>
+      _readBits(modbus.ModbusElementType.coil, startAddress, quantity);
+
+  Future<List<bool>> readDiscreteInputs(int startAddress, int quantity) =>
+      _readBits(modbus.ModbusElementType.discreteInput, startAddress, quantity);
+
   Future<List<int>> _readRegisters(
     modbus.ModbusElementType type,
     int startAddress,
@@ -77,6 +84,34 @@ class ModbusClient {
     return [for (final register in registers) _valueFor(register)];
   }
 
+  Future<List<bool>> _readBits(
+    modbus.ModbusElementType type,
+    int startAddress,
+    int quantity,
+  ) async {
+    _validateBitReadRange(startAddress, quantity);
+
+    final bits = [
+      for (var offset = 0; offset < quantity; offset++)
+        type == modbus.ModbusElementType.coil
+            ? modbus.ModbusCoil(
+                name: 'Coil ${startAddress + offset}',
+                address: startAddress + offset,
+              )
+            : modbus.ModbusDiscreteInput(
+                name: 'Discrete input ${startAddress + offset}',
+                address: startAddress + offset,
+              ),
+    ];
+    final group = modbus.ModbusElementsGroup(bits);
+    final response = await _requireTcpClient().send(group.getReadRequest());
+    if (response != modbus.ModbusResponseCode.requestSucceed) {
+      throw ModbusClientException('Modbus read failed: ${response.name}.');
+    }
+
+    return [for (final bit in bits) _bitValueFor(bit)];
+  }
+
   modbus_tcp.ModbusClientTcp _requireTcpClient() {
     final client = _tcpClient;
     if (client == null) {
@@ -95,6 +130,16 @@ class ModbusClient {
     return value.toInt();
   }
 
+  bool _bitValueFor(modbus.ModbusBitElement bit) {
+    final value = bit.value;
+    if (value == null) {
+      throw ModbusClientException(
+        'Modbus response did not update bit ${bit.address}.',
+      );
+    }
+    return value;
+  }
+
   void _validateReadRange(int startAddress, int quantity) {
     if (startAddress < 0 || startAddress > 0xffff) {
       throw RangeError.range(startAddress, 0, 0xffff, 'startAddress');
@@ -104,6 +149,18 @@ class ModbusClient {
     }
     if (startAddress + quantity > 0x10000) {
       throw RangeError('Read range exceeds Modbus register address space.');
+    }
+  }
+
+  void _validateBitReadRange(int startAddress, int quantity) {
+    if (startAddress < 0 || startAddress > 0xffff) {
+      throw RangeError.range(startAddress, 0, 0xffff, 'startAddress');
+    }
+    if (quantity < 1 || quantity > _maxBitsPerRead) {
+      throw RangeError.range(quantity, 1, _maxBitsPerRead, 'quantity');
+    }
+    if (startAddress + quantity > 0x10000) {
+      throw RangeError('Read range exceeds Modbus bit address space.');
     }
   }
 }

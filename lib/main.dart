@@ -66,6 +66,7 @@ class _AppShellState extends State<AppShell> {
 
   final _navigatorKeys = List.generate(4, (_) => GlobalKey<NavigatorState>());
   final _registersReturnDeviceId = ValueNotifier<String?>(null);
+  final _registersScreenActive = ValueNotifier<bool>(false);
 
   late final DevicesController _devicesController;
   late final RegistersController _registersController;
@@ -99,6 +100,7 @@ class _AppShellState extends State<AppShell> {
   @override
   void dispose() {
     _registersReturnDeviceId.dispose();
+    _registersScreenActive.dispose();
     _devicesController.dispose();
     _registersController.dispose();
     _trafficController.dispose();
@@ -110,12 +112,12 @@ class _AppShellState extends State<AppShell> {
     await _registersController.selectTarget(target);
     if (!mounted) return;
     _registersReturnDeviceId.value = target.deviceId;
-    setState(() => _index = 1);
+    _setTabIndex(1);
   }
 
   void _openTraffic(TrafficRouteArgs target) {
     _trafficController.selectTarget(target);
-    setState(() => _index = 2);
+    _setTabIndex(2);
   }
 
   void _openDevice(String deviceId) {
@@ -147,6 +149,7 @@ class _AppShellState extends State<AppShell> {
       1 => RegistersScreen(
         controller: _registersController,
         returnDeviceId: _registersReturnDeviceId,
+        screenActive: _registersScreenActive,
         onReturnToDevice: _returnFromRegisters,
       ),
       2 => TrafficScreen(controller: _trafficController),
@@ -168,17 +171,22 @@ class _AppShellState extends State<AppShell> {
     if (_index == 1 && _registersReturnDeviceId.value != null) {
       _returnFromRegisters();
     } else if (_index != 0) {
-      setState(() => _index = 0);
+      _setTabIndex(0);
     }
   }
 
   void _returnFromRegisters() {
     _registersReturnDeviceId.value = null;
-    setState(() => _index = 0);
+    _setTabIndex(0);
   }
 
   void _selectTab(int index) {
     _registersReturnDeviceId.value = null;
+    _setTabIndex(index);
+  }
+
+  void _setTabIndex(int index) {
+    _registersScreenActive.value = index == 1;
     setState(() => _index = index);
   }
 

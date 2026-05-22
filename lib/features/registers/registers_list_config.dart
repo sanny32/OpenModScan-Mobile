@@ -8,6 +8,7 @@ class _ListConfig {
   late final TextEditingController refreshIntervalCtrl;
   late final TextEditingController coilStartAddrCtrl;
   late final TextEditingController coilCountCtrl;
+  late final TextEditingController coilRefreshIntervalCtrl;
 
   String get name => data.name;
   set name(String value) => data.name = value;
@@ -29,6 +30,8 @@ class _ListConfig {
   bool get coilAutoRefresh => data.coilAutoRefresh;
   set coilAutoRefresh(bool value) => data.coilAutoRefresh = value;
 
+  int get coilRefreshIntervalMs => data.coilRefreshIntervalMs;
+
   _ListConfig(this.data, {this.onChanged}) {
     startAddrCtrl = TextEditingController(text: data.startAddress.toString());
     countCtrl = TextEditingController(text: data.count.toString());
@@ -39,6 +42,9 @@ class _ListConfig {
       text: data.coilStartAddress.toString().padLeft(5, '0'),
     );
     coilCountCtrl = TextEditingController(text: data.coilCount.toString());
+    coilRefreshIntervalCtrl = TextEditingController(
+      text: data.coilRefreshIntervalMs.toString(),
+    );
 
     startAddrCtrl.addListener(() {
       data.startAddress = int.tryParse(startAddrCtrl.text) ?? 1;
@@ -66,6 +72,16 @@ class _ListConfig {
       data.coilCount = int.tryParse(coilCountCtrl.text) ?? 20;
       onChanged?.call(data);
     });
+    coilRefreshIntervalCtrl.addListener(() {
+      final value = int.tryParse(coilRefreshIntervalCtrl.text);
+      if (value == null ||
+          value < kMinRegisterRefreshIntervalMs ||
+          value > kMaxRegisterRefreshIntervalMs) {
+        return;
+      }
+      data.coilRefreshIntervalMs = value;
+      onChanged?.call(data);
+    });
   }
 
   void commitRefreshInterval() {
@@ -85,11 +101,29 @@ class _ListConfig {
     refreshIntervalCtrl.text = value.toString();
   }
 
+  void commitCoilRefreshInterval() {
+    final rawValue = int.tryParse(coilRefreshIntervalCtrl.text);
+    final value = rawValue == null
+        ? data.coilRefreshIntervalMs
+        : rawValue
+              .clamp(
+                kMinRegisterRefreshIntervalMs,
+                kMaxRegisterRefreshIntervalMs,
+              )
+              .toInt();
+    if (data.coilRefreshIntervalMs != value) {
+      data.coilRefreshIntervalMs = value;
+      onChanged?.call(data);
+    }
+    coilRefreshIntervalCtrl.text = value.toString();
+  }
+
   void dispose() {
     startAddrCtrl.dispose();
     countCtrl.dispose();
     refreshIntervalCtrl.dispose();
     coilStartAddrCtrl.dispose();
     coilCountCtrl.dispose();
+    coilRefreshIntervalCtrl.dispose();
   }
 }

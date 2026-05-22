@@ -7,6 +7,9 @@ class StatusDetailScreen extends StatefulWidget {
   final bool initialValue;
   final String comment;
   final bool canWrite;
+  final String? timestamp;
+  final String? date;
+  final ValueChanged<String?>? onSaved;
 
   const StatusDetailScreen({
     super.key,
@@ -14,6 +17,9 @@ class StatusDetailScreen extends StatefulWidget {
     required this.initialValue,
     required this.comment,
     required this.canWrite,
+    this.timestamp,
+    this.date,
+    this.onSaved,
   });
 
   @override
@@ -53,6 +59,8 @@ class _StatusDetailScreenState extends State<StatusDetailScreen> {
   }
 
   void _save() {
+    final comment = _commentCtrl.text.trim();
+    widget.onSaved?.call(comment.isEmpty ? null : comment);
     setState(() => _hasChanges = false);
   }
 
@@ -104,41 +112,45 @@ class _StatusDetailScreenState extends State<StatusDetailScreen> {
                         ),
                       ),
                       const Spacer(),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 1),
-                        child: Icon(
-                          Icons.schedule_rounded,
-                          size: 18,
-                          color: cs.onSurfaceVariant,
+                      if (widget.timestamp != null) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(top: 1),
+                          child: Icon(
+                            Icons.schedule_rounded,
+                            size: 18,
+                            color: cs.onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 5),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '21.05.2024',
-                            maxLines: 1,
-                            softWrap: false,
-                            style: tt.bodyLarge!.copyWith(
-                              color: cs.onSurfaceVariant,
-                              fontSize: 12,
-                              height: 1,
+                        const SizedBox(width: 5),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (widget.date != null) ...[
+                              Text(
+                                widget.date!,
+                                maxLines: 1,
+                                softWrap: false,
+                                style: tt.bodyLarge!.copyWith(
+                                  color: cs.onSurfaceVariant,
+                                  fontSize: 12,
+                                  height: 1,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                            ],
+                            Text(
+                              '${widget.timestamp!}.000',
+                              maxLines: 1,
+                              softWrap: false,
+                              style: tt.bodyLarge!.copyWith(
+                                color: cs.onSurfaceVariant,
+                                fontSize: 13,
+                                height: 1,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            '10:42:35.000',
-                            maxLines: 1,
-                            softWrap: false,
-                            style: tt.bodyLarge!.copyWith(
-                              color: cs.onSurfaceVariant,
-                              fontSize: 13,
-                              height: 1,
-                            ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 16),

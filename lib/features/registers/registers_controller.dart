@@ -16,6 +16,7 @@ class RegistersController extends ChangeNotifier {
   String? _selectedDeviceId;
   String? _selectedListId;
   final Map<int, (String, String?, DateTime?)> _runtimeValues = {};
+  final Map<(String, int), (bool, bool?, DateTime?)> _runtimeStatusValues = {};
 
   RegistersController(
     this._repository,
@@ -48,6 +49,15 @@ class RegistersController extends ChangeNotifier {
   Map<int, (String, String?, DateTime?)> get runtimeValues =>
       Map.unmodifiable(_runtimeValues);
 
+  Map<(String, int), (bool, bool?, DateTime?)> get runtimeStatusValues =>
+      Map.unmodifiable(_runtimeStatusValues);
+
+  DateTime? get lastRegisterReadAt =>
+      _latestReadAt(_runtimeValues.values.map((value) => value.$3));
+
+  DateTime? get lastStatusReadAt =>
+      _latestReadAt(_runtimeStatusValues.values.map((value) => value.$3));
+
   bool isConnected(DeviceInfo device) => _connectionRuntime.isConnected(device);
 
   List<DeviceInfo> get connectedDevices =>
@@ -62,6 +72,7 @@ class RegistersController extends ChangeNotifier {
   Future<void> selectTarget(RegistersRouteArgs target) async {
     if (_selectedDeviceId != target.deviceId) {
       _runtimeValues.clear();
+      _runtimeStatusValues.clear();
     }
     _selectedDeviceId = target.deviceId;
     _selectedListId = target.registerListId;
@@ -72,6 +83,7 @@ class RegistersController extends ChangeNotifier {
   Future<void> selectDevice(String deviceId) async {
     if (_selectedDeviceId == deviceId) return;
     _runtimeValues.clear();
+    _runtimeStatusValues.clear();
     _selectedDeviceId = deviceId;
     _selectedListId = null;
     await ensureSelectedList();
@@ -159,6 +171,21 @@ class RegistersController extends ChangeNotifier {
     await updateList(list.copyWith(entries: entries));
   }
 
+  Future<void> updateStatusEntry(
+    String statusType,
+    int address,
+    String? comment,
+  ) async {
+    final device = selectedDevice;
+    final list = activeList;
+    if (device == null || list == null) return;
+    await _repository.upsertStatusConfig(
+      device.id,
+      list.id,
+      StatusConfig(statusType: statusType, address: address, comment: comment),
+    );
+  }
+
   Future<void> writeValue(int address, String value) async {
     final device = selectedDevice;
     if (device == null) return;
@@ -212,6 +239,45 @@ class RegistersController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> readStatuses({
+    required String statusType,
+    required int startAddress,
+    required int count,
+  }) async {
+    final device = selectedDevice;
+    if (device == null) {
+      throw StateError('Select a device before reading status values.');
+    }
+    if (!_connectionRuntime.isConnected(device)) {
+      throw StateError('${device.name} is not connected.');
+    }
+
+    final values = switch (statusType) {
+      '0xxxx' => await _connectionRuntime.readCoils(
+        device,
+        startAddress: startAddress,
+        count: count,
+      ),
+      '1xxxx' => await _connectionRuntime.readDiscreteInputs(
+        device,
+        startAddress: startAddress,
+        count: count,
+      ),
+      _ => throw UnsupportedError(
+        'Reading $statusType status values is not implemented.',
+      ),
+    };
+
+    final readAt = DateTime.now();
+    for (var index = 0; index < values.length; index++) {
+      final address = startAddress + index;
+      final key = (statusType, address);
+      final previous = _runtimeStatusValues[key]?.$1;
+      _runtimeStatusValues[key] = (values[index], previous, readAt);
+    }
+    notifyListeners();
+  }
+
   void _selectFallbackDevice() {
     if (_selectedDeviceId != null || devices.isEmpty) return;
     _selectedDeviceId = devices.first.id;
@@ -255,4 +321,14 @@ int _modbusRegisterAddress(String regType, int displayAddress) {
     throw RangeError.value(displayAddress, 'startAddress');
   }
   return registerNumber == 0 ? 0 : registerNumber - 1;
+}
+
+DateTime? _latestReadAt(Iterable<DateTime?> timestamps) {
+  DateTime? latest;
+  for (final timestamp in timestamps) {
+    if (timestamp != null && (latest == null || timestamp.isAfter(latest))) {
+      latest = timestamp;
+    }
+  }
+  return latest;
 }

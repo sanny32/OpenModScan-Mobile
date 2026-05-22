@@ -100,6 +100,7 @@ void main() {
     expect(readAt, isNotNull);
     expect(readAt!.isBefore(beforeRead), isFalse);
     expect(readAt.isAfter(afterRead), isFalse);
+    expect(controller.lastRegisterReadAt, readAt);
     expect(controller.runtimeValues[40002]?.$1, '23');
     expect(controller.runtimeValues[40002]?.$3, readAt);
 
@@ -114,13 +115,108 @@ void main() {
 
     controller.dispose();
   });
+
+  test('reads coils into runtime status values', () async {
+    final repository = DeviceRepository.instance;
+    final device = DeviceInfo(
+      id: 'device-d',
+      name: 'PLC D',
+      host: '127.0.0.4',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [RegisterList(id: 'list-d', name: 'List 1')],
+    );
+    await repository.replaceAll([device]);
+
+    final connections = _TestConnectionRuntime()..coilValues = [true, false];
+    await connections.connect(device);
+    final controller = RegistersController(
+      repository,
+      connections,
+      const DemoRegisterRuntime(enabled: false),
+    );
+    await controller.selectTarget(
+      const RegistersRouteArgs(deviceId: 'device-d', registerListId: 'list-d'),
+    );
+
+    final beforeRead = DateTime.now();
+    await controller.readStatuses(
+      statusType: '0xxxx',
+      startAddress: 7,
+      count: 2,
+    );
+    final afterRead = DateTime.now();
+
+    expect(connections.lastCoilStartAddress, 7);
+    expect(connections.lastCoilCount, 2);
+    final first = controller.runtimeStatusValues[('0xxxx', 7)];
+    expect(first?.$1, isTrue);
+    expect(first?.$2, isNull);
+    expect(first?.$3, isNotNull);
+    expect(first!.$3!.isBefore(beforeRead), isFalse);
+    expect(first.$3!.isAfter(afterRead), isFalse);
+    expect(controller.lastStatusReadAt, first.$3);
+    expect(controller.runtimeStatusValues[('0xxxx', 8)]?.$1, isFalse);
+
+    connections.coilValues = [false, true];
+    await controller.readStatuses(
+      statusType: '0xxxx',
+      startAddress: 7,
+      count: 2,
+    );
+    expect(controller.runtimeStatusValues[('0xxxx', 7)]?.$1, isFalse);
+    expect(controller.runtimeStatusValues[('0xxxx', 7)]?.$2, isTrue);
+
+    controller.dispose();
+  });
+
+  test('updates status comment through repository', () async {
+    final repository = DeviceRepository.instance;
+    await repository.replaceAll([
+      DeviceInfo(
+        id: 'device-e',
+        name: 'PLC E',
+        host: '127.0.0.5',
+        port: 502,
+        protocol: ProtocolType.modbusTcp,
+        unitId: 1,
+        registerLists: [RegisterList(id: 'list-e', name: 'List 1')],
+      ),
+    ]);
+    final controller = RegistersController(
+      repository,
+      _TestConnectionRuntime(),
+      const DemoRegisterRuntime(enabled: false),
+    );
+    await controller.selectTarget(
+      const RegistersRouteArgs(deviceId: 'device-e', registerListId: 'list-e'),
+    );
+
+    await controller.updateStatusEntry('1xxxx', 12, 'Line ready');
+
+    final entry = repository
+        .findById('device-e')!
+        .registerLists
+        .single
+        .statusEntries
+        .single;
+    expect(entry.statusType, '1xxxx');
+    expect(entry.address, 12);
+    expect(entry.comment, 'Line ready');
+
+    controller.dispose();
+  });
 }
 
 class _TestConnectionRuntime implements ConnectionRuntime {
   final _ids = ValueNotifier<Set<String>>(const {});
   var holdingValues = <int>[];
+  var coilValues = <bool>[];
   int? lastHoldingStartAddress;
   int? lastHoldingCount;
+  int? lastCoilStartAddress;
+  int? lastCoilCount;
 
   @override
   ValueListenable<Set<String>> get connectedDeviceIds => _ids;
@@ -151,6 +247,24 @@ class _TestConnectionRuntime implements ConnectionRuntime {
 
   @override
   Future<List<int>> readInputRegisters(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  }) async => const [];
+
+  @override
+  Future<List<bool>> readCoils(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  }) async {
+    lastCoilStartAddress = startAddress;
+    lastCoilCount = count;
+    return coilValues.take(count).toList();
+  }
+
+  @override
+  Future<List<bool>> readDiscreteInputs(
     DeviceInfo device, {
     required int startAddress,
     required int count,
