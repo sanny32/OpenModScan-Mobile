@@ -16,6 +16,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   url_launcher: ^6.3.0
   shared_preferences: ^2.3.0
+  modbus_client: ^1.4.5
+  modbus_client_tcp: ^1.2.3
 
 dev_dependencies:
   flutter_test:
