@@ -1,14 +1,20 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omodscan_mobile/features/devices/device_screen.dart';
 import 'package:omodscan_mobile/features/registers/register_list_dialogs.dart';
+import 'package:omodscan_mobile/features/registers/registers_controller.dart';
+import 'package:omodscan_mobile/features/registers/registers_screen.dart';
 import 'package:omodscan_mobile/l10n/l10n.dart';
 import 'package:omodscan_mobile/main.dart';
 import 'package:omodscan_mobile/models/app_settings.dart';
 import 'package:omodscan_mobile/models/device_info.dart';
 import 'package:omodscan_mobile/models/register_list.dart';
 import 'package:omodscan_mobile/runtime/fakes/demo_fixtures.dart';
+import 'package:omodscan_mobile/runtime/fakes/demo_runtime.dart';
+import 'package:omodscan_mobile/runtime/runtime_ports.dart';
 import 'package:omodscan_mobile/services/device_repository.dart';
+import 'package:omodscan_mobile/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -154,6 +160,57 @@ void main() {
     expect(find.byType(DeviceScreen), findsOneWidget);
   });
 
+  testWidgets('Register map auto refresh reads connected registers', (
+    WidgetTester tester,
+  ) async {
+    final device = DeviceInfo(
+      id: 'auto-device',
+      name: 'Auto PLC',
+      host: '127.0.0.21',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [
+        RegisterList(id: 'auto-list', name: 'Auto List', count: 1),
+      ],
+    );
+    await DeviceRepository.instance.replaceAll([device]);
+
+    final connections = _PollingConnectionRuntime();
+    await connections.connect(device);
+    final controller = RegistersController(
+      DeviceRepository.instance,
+      connections,
+      const DemoRegisterRuntime(enabled: false),
+    );
+    final returnDeviceId = ValueNotifier<String?>(null);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegistersScreen(
+          controller: controller,
+          returnDeviceId: returnDeviceId,
+          onReturnToDevice: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(connections.holdingReadCount, 1);
+
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+
+    expect(connections.holdingReadCount, greaterThan(1));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+    returnDeviceId.dispose();
+  });
+
   testWidgets('Theme setting updates app theme', (WidgetTester tester) async {
     await tester.pumpWidget(const OModScanApp());
 
@@ -221,4 +278,42 @@ class _RegisterListDialogHarness extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PollingConnectionRuntime implements ConnectionRuntime {
+  final _ids = ValueNotifier<Set<String>>(const {});
+  var holdingReadCount = 0;
+
+  @override
+  ValueListenable<Set<String>> get connectedDeviceIds => _ids;
+
+  @override
+  Future<void> connect(DeviceInfo device) async {
+    _ids.value = {..._ids.value, device.id};
+  }
+
+  @override
+  Future<void> disconnect(DeviceInfo device) async {
+    _ids.value = Set.of(_ids.value)..remove(device.id);
+  }
+
+  @override
+  bool isConnected(DeviceInfo device) => _ids.value.contains(device.id);
+
+  @override
+  Future<List<int>> readHoldingRegisters(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  }) async {
+    holdingReadCount++;
+    return List.filled(count, holdingReadCount);
+  }
+
+  @override
+  Future<List<int>> readInputRegisters(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  }) async => List.filled(count, 0);
 }

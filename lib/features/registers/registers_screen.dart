@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -444,7 +446,7 @@ class _RegistersTab extends StatefulWidget {
   final TextEditingController startAddrCtrl;
   final TextEditingController countCtrl;
   final RegisterList registerList;
-  final Map<int, (String, String?)> runtimeValues;
+  final Map<int, (String, String?, DateTime?)> runtimeValues;
   final List<RegisterEntry> Function(int startAddress, int count)
   referenceRegisters;
   final bool canRead;
@@ -481,8 +483,12 @@ class _RegistersTab extends StatefulWidget {
 }
 
 class _RegistersTabState extends State<_RegistersTab> {
+  static const _autoRefreshPeriod = Duration(seconds: 1);
+
   var _reading = false;
+  var _manualReadInProgress = false;
   String? _lastUpdateTime;
+  Timer? _autoRefreshTimer;
 
   void _onCtrlChanged() => setState(() {});
 
@@ -494,6 +500,7 @@ class _RegistersTabState extends State<_RegistersTab> {
     super.initState();
     widget.startAddrCtrl.addListener(_onCtrlChanged);
     widget.countCtrl.addListener(_onCtrlChanged);
+    _syncAutoRefresh(readImmediately: true);
   }
 
   @override
@@ -507,16 +514,42 @@ class _RegistersTabState extends State<_RegistersTab> {
       old.countCtrl.removeListener(_onCtrlChanged);
       widget.countCtrl.addListener(_onCtrlChanged);
     }
+    if (old.autoRefresh != widget.autoRefresh ||
+        old.canRead != widget.canRead ||
+        old.regType != widget.regType) {
+      _syncAutoRefresh(
+        readImmediately:
+            widget.autoRefresh &&
+            (!old.autoRefresh || !old.canRead && widget.canRead),
+      );
+    }
   }
 
   @override
   void dispose() {
     widget.startAddrCtrl.removeListener(_onCtrlChanged);
     widget.countCtrl.removeListener(_onCtrlChanged);
+    _autoRefreshTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _read() async {
+  void _syncAutoRefresh({bool readImmediately = false}) {
+    _autoRefreshTimer?.cancel();
+    if (!widget.autoRefresh) return;
+
+    _autoRefreshTimer = Timer.periodic(_autoRefreshPeriod, (_) {
+      _read(showErrors: false, showProgress: false);
+    });
+    if (readImmediately) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && widget.autoRefresh) {
+          _read(showErrors: false, showProgress: false);
+        }
+      });
+    }
+  }
+
+  Future<void> _read({bool showErrors = true, bool showProgress = true}) async {
     if (_reading || !widget.canRead || !_supportsRegisterRead) return;
 
     final offset = _regTypeOffset(widget.regType);
@@ -524,7 +557,10 @@ class _RegistersTabState extends State<_RegistersTab> {
     final rawCount = int.tryParse(widget.countCtrl.text);
     final count = (rawCount == null || rawCount < 1) ? 20 : rawCount;
 
-    setState(() => _reading = true);
+    _reading = true;
+    if (showProgress) {
+      setState(() => _manualReadInProgress = true);
+    }
     try {
       await widget.onRead(
         regType: widget.regType,
@@ -540,13 +576,16 @@ class _RegistersTabState extends State<_RegistersTab> {
             '${now.second.toString().padLeft(2, '0')}';
       });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || !showErrors) return;
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
         ..showSnackBar(SnackBar(content: Text('$error')));
     } finally {
+      _reading = false;
       if (mounted) {
-        setState(() => _reading = false);
+        if (showProgress) {
+          setState(() => _manualReadInProgress = false);
+        }
       }
     }
   }
@@ -592,8 +631,10 @@ class _RegistersTabState extends State<_RegistersTab> {
         previousValue: runtime?.$2 ?? mock?.previousValue,
         typeName: typeName,
         comment: config?.comment ?? mock?.comment,
-        timestamp: mock?.timestamp,
-        date: mock?.date,
+        timestamp: runtime?.$3 == null
+            ? mock?.timestamp
+            : _formatTimestamp(runtime!.$3!),
+        date: runtime?.$3 == null ? mock?.date : _formatDate(runtime!.$3!),
       );
     });
 
@@ -621,14 +662,17 @@ class _RegistersTabState extends State<_RegistersTab> {
                 constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               ),
               ElevatedButton.icon(
-                icon: _reading
+                icon: _manualReadInProgress
                     ? const SizedBox.square(
                         dimension: 15,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.refresh, size: 15),
                 label: Text(l10n.btnRead),
-                onPressed: widget.canRead && _supportsRegisterRead && !_reading
+                onPressed:
+                    widget.canRead &&
+                        _supportsRegisterRead &&
+                        !_manualReadInProgress
                     ? _read
                     : null,
                 style: ElevatedButton.styleFrom(
@@ -784,6 +828,16 @@ class _RegistersTabState extends State<_RegistersTab> {
     );
   }
 }
+
+String _formatTimestamp(DateTime value) =>
+    '${value.hour.toString().padLeft(2, '0')}:'
+    '${value.minute.toString().padLeft(2, '0')}:'
+    '${value.second.toString().padLeft(2, '0')}';
+
+String _formatDate(DateTime value) =>
+    '${value.day.toString().padLeft(2, '0')}.'
+    '${value.month.toString().padLeft(2, '0')}.'
+    '${value.year.toString().padLeft(4, '0')}';
 
 String _bitRangeLabel(AppLocalizations l10n, int start, int end) {
   final raw = l10n.registersShowing(start, end);
@@ -1149,10 +1203,7 @@ class _RegTypeDropdown extends StatelessWidget {
             items: const [
               DropdownMenuItem(value: '4xxxx', child: Text('Holding (4xxxx)')),
               DropdownMenuItem(value: '3xxxx', child: Text('Input (3xxxx)')),
-              DropdownMenuItem(
-                value: '1xxxx',
-                child: Text('Discrete (1xxxx)'),
-              ),
+              DropdownMenuItem(value: '1xxxx', child: Text('Discrete (1xxxx)')),
               DropdownMenuItem(value: '0xxxx', child: Text('Coils (0xxxx)')),
             ],
             onChanged: (v) {

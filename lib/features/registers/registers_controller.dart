@@ -15,7 +15,7 @@ class RegistersController extends ChangeNotifier {
 
   String? _selectedDeviceId;
   String? _selectedListId;
-  final Map<int, (String, String?)> _runtimeValues = {};
+  final Map<int, (String, String?, DateTime?)> _runtimeValues = {};
 
   RegistersController(
     this._repository,
@@ -45,7 +45,7 @@ class RegistersController extends ChangeNotifier {
   RegisterList? get activeList =>
       lists.isEmpty ? null : lists[activeListIndex.clamp(0, lists.length - 1)];
 
-  Map<int, (String, String?)> get runtimeValues =>
+  Map<int, (String, String?, DateTime?)> get runtimeValues =>
       Map.unmodifiable(_runtimeValues);
 
   bool isConnected(DeviceInfo device) => _connectionRuntime.isConnected(device);
@@ -162,13 +162,14 @@ class RegistersController extends ChangeNotifier {
   Future<void> writeValue(int address, String value) async {
     final device = selectedDevice;
     if (device == null) return;
-    final previous = _runtimeValues[address]?.$1;
+    final runtimeValue = _runtimeValues[address];
+    final previous = runtimeValue?.$1;
     await _registerRuntime.writeRegister(
       deviceId: device.id,
       address: address,
       value: value,
     );
-    _runtimeValues[address] = (value, previous);
+    _runtimeValues[address] = (value, previous, runtimeValue?.$3);
     notifyListeners();
   }
 
@@ -202,10 +203,11 @@ class RegistersController extends ChangeNotifier {
       ),
     };
 
+    final readAt = DateTime.now();
     for (var index = 0; index < values.length; index++) {
       final address = startAddress + index;
       final previous = _runtimeValues[address]?.$1;
-      _runtimeValues[address] = (values[index].toString(), previous);
+      _runtimeValues[address] = (values[index].toString(), previous, readAt);
     }
     notifyListeners();
   }

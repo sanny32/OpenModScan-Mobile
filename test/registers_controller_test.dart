@@ -84,16 +84,24 @@ void main() {
       const RegistersRouteArgs(deviceId: 'device-c', registerListId: 'list-c'),
     );
 
+    final beforeRead = DateTime.now();
     await controller.readRegisters(
       regType: '4xxxx',
       startAddress: 40001,
       count: 2,
     );
+    final afterRead = DateTime.now();
 
     expect(connections.lastHoldingStartAddress, 0);
     expect(connections.lastHoldingCount, 2);
-    expect(controller.runtimeValues[40001], ('17', null));
-    expect(controller.runtimeValues[40002], ('23', null));
+    expect(controller.runtimeValues[40001]?.$1, '17');
+    expect(controller.runtimeValues[40001]?.$2, isNull);
+    final readAt = controller.runtimeValues[40001]?.$3;
+    expect(readAt, isNotNull);
+    expect(readAt!.isBefore(beforeRead), isFalse);
+    expect(readAt.isAfter(afterRead), isFalse);
+    expect(controller.runtimeValues[40002]?.$1, '23');
+    expect(controller.runtimeValues[40002]?.$3, readAt);
 
     connections.holdingValues = [19, 29];
     await controller.readRegisters(
@@ -101,7 +109,8 @@ void main() {
       startAddress: 40001,
       count: 2,
     );
-    expect(controller.runtimeValues[40001], ('19', '17'));
+    expect(controller.runtimeValues[40001]?.$1, '19');
+    expect(controller.runtimeValues[40001]?.$2, '17');
 
     controller.dispose();
   });
