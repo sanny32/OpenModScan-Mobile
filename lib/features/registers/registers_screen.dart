@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../l10n/l10n.dart';
@@ -28,8 +29,15 @@ enum _MenuAction {
 
 class RegistersScreen extends StatefulWidget {
   final RegistersController controller;
+  final ValueListenable<String?> returnDeviceId;
+  final VoidCallback onReturnToDevice;
 
-  const RegistersScreen({super.key, required this.controller});
+  const RegistersScreen({
+    super.key,
+    required this.controller,
+    required this.returnDeviceId,
+    required this.onReturnToDevice,
+  });
 
   @override
   State<RegistersScreen> createState() => _RegistersScreenState();
@@ -260,6 +268,15 @@ class _RegistersScreenState extends State<RegistersScreen>
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 70,
+        leading: ValueListenableBuilder<String?>(
+          valueListenable: widget.returnDeviceId,
+          builder: (context, returnDeviceId, _) => returnDeviceId == null
+              ? const SizedBox.shrink()
+              : IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: widget.onReturnToDevice,
+                ),
+        ),
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

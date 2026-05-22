@@ -110,6 +110,10 @@ void main() {
       ),
       findsOneWidget,
     );
+
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+    expect(find.byType(DeviceScreen), findsOneWidget);
   });
 
   testWidgets('Theme setting updates app theme', (WidgetTester tester) async {

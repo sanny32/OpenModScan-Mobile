@@ -62,6 +62,7 @@ class _AppShellState extends State<AppShell> {
   static const _deviceDetailRoute = '/device';
 
   final _navigatorKeys = List.generate(4, (_) => GlobalKey<NavigatorState>());
+  final _registersReturnDeviceId = ValueNotifier<String?>(null);
 
   late final DevicesController _devicesController;
   late final RegistersController _registersController;
@@ -94,6 +95,7 @@ class _AppShellState extends State<AppShell> {
 
   @override
   void dispose() {
+    _registersReturnDeviceId.dispose();
     _devicesController.dispose();
     _registersController.dispose();
     _trafficController.dispose();
@@ -103,7 +105,9 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _openRegisters(RegistersRouteArgs target) async {
     await _registersController.selectTarget(target);
-    if (mounted) setState(() => _index = 1);
+    if (!mounted) return;
+    _registersReturnDeviceId.value = target.deviceId;
+    setState(() => _index = 1);
   }
 
   void _openTraffic(TrafficRouteArgs target) {
@@ -137,7 +141,11 @@ class _AppShellState extends State<AppShell> {
         controller: _devicesController,
         onOpenDevice: _openDevice,
       ),
-      1 => RegistersScreen(controller: _registersController),
+      1 => RegistersScreen(
+        controller: _registersController,
+        returnDeviceId: _registersReturnDeviceId,
+        onReturnToDevice: _returnFromRegisters,
+      ),
       2 => TrafficScreen(controller: _trafficController),
       _ => SettingsScreen(controller: _settingsController),
     };
@@ -153,9 +161,22 @@ class _AppShellState extends State<AppShell> {
   Future<void> _handlePop() async {
     final popped =
         await _navigatorKeys[_index].currentState?.maybePop() ?? false;
-    if (!popped && _index != 0 && mounted) {
+    if (popped || !mounted) return;
+    if (_index == 1 && _registersReturnDeviceId.value != null) {
+      _returnFromRegisters();
+    } else if (_index != 0) {
       setState(() => _index = 0);
     }
+  }
+
+  void _returnFromRegisters() {
+    _registersReturnDeviceId.value = null;
+    setState(() => _index = 0);
+  }
+
+  void _selectTab(int index) {
+    _registersReturnDeviceId.value = null;
+    setState(() => _index = index);
   }
 
   static const _tabCount = 4;
@@ -176,7 +197,7 @@ class _AppShellState extends State<AppShell> {
         body: IndexedStack(index: _index, children: _tabNavigators),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _index,
-          onTap: (index) => setState(() => _index = index),
+          onTap: _selectTab,
           items: [
             BottomNavigationBarItem(
               icon: const Icon(Icons.devices_outlined),
