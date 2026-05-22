@@ -15,8 +15,14 @@ class DeviceFormSheet extends StatefulWidget {
   /// [addMode] forces add-mode UI even when [initial] is provided (pre-fill from discovery).
   final DeviceInfo? initial;
   final bool addMode;
+  final List<String> existingNames;
 
-  const DeviceFormSheet({super.key, this.initial, this.addMode = false});
+  const DeviceFormSheet({
+    super.key,
+    this.initial,
+    this.addMode = false,
+    this.existingNames = const [],
+  });
 
   @override
   State<DeviceFormSheet> createState() => _DeviceFormSheetState();
@@ -31,7 +37,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
   late final TextEditingController _timeoutCtrl;
   late final TextEditingController _reconnectCtrl;
   late final TextEditingController _notesCtrl;
-  var _showNameError = false;
+  String? _nameError;
 
   bool get _isEdit => widget.initial != null && !widget.addMode;
 
@@ -65,8 +71,13 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
 
   void _submit({bool connectAfterSave = false}) {
     final name = _nameCtrl.text.trim();
+    final l10n = context.l10n;
     if (name.isEmpty) {
-      setState(() => _showNameError = true);
+      setState(() => _nameError = l10n.nameRequired);
+      return;
+    }
+    if (widget.existingNames.contains(name)) {
+      setState(() => _nameError = l10n.nameAlreadyExists);
       return;
     }
 
@@ -181,11 +192,9 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                   const SizedBox(height: 6),
                   _field(
                     _nameCtrl,
-                    errorText: _showNameError ? l10n.nameRequired : null,
-                    onChanged: (value) {
-                      if (_showNameError && value.trim().isNotEmpty) {
-                        setState(() => _showNameError = false);
-                      }
+                    errorText: _nameError,
+                    onChanged: (_) {
+                      if (_nameError != null) setState(() => _nameError = null);
                     },
                   ),
                   const SizedBox(height: 16),

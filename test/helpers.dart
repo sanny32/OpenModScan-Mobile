@@ -6,7 +6,12 @@ import 'package:omodscan_mobile/models/device_info.dart';
 import 'package:omodscan_mobile/runtime/runtime_ports.dart';
 
 class RegisterListDialogHarness extends StatelessWidget {
-  const RegisterListDialogHarness({super.key});
+  final List<String> existingNames;
+
+  const RegisterListDialogHarness({
+    super.key,
+    this.existingNames = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,8 +22,11 @@ class RegisterListDialogHarness extends StatelessWidget {
         body: Builder(
           builder: (context) => Center(
             child: ElevatedButton(
-              onPressed: () =>
-                  showRegisterListDialog(context, defaultName: 'List 1'),
+              onPressed: () => showRegisterListDialog(
+                context,
+                defaultName: 'List 1',
+                existingNames: existingNames,
+              ),
               child: const Text('Open dialog'),
             ),
           ),

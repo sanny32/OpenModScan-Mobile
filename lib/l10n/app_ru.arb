@@ -64,6 +64,7 @@
   "connectTypeRtuSub": "Modbus RTU по TCP",
   "labelName": "Имя",
   "nameRequired": "Имя обязательно",
+  "nameAlreadyExists": "Имя уже существует",
   "labelHost": "Хост / IP-адрес",
   "labelPort": "Порт",
   "labelUnitIdField": "Unit ID (Slave ID)",

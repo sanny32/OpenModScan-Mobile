@@ -78,6 +78,25 @@ void main() {
     expect(find.text('Name is required'), findsOneWidget);
   });
 
+  testWidgets('New device form rejects duplicate name', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const OModScanApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+
+    final nameField = find.byWidgetPredicate(
+      (widget) => widget is TextField && widget.controller?.text == 'Device #6',
+    );
+    await tester.enterText(nameField, 'PLC #1');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Name already exists'), findsOneWidget);
+  });
+
   testWidgets('Register list dialog closes without disposed controllers', (
     WidgetTester tester,
   ) async {
@@ -91,5 +110,48 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Register list dialog rejects duplicate name', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const RegisterListDialogHarness(existingNames: ['List 1']),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open dialog'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Name already exists'), findsOneWidget);
+  });
+
+  testWidgets('Register list dialog clears error when name is changed', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const RegisterListDialogHarness(existingNames: ['List 1']),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open dialog'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(find.text('Name already exists'), findsOneWidget);
+
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (w) => w is TextField && w.controller?.text == 'List 1',
+      ),
+      'List 2',
+    );
+    await tester.pump();
+
+    expect(find.text('Name already exists'), findsNothing);
   });
 }

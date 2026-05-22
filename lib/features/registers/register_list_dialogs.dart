@@ -7,15 +7,23 @@ import '../../models/register_list.dart';
 Future<RegisterList?> showRegisterListDialog(
   BuildContext context, {
   required String defaultName,
+  List<String> existingNames = const [],
 }) => showDialog<RegisterList>(
   context: context,
-  builder: (_) => _RegisterListDialog(defaultName: defaultName),
+  builder: (_) => _RegisterListDialog(
+    defaultName: defaultName,
+    existingNames: existingNames,
+  ),
 );
 
 class _RegisterListDialog extends StatefulWidget {
   final String defaultName;
+  final List<String> existingNames;
 
-  const _RegisterListDialog({required this.defaultName});
+  const _RegisterListDialog({
+    required this.defaultName,
+    required this.existingNames,
+  });
 
   @override
   State<_RegisterListDialog> createState() => _RegisterListDialogState();
@@ -26,6 +34,7 @@ class _RegisterListDialogState extends State<_RegisterListDialog> {
   late final TextEditingController _startCtrl;
   late final TextEditingController _countCtrl;
   var _regType = '4xxxx';
+  String? _nameError;
 
   @override
   void initState() {
@@ -46,6 +55,10 @@ class _RegisterListDialogState extends State<_RegisterListDialog> {
   void _save() {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) return;
+    if (widget.existingNames.contains(name)) {
+      setState(() => _nameError = context.l10n.nameAlreadyExists);
+      return;
+    }
     Navigator.pop(
       context,
       RegisterList(
@@ -70,9 +83,13 @@ class _RegisterListDialogState extends State<_RegisterListDialog> {
             TextField(
               controller: _nameCtrl,
               autofocus: true,
+              onChanged: (_) {
+                if (_nameError != null) setState(() => _nameError = null);
+              },
               decoration: InputDecoration(
                 labelText: l10n.labelName,
                 hintText: l10n.dialogListNameHint,
+                errorText: _nameError,
               ),
             ),
             const SizedBox(height: 16),

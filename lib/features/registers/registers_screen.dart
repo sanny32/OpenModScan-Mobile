@@ -182,6 +182,7 @@ class _RegistersScreenState extends State<RegistersScreen>
     final result = await showRegisterListDialog(
       context,
       defaultName: 'List ${_lists.length + 1}',
+      existingNames: _lists.map((l) => l.name).toList(),
     );
 
     if (!mounted) return;

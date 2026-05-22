@@ -212,6 +212,9 @@
   "nameRequired": "Name is required",
   "@nameRequired": {},
 
+  "nameAlreadyExists": "Name already exists",
+  "@nameAlreadyExists": {},
+
   "labelHost": "Host / IP address",
   "@labelHost": {},
 

@@ -53,7 +53,11 @@ class _DevicesScreenState extends State<DevicesScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => DeviceFormSheet(initial: initial, addMode: true),
+      builder: (_) => DeviceFormSheet(
+        initial: initial,
+        addMode: true,
+        existingNames: widget.controller.devices.map((d) => d.name).toList(),
+      ),
     );
     if (result != null && mounted) {
       await widget.controller.addDevice(result.device);

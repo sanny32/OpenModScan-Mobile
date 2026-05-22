@@ -92,7 +92,13 @@ class _DeviceScreenState extends State<DeviceScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => DeviceFormSheet(initial: _device),
+      builder: (_) => DeviceFormSheet(
+        initial: _device,
+        existingNames: widget.controller.devices
+            .where((d) => d.id != _device.id)
+            .map((d) => d.name)
+            .toList(),
+      ),
     ).then((result) {
       if (result != null) widget.controller.updateDevice(result.device);
     });
@@ -102,6 +108,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     final result = await showRegisterListDialog(
       context,
       defaultName: 'List ${_device.registerLists.length + 1}',
+      existingNames: _device.registerLists.map((l) => l.name).toList(),
     );
 
     if (!mounted) return;
