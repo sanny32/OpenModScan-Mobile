@@ -77,12 +77,23 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
         ? settings.byteOrder
         : AppSettings.byteOrders.first;
     _commentCtrl = TextEditingController(text: widget.entry.comment ?? '');
-    AppSettings.instance.showTypeBadgesNotifier.addListener(
-      _onBadgeSettingChanged,
-    );
+    AppSettings.instance.showTypeBadgesNotifier.addListener(_onSettingChanged);
+    AppSettings.instance.showLastValuesNotifier.addListener(_onSettingChanged);
   }
 
-  void _onBadgeSettingChanged() => setState(() {});
+  void _onSettingChanged() => setState(() {});
+
+  String _displayPreviousValue(String raw) {
+    final rawInt = int.tryParse(raw);
+    if (rawInt == null) return raw;
+    return computeDisplayValue(
+      widget.entry.address,
+      _selectedType,
+      {widget.entry.address: rawInt},
+      registerOrder: _registerOrder,
+      byteOrder: _byteOrder,
+    );
+  }
 
   void _saveComment(String? value) {
     _commentCtrl.text = value ?? '';
@@ -100,9 +111,8 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
   @override
   void dispose() {
     _commentCtrl.dispose();
-    AppSettings.instance.showTypeBadgesNotifier.removeListener(
-      _onBadgeSettingChanged,
-    );
+    AppSettings.instance.showTypeBadgesNotifier.removeListener(_onSettingChanged);
+    AppSettings.instance.showLastValuesNotifier.removeListener(_onSettingChanged);
     super.dispose();
   }
 
@@ -431,60 +441,38 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      ValueListenableBuilder<bool>(
-                        valueListenable:
-                            AppSettings.instance.showLastValuesNotifier,
-                        builder: (_, showLastValues, _) {
-                          if (!showLastValues || entry.previousValue == null) {
-                            return const SizedBox.shrink();
-                          }
-                          return Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                l10n.labelPreviousValue,
-                                style: tt.bodySmall!.copyWith(
-                                  color: cs.onSurfaceVariant,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Icon(
-                                Icons.arrow_back_rounded,
-                                size: 15,
-                                color: cs.onSurfaceVariant,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                entry.previousValue!,
-                                style: tt.bodyMedium!.copyWith(
-                                  color: cs.onSurfaceVariant,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  fontFeatures: const [
-                                    FontFeature.tabularFigures(),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                      const Spacer(),
-                      Icon(
-                        Icons.label_outline_rounded,
-                        size: 17,
-                        color: cs.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        _typeDescription(_selectedType),
-                        style: tt.bodyMedium!.copyWith(
-                          color: cs.onSurfaceVariant,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                      if (entry.previousValue != null &&
+                          AppSettings.instance.showLastValuesNotifier.value) ...[
+                        Text(
+                          l10n.labelPreviousValue,
+                          style: tt.bodySmall!.copyWith(
+                            color: cs.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.arrow_back_rounded,
+                          size: 15,
+                          color: cs.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            _displayPreviousValue(entry.previousValue!),
+                            overflow: TextOverflow.ellipsis,
+                            style: tt.bodyMedium!.copyWith(
+                              color: cs.onSurfaceVariant,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                     ],
                   ),
                 ],

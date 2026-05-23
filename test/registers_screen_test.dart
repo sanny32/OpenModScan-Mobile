@@ -707,4 +707,39 @@ void main() {
     // UInt32 row in interpretations list and header both show 65538
     expect(find.text('65538'), findsWidgets);
   });
+
+  testWidgets('Register detail shows previous value in selected type', (
+    WidgetTester tester,
+  ) async {
+    // previousValue '258' raw uint16: UInt16 → 258, Hex → 0x0102
+    await AppSettings.instance.resetToDefaults();
+    AppSettings.instance.showLastValuesNotifier.value = true;
+    const entry = RegisterEntry(
+      address: 40001,
+      value: '1',
+      typeName: 'UInt16',
+      previousValue: '258',
+      rawWords: {40001: 1, 40002: 2},
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegisterDetailScreen(entry: entry, canWrite: false),
+      ),
+    );
+    await tester.pump();
+
+    // UInt16: 258 → '258'
+    expect(find.text('258'), findsWidgets);
+
+    // Switch to Hex via interpretations list — scroll down to find it, tap last occurrence
+    await tester.scrollUntilVisible(find.text('Hex').last, 100);
+    await tester.tap(find.text('Hex').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('0x0102'), findsOneWidget);
+  });
 }

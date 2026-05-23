@@ -1683,6 +1683,18 @@ Future<void> _showWriteRegisterDialog(
   );
 }
 
+String _formatPreviousValue(RegisterEntry entry) {
+  final raw = entry.previousValue;
+  if (raw == null) return '';
+  final rawInt = int.tryParse(raw);
+  if (rawInt == null) return raw;
+  return computeDisplayValue(
+    entry.address,
+    entry.typeName,
+    {entry.address: rawInt},
+  );
+}
+
 class _RegisterRow extends StatelessWidget {
   final RegisterEntry entry;
   final bool canWrite;
@@ -1776,7 +1788,7 @@ class _RegisterRow extends StatelessWidget {
                         return const SizedBox.shrink();
                       }
                       return Text(
-                        entry.previousValue!,
+                        _formatPreviousValue(entry),
                         style: tt.bodySmall!.copyWith(
                           color: cs.onSurfaceVariant,
                         ),
