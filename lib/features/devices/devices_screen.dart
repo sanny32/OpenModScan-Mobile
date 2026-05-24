@@ -95,6 +95,17 @@ class _DevicesScreenState extends State<DevicesScreen> {
     }
   }
 
+  Future<void> _connectDiscovered(DiscoveredDevice discovered) async {
+    try {
+      await widget.controller.connectDiscoveredDevice(discovered);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
+
   Future<void> _deleteDevice(DeviceInfo device) async {
     final index = await widget.controller.removeDevice(device.id);
     if (!mounted || index == null) return;
@@ -225,7 +236,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                       protocol: widget.controller.scannerProtocol,
                       onTap: widget.controller.startScan,
                       onStop: widget.controller.stopScan,
-                      onConnect: _openConnect,
+                      onConnect: _connectDiscovered,
                     ),
                   ],
                 ),
@@ -360,8 +371,6 @@ class _ScanButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final l10n = context.l10n;
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -395,13 +404,7 @@ class _ScanButton extends StatelessWidget {
               protocol: protocol,
               completed: true,
               onConnect: onConnect,
-            ),
-            const SizedBox(height: 10),
-            _ScanActionButton(
-              icon: Icons.radar_outlined,
-              label: l10n.devicesScanNetwork,
-              onPressed: onTap,
-              color: cs.primary,
+              onRestart: onTap,
             ),
           ],
         ),
@@ -508,6 +511,7 @@ class _ScanningCard extends StatelessWidget {
   final bool completed;
   final void Function(DiscoveredDevice) onConnect;
   final VoidCallback? onStop;
+  final VoidCallback? onRestart;
 
   const _ScanningCard({
     required this.progress,
@@ -520,6 +524,7 @@ class _ScanningCard extends StatelessWidget {
     required this.onConnect,
     this.completed = false,
     this.onStop,
+    this.onRestart,
   });
 
   @override
@@ -647,6 +652,15 @@ class _ScanningCard extends StatelessWidget {
                 icon: Icons.stop_circle_outlined,
                 label: l10n.devicesScanStop,
                 onPressed: onStop!,
+                color: cs.primary,
+              ),
+            ],
+            if (completed && onRestart != null) ...[
+              const SizedBox(height: 14),
+              _ScanActionButton(
+                icon: Icons.radar_outlined,
+                label: l10n.devicesScanNetwork,
+                onPressed: onRestart!,
                 color: cs.primary,
               ),
             ],

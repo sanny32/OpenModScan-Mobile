@@ -131,6 +131,57 @@ void main() {
     expect(find.text('100%'), findsOneWidget);
     expect(find.textContaining('Duration:'), findsOneWidget);
     expect(find.text('Found: 1'), findsOneWidget);
+    expect(find.text('Scan network'), findsOneWidget);
+
+    await tester.tap(find.text('Scan network'));
+    await tester.pump();
+
+    expect(scanner.startCalled, isTrue);
+  });
+
+  testWidgets('connect discovered device saves and connects immediately', (
+    tester,
+  ) async {
+    final scanner = _ScanPort(
+      ScannerStateView.done,
+      discovered: const [
+        DiscoveredDevice(
+          host: '192.168.88.104',
+          port: 502,
+          unitId: 1,
+          protocol: ProtocolType.modbusTcp,
+        ),
+      ],
+    );
+    final runtime = PollingConnectionRuntime();
+    final controller = DevicesController(
+      DeviceRepository.instance,
+      runtime,
+      scanner,
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: DevicesScreen(controller: controller, onOpenDevice: (_) {}),
+      ),
+    );
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Connect'));
+    await tester.pumpAndSettle();
+
+    final device = controller.devices.single;
+    expect(device.name, 'Device #1');
+    expect(device.host, '192.168.88.104');
+    expect(device.port, 502);
+    expect(device.protocol, ProtocolType.modbusTcp);
+    expect(device.unitId, 1);
+    expect(runtime.isConnected(device), isTrue);
+    expect(scanner.discoveredDevices.isEmpty, isTrue);
+    expect(find.text('Device #1'), findsOneWidget);
+    expect(find.text('Connect to Device'), findsNothing);
   });
 
   testWidgets('clearing discovered devices resets scan panel', (tester) async {
@@ -173,6 +224,7 @@ class _ScanPort extends ChangeNotifier implements DeviceScannerPort {
   ScannerStateView _state;
 
   _ScanPort(this._state, {List<DiscoveredDevice> discovered = const []}) {
+    discoveredDevices.addListener(notifyListeners);
     for (final device in discovered) {
       discoveredDevices.add(device);
     }

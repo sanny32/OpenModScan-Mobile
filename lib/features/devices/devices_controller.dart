@@ -66,6 +66,21 @@ class DevicesController extends ChangeNotifier {
 
   Future<void> addDevice(DeviceInfo device) => _repository.add(device);
 
+  Future<DeviceInfo> connectDiscoveredDevice(
+    DiscoveredDevice discovered,
+  ) async {
+    final existing = _findDiscoveredDevice(discovered);
+    final device = existing ?? _deviceFromDiscovered(discovered);
+    if (existing == null) {
+      await _repository.add(device);
+    }
+    _scanner.discoveredDevices.remove(discovered);
+    if (!_connectionRuntime.isConnected(device)) {
+      await _connectionRuntime.connect(device);
+    }
+    return device;
+  }
+
   Future<void> updateDevice(DeviceInfo device) => _repository.update(device);
 
   Future<int?> removeDevice(String deviceId) async {
@@ -110,6 +125,44 @@ class DevicesController extends ChangeNotifier {
   void clearDiscoveredDevices() => _scanner.clearResults();
 
   void _forwardChange() => notifyListeners();
+
+  DeviceInfo? _findDiscoveredDevice(DiscoveredDevice discovered) {
+    for (final device in devices) {
+      if (_matchesDiscovered(device, discovered)) return device;
+    }
+    return null;
+  }
+
+  bool _matchesDiscovered(DeviceInfo device, DiscoveredDevice discovered) {
+    return device.host == discovered.host &&
+        device.port == discovered.port &&
+        device.protocol == discovered.protocol &&
+        device.unitId == discovered.unitId;
+  }
+
+  DeviceInfo _deviceFromDiscovered(DiscoveredDevice discovered) {
+    final settings = AppSettings.instance;
+    return DeviceInfo(
+      name: _nextDeviceName(),
+      host: discovered.host,
+      port: discovered.port,
+      protocol: discovered.protocol,
+      unitId: discovered.unitId,
+      timeout: settings.timeout,
+      reconnectDelay: settings.reconnectDelay,
+    );
+  }
+
+  String _nextDeviceName() {
+    final names = devices.map((device) => device.name).toSet();
+    var index = devices.length + 1;
+    var name = 'Device #$index';
+    while (names.contains(name)) {
+      index++;
+      name = 'Device #$index';
+    }
+    return name;
+  }
 
   @override
   void dispose() {

@@ -26,4 +26,17 @@ class DiscoveredDeviceList extends ChangeNotifier {
     _devices.clear();
     notifyListeners();
   }
+
+  void remove(DiscoveredDevice device) {
+    final index = _devices.indexWhere(
+      (d) =>
+          d.host == device.host &&
+          d.port == device.port &&
+          d.protocol == device.protocol &&
+          d.unitId == device.unitId,
+    );
+    if (index == -1) return;
+    _devices.removeAt(index);
+    notifyListeners();
+  }
 }
