@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 import '../../models/app_settings.dart';
+import '../../models/device_info.dart';
+import '../../models/modbus_scan.dart';
 
 class SettingsController extends ChangeNotifier {
   final AppSettings settings;
@@ -59,6 +61,36 @@ class SettingsController extends ChangeNotifier {
 
   Future<void> setClearLogOnDisconnect(bool value) async {
     await settings.setClearLogOnDisconnect(value);
+    notifyListeners();
+  }
+
+  Future<void> setScanProtocol(ProtocolType value) async {
+    await settings.setScanProtocol(value);
+    notifyListeners();
+  }
+
+  Future<void> setScanSubnetPrefix(int value) async {
+    await settings.setScanSubnetPrefix(value);
+    notifyListeners();
+  }
+
+  Future<void> setScanPortRange(int start, int end) async {
+    await settings.setScanPortRange(start, end);
+    notifyListeners();
+  }
+
+  Future<void> setScanUnitIdRange(int start, int end) async {
+    await settings.setScanUnitIdRange(start, end);
+    notifyListeners();
+  }
+
+  Future<void> setScanRequestType(ModbusScanRequestType value) async {
+    await settings.setScanRequestType(value);
+    notifyListeners();
+  }
+
+  Future<void> setScanRequestAddress(int value) async {
+    await settings.setScanRequestAddress(value);
     notifyListeners();
   }
 

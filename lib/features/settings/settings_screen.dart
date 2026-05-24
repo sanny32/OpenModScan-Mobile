@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../l10n/l10n.dart';
 import '../../models/app_settings.dart';
+import '../../models/device_info.dart';
+import '../../models/modbus_scan.dart';
 import 'settings_controller.dart';
 import 'about_screen.dart';
 
@@ -82,6 +84,112 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 icon: Icons.tag,
                 label: l10n.settingsDefaultUnitId,
                 value: '${_s.defaultUnitId}',
+              ),
+            ],
+          ),
+          _section(
+            label: l10n.settingsSectionNetworkScan,
+            children: [
+              _navTile(
+                icon: Icons.hub_outlined,
+                label: l10n.settingsScanProtocol,
+                value: _protocolLabel(l10n, _s.scanProtocol),
+                onTap: () => _showChoiceSheet(
+                  title: l10n.settingsScanProtocol,
+                  options: ProtocolType.values
+                      .map((value) => value.name)
+                      .toList(),
+                  selected: _s.scanProtocol.name,
+                  optionLabel: (value) => _protocolLabel(
+                    l10n,
+                    ProtocolType.values.firstWhere(
+                      (protocol) => protocol.name == value,
+                    ),
+                  ),
+                  onSelected: (value) => widget.controller.setScanProtocol(
+                    ProtocolType.values.firstWhere(
+                      (protocol) => protocol.name == value,
+                    ),
+                  ),
+                ),
+              ),
+              _divider(),
+              _navTile(
+                icon: Icons.account_tree_outlined,
+                label: l10n.settingsScanSubnetPrefix,
+                value: '/${_s.scanSubnetPrefix}',
+                onTap: () => _showNumberSheet(
+                  title: l10n.settingsScanSubnetPrefix,
+                  initialValue: _s.scanSubnetPrefix,
+                  min: 16,
+                  max: 30,
+                  onSubmitted: widget.controller.setScanSubnetPrefix,
+                ),
+              ),
+              _divider(),
+              _navTile(
+                icon: Icons.settings_ethernet,
+                label: l10n.settingsScanPortRange,
+                value: _formatRange(_s.scanPortStart, _s.scanPortEnd),
+                onTap: () => _showRangeSheet(
+                  title: l10n.settingsScanPortRange,
+                  startValue: _s.scanPortStart,
+                  endValue: _s.scanPortEnd,
+                  min: 1,
+                  max: 65535,
+                  onSubmitted: widget.controller.setScanPortRange,
+                ),
+              ),
+              _divider(),
+              _navTile(
+                icon: Icons.tag,
+                label: l10n.settingsScanUnitIdRange,
+                value: _formatRange(_s.scanUnitIdStart, _s.scanUnitIdEnd),
+                onTap: () => _showRangeSheet(
+                  title: l10n.settingsScanUnitIdRange,
+                  startValue: _s.scanUnitIdStart,
+                  endValue: _s.scanUnitIdEnd,
+                  min: 1,
+                  max: 247,
+                  onSubmitted: widget.controller.setScanUnitIdRange,
+                ),
+              ),
+              _divider(),
+              _navTile(
+                icon: Icons.call_received,
+                label: l10n.settingsScanRequestType,
+                value: _scanRequestTypeLabel(l10n, _s.scanRequestType),
+                onTap: () => _showChoiceSheet(
+                  title: l10n.settingsScanRequestType,
+                  options: ModbusScanRequestType.values
+                      .map((value) => value.name)
+                      .toList(),
+                  selected: _s.scanRequestType.name,
+                  optionLabel: (value) => _scanRequestTypeLabel(
+                    l10n,
+                    ModbusScanRequestType.values.firstWhere(
+                      (type) => type.name == value,
+                    ),
+                  ),
+                  onSelected: (value) => widget.controller.setScanRequestType(
+                    ModbusScanRequestType.values.firstWhere(
+                      (type) => type.name == value,
+                    ),
+                  ),
+                ),
+              ),
+              _divider(),
+              _navTile(
+                icon: Icons.pin_outlined,
+                label: l10n.settingsScanRequestAddress,
+                value: '${_s.scanRequestAddress}',
+                onTap: () => _showNumberSheet(
+                  title: l10n.settingsScanRequestAddress,
+                  initialValue: _s.scanRequestAddress,
+                  min: 0,
+                  max: 65535,
+                  onSubmitted: widget.controller.setScanRequestAddress,
+                ),
               ),
             ],
           ),
@@ -355,6 +463,149 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _showNumberSheet({
+    required String title,
+    required int initialValue,
+    required int min,
+    required int max,
+    required FutureOr<void> Function(int) onSubmitted,
+  }) async {
+    await _showTextSheet(
+      title: title,
+      initialValue: '$initialValue',
+      keyboardType: TextInputType.number,
+      onSubmitted: (value) async {
+        final parsed = int.tryParse(value) ?? initialValue;
+        await onSubmitted(parsed.clamp(min, max).toInt());
+      },
+    );
+  }
+
+  Future<void> _showTextSheet({
+    required String title,
+    required String initialValue,
+    required TextInputType keyboardType,
+    required FutureOr<void> Function(String) onSubmitted,
+  }) async {
+    final controller = TextEditingController(text: initialValue);
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                keyboardType: keyboardType,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await onSubmitted(controller.text.trim());
+                },
+                child: Text(context.l10n.save),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    controller.dispose();
+  }
+
+  Future<void> _showRangeSheet({
+    required String title,
+    required int startValue,
+    required int endValue,
+    required int min,
+    required int max,
+    required FutureOr<void> Function(int, int) onSubmitted,
+  }) async {
+    final startController = TextEditingController(text: '$startValue');
+    final endController = TextEditingController(text: '$endValue');
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: startController,
+                      keyboardType: TextInputType.number,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        labelText: context.l10n.settingsRangeStart,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: endController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: context.l10n.settingsRangeEnd,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () async {
+                  final start =
+                      int.tryParse(startController.text) ?? startValue;
+                  final end = int.tryParse(endController.text) ?? endValue;
+                  Navigator.pop(ctx);
+                  await onSubmitted(
+                    start.clamp(min, max).toInt(),
+                    end.clamp(min, max).toInt(),
+                  );
+                },
+                child: Text(context.l10n.save),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    startController.dispose();
+    endController.dispose();
+  }
+
   String _themeOptionLabel(AppLocalizations l10n, String option) {
     switch (option) {
       case 'Light':
@@ -377,6 +628,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
       default:
         return l10n.settingsLanguageSystem;
     }
+  }
+
+  String _protocolLabel(AppLocalizations l10n, ProtocolType protocol) {
+    return switch (protocol) {
+      ProtocolType.modbusTcp => l10n.connectTypeTcp,
+      ProtocolType.modbusRtuIp => l10n.connectTypeRtu,
+    };
+  }
+
+  String _formatRange(int start, int end) {
+    return start == end ? '$start' : '$start-$end';
+  }
+
+  String _scanRequestTypeLabel(
+    AppLocalizations l10n,
+    ModbusScanRequestType type,
+  ) {
+    return switch (type) {
+      ModbusScanRequestType.coils => l10n.settingsScanRequestCoils,
+      ModbusScanRequestType.discreteInputs =>
+        l10n.settingsScanRequestDiscreteInputs,
+      ModbusScanRequestType.holdingRegisters =>
+        l10n.settingsScanRequestHoldingRegisters,
+      ModbusScanRequestType.inputRegisters =>
+        l10n.settingsScanRequestInputRegisters,
+    };
   }
 
   void _confirmReset() {

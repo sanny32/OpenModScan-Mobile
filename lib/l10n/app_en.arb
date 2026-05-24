@@ -53,6 +53,14 @@
   "devicesScanNetwork": "Scan network",
   "@devicesScanNetwork": {},
 
+  "devicesScanProgress": "{scanned}/{total}",
+  "@devicesScanProgress": {
+    "placeholders": {
+      "scanned": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+
   "protocolAndUnitId": "{protocol} • ID: {unitId}",
   "@protocolAndUnitId": {
     "placeholders": {
@@ -310,6 +318,45 @@
 
   "settingsDefaultUnitId": "Default Unit ID (Slave ID)",
   "@settingsDefaultUnitId": {},
+
+  "settingsSectionNetworkScan": "Network scan",
+  "@settingsSectionNetworkScan": {},
+
+  "settingsScanProtocol": "Scan Protocol",
+  "@settingsScanProtocol": {},
+
+  "settingsScanSubnetPrefix": "Current subnet mask",
+  "@settingsScanSubnetPrefix": {},
+
+  "settingsScanPortRange": "Port range",
+  "@settingsScanPortRange": {},
+
+  "settingsScanUnitIdRange": "Unit ID range",
+  "@settingsScanUnitIdRange": {},
+
+  "settingsScanRequestType": "Modbus request",
+  "@settingsScanRequestType": {},
+
+  "settingsScanRequestAddress": "Request address",
+  "@settingsScanRequestAddress": {},
+
+  "settingsScanRequestCoils": "Read Coils",
+  "@settingsScanRequestCoils": {},
+
+  "settingsScanRequestDiscreteInputs": "Read Discrete Inputs",
+  "@settingsScanRequestDiscreteInputs": {},
+
+  "settingsScanRequestHoldingRegisters": "Read Holding Registers",
+  "@settingsScanRequestHoldingRegisters": {},
+
+  "settingsScanRequestInputRegisters": "Read Input Registers",
+  "@settingsScanRequestInputRegisters": {},
+
+  "settingsRangeStart": "Start",
+  "@settingsRangeStart": {},
+
+  "settingsRangeEnd": "End",
+  "@settingsRangeEnd": {},
 
   "settingsSectionReadWrite": "Registers",
   "@settingsSectionReadWrite": {},

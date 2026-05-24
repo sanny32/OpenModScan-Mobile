@@ -61,7 +61,10 @@ class DeviceInfo {
 
   String get address => '$host:$port';
 
-  String get protocolName => 'Modbus TCP';
+  String get protocolName => switch (protocol) {
+    ProtocolType.modbusTcp => 'Modbus TCP',
+    ProtocolType.modbusRtuIp => 'Modbus RTU/IP',
+  };
 
   Map<String, dynamic> toJson() => {
     'id': id,

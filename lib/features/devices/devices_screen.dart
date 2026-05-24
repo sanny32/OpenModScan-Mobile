@@ -198,7 +198,10 @@ class _DevicesScreenState extends State<DevicesScreen> {
               ),
               _ScanButton(
                 state: widget.controller.scannerState,
-                onTap: () => widget.controller.startScan('192.168.0'),
+                progress: widget.controller.scannerProgress,
+                scanned: widget.controller.scannerScannedCount,
+                total: widget.controller.scannerTotalCount,
+                onTap: widget.controller.startScan,
                 onStop: widget.controller.stopScan,
               ),
             ],
@@ -359,11 +362,17 @@ class _DiscoveredCard extends StatelessWidget {
 
 class _ScanButton extends StatelessWidget {
   final ScannerStateView state;
+  final double progress;
+  final int scanned;
+  final int total;
   final VoidCallback onTap;
   final VoidCallback onStop;
 
   const _ScanButton({
     required this.state,
+    required this.progress,
+    required this.scanned,
+    required this.total,
     required this.onTap,
     required this.onStop,
   });
@@ -378,27 +387,51 @@ class _ScanButton extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: SafeArea(
         top: false,
-        child: OutlinedButton.icon(
-          icon: scanning
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.wifi_find),
-          label: Text(
-            scanning ? l10n.devicesScanStop : l10n.devicesScanNetwork,
-          ),
-          onPressed: scanning ? onStop : onTap,
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 48),
-            side: BorderSide(color: cs.primary),
-            foregroundColor: cs.primary,
-            textStyle: Theme.of(context).textTheme.labelLarge,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (scanning) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: LinearProgressIndicator(
+                      value: total == 0 ? null : progress,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    total == 0 ? '' : l10n.devicesScanProgress(scanned, total),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+            OutlinedButton.icon(
+              icon: scanning
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.wifi_find),
+              label: Text(
+                scanning ? l10n.devicesScanStop : l10n.devicesScanNetwork,
+              ),
+              onPressed: scanning ? onStop : onTap,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48),
+                side: BorderSide(color: cs.primary),
+                foregroundColor: cs.primary,
+                textStyle: Theme.of(context).textTheme.labelLarge,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

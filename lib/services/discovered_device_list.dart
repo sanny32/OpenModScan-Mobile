@@ -10,7 +10,11 @@ class DiscoveredDeviceList extends ChangeNotifier {
 
   void add(DiscoveredDevice device) {
     final duplicate = _devices.any(
-      (d) => d.host == device.host && d.port == device.port,
+      (d) =>
+          d.host == device.host &&
+          d.port == device.port &&
+          d.protocol == device.protocol &&
+          d.unitId == device.unitId,
     );
     if (duplicate) return;
     _devices.add(device);

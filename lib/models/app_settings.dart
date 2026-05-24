@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'device_info.dart';
+import 'modbus_scan.dart';
+
 class AppSettings {
   static final AppSettings instance = AppSettings._();
   AppSettings._();
@@ -22,6 +25,14 @@ class AppSettings {
   static const _saveLogToFileKey = 'saveLogToFile';
   static const _clearLogOnDisconnectKey = 'clearLogOnDisconnect';
   static const _maxLogEntriesKey = 'maxLogEntries';
+  static const _scanProtocolKey = 'scanProtocol';
+  static const _scanSubnetPrefixKey = 'scanSubnetPrefix';
+  static const _scanPortStartKey = 'scanPortStart';
+  static const _scanPortEndKey = 'scanPortEnd';
+  static const _scanUnitIdStartKey = 'scanUnitIdStart';
+  static const _scanUnitIdEndKey = 'scanUnitIdEnd';
+  static const _scanRequestTypeKey = 'scanRequestType';
+  static const _scanRequestAddressKey = 'scanRequestAddress';
   static const registerOrders = ['MSRF', 'LSRF'];
   static const byteOrders = ['Direct', 'Swapped'];
   static const addressBases = ['0-based', '1-based'];
@@ -42,6 +53,15 @@ class AppSettings {
   bool saveLogToFile = false;
   bool clearLogOnDisconnect = false;
   int maxLogEntries = 1000;
+  ProtocolType scanProtocol = ProtocolType.modbusTcp;
+  int scanSubnetPrefix = 24;
+  int scanPortStart = 502;
+  int scanPortEnd = 502;
+  int scanUnitIdStart = 1;
+  int scanUnitIdEnd = 10;
+  ModbusScanRequestType scanRequestType =
+      ModbusScanRequestType.holdingRegisters;
+  int scanRequestAddress = 0;
 
   final showLastValuesNotifier = ValueNotifier<bool>(true);
   final showTypeBadgesNotifier = ValueNotifier<bool>(false);
@@ -68,7 +88,8 @@ class AppSettings {
     defaultUnitId = prefs.getInt(_defaultUnitIdKey) ?? 1;
     defaultReadQty = prefs.getInt(_defaultReadQtyKey) ?? 20;
     addressBase = _getString(prefs, _addressBaseKey) ?? addressBases.first;
-    registerOrder = _getString(prefs, _registerOrderKey) ?? registerOrders.first;
+    registerOrder =
+        _getString(prefs, _registerOrderKey) ?? registerOrders.first;
     byteOrder = _getString(prefs, _byteOrderKey) ?? byteOrders.first;
     confirmBeforeWrite = prefs.getBool(_confirmBeforeWriteKey) ?? true;
     showLastValuesNotifier.value = prefs.getBool(_showLastValuesKey) ?? true;
@@ -76,6 +97,25 @@ class AppSettings {
     saveLogToFile = prefs.getBool(_saveLogToFileKey) ?? false;
     clearLogOnDisconnect = prefs.getBool(_clearLogOnDisconnectKey) ?? false;
     maxLogEntries = prefs.getInt(_maxLogEntriesKey) ?? 1000;
+    scanProtocol = _protocolFromValue(_getString(prefs, _scanProtocolKey));
+    scanSubnetPrefix = _clampInt(
+      prefs.getInt(_scanSubnetPrefixKey) ?? 24,
+      16,
+      30,
+    );
+    scanPortStart = _clampInt(prefs.getInt(_scanPortStartKey) ?? 502, 1, 65535);
+    scanPortEnd = _clampInt(prefs.getInt(_scanPortEndKey) ?? 502, 1, 65535);
+    scanUnitIdStart = _clampInt(prefs.getInt(_scanUnitIdStartKey) ?? 1, 1, 247);
+    scanUnitIdEnd = _clampInt(prefs.getInt(_scanUnitIdEndKey) ?? 10, 1, 247);
+    _normalizeScanRanges();
+    scanRequestType = ModbusScanRequestTypeX.fromName(
+      _getString(prefs, _scanRequestTypeKey),
+    );
+    scanRequestAddress = _clampInt(
+      prefs.getInt(_scanRequestAddressKey) ?? 0,
+      0,
+      0xffff,
+    );
     themeModeNotifier.value = _themeModeFromValue(
       _getString(prefs, _themeModeKey),
     );
@@ -142,6 +182,40 @@ class AppSettings {
     await _saveEditableValues();
   }
 
+  Future<void> setScanProtocol(ProtocolType value) async {
+    scanProtocol = value;
+    await _saveEditableValues();
+  }
+
+  Future<void> setScanSubnetPrefix(int value) async {
+    scanSubnetPrefix = _clampInt(value, 16, 30);
+    await _saveEditableValues();
+  }
+
+  Future<void> setScanPortRange(int start, int end) async {
+    scanPortStart = _clampInt(start, 1, 65535);
+    scanPortEnd = _clampInt(end, 1, 65535);
+    _normalizeScanRanges();
+    await _saveEditableValues();
+  }
+
+  Future<void> setScanUnitIdRange(int start, int end) async {
+    scanUnitIdStart = _clampInt(start, 1, 247);
+    scanUnitIdEnd = _clampInt(end, 1, 247);
+    _normalizeScanRanges();
+    await _saveEditableValues();
+  }
+
+  Future<void> setScanRequestType(ModbusScanRequestType value) async {
+    scanRequestType = value;
+    await _saveEditableValues();
+  }
+
+  Future<void> setScanRequestAddress(int value) async {
+    scanRequestAddress = _clampInt(value, 0, 0xffff);
+    await _saveEditableValues();
+  }
+
   Future<void> resetToDefaults() async {
     connectionType = 'Modbus TCP';
     timeout = 1000;
@@ -158,6 +232,14 @@ class AppSettings {
     saveLogToFile = false;
     clearLogOnDisconnect = false;
     maxLogEntries = 1000;
+    scanProtocol = ProtocolType.modbusTcp;
+    scanSubnetPrefix = 24;
+    scanPortStart = 502;
+    scanPortEnd = 502;
+    scanUnitIdStart = 1;
+    scanUnitIdEnd = 10;
+    scanRequestType = ModbusScanRequestType.holdingRegisters;
+    scanRequestAddress = 0;
     await _saveEditableValues();
     await _setThemeMode(ThemeMode.system);
     await _setLocale(null);
@@ -180,6 +262,14 @@ class AppSettings {
     await prefs.setBool(_saveLogToFileKey, saveLogToFile);
     await prefs.setBool(_clearLogOnDisconnectKey, clearLogOnDisconnect);
     await prefs.setInt(_maxLogEntriesKey, maxLogEntries);
+    await prefs.setString(_scanProtocolKey, scanProtocol.name);
+    await prefs.setInt(_scanSubnetPrefixKey, scanSubnetPrefix);
+    await prefs.setInt(_scanPortStartKey, scanPortStart);
+    await prefs.setInt(_scanPortEndKey, scanPortEnd);
+    await prefs.setInt(_scanUnitIdStartKey, scanUnitIdStart);
+    await prefs.setInt(_scanUnitIdEndKey, scanUnitIdEnd);
+    await prefs.setString(_scanRequestTypeKey, scanRequestType.name);
+    await prefs.setInt(_scanRequestAddressKey, scanRequestAddress);
   }
 
   Future<void> _setThemeMode(ThemeMode value) async {
@@ -245,6 +335,29 @@ class AppSettings {
         return 'Russian';
       default:
         return 'System';
+    }
+  }
+
+  ProtocolType _protocolFromValue(String? value) {
+    return ProtocolType.values.firstWhere(
+      (protocol) => protocol.name == value,
+      orElse: () => ProtocolType.modbusTcp,
+    );
+  }
+
+  static int _clampInt(int value, int min, int max) =>
+      value.clamp(min, max).toInt();
+
+  void _normalizeScanRanges() {
+    if (scanPortStart > scanPortEnd) {
+      final tmp = scanPortStart;
+      scanPortStart = scanPortEnd;
+      scanPortEnd = tmp;
+    }
+    if (scanUnitIdStart > scanUnitIdEnd) {
+      final tmp = scanUnitIdStart;
+      scanUnitIdStart = scanUnitIdEnd;
+      scanUnitIdEnd = tmp;
     }
   }
 }

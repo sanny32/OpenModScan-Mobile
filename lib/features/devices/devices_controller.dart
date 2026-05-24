@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../models/app_settings.dart';
 import '../../models/device_info.dart';
 import '../../models/discovered_device.dart';
 import '../../models/register_list.dart';
@@ -36,6 +37,12 @@ class DevicesController extends ChangeNotifier {
   bool get hasDiscoveredDevices => !_scanner.discoveredDevices.isEmpty;
 
   ScannerStateView get scannerState => _scanner.state;
+
+  int get scannerScannedCount => _scanner.scannedCount;
+
+  int get scannerTotalCount => _scanner.totalCount;
+
+  double get scannerProgress => _scanner.progress;
 
   DeviceInfo? deviceById(String id) => _repository.findById(id);
 
@@ -75,8 +82,22 @@ class DevicesController extends ChangeNotifier {
   Future<void> removeRegisterList(String deviceId, String listId) =>
       _repository.removeRegisterList(deviceId, listId);
 
-  Future<void> startScan(String subnet) =>
-      _scanner.startScan(DeviceScanRequest(subnet: subnet));
+  Future<void> startScan() {
+    final settings = AppSettings.instance;
+    return _scanner.startScan(
+      DeviceScanRequest(
+        protocol: settings.scanProtocol,
+        subnetPrefix: settings.scanSubnetPrefix,
+        portStart: settings.scanPortStart,
+        portEnd: settings.scanPortEnd,
+        unitIdStart: settings.scanUnitIdStart,
+        unitIdEnd: settings.scanUnitIdEnd,
+        requestType: settings.scanRequestType,
+        requestAddress: settings.scanRequestAddress,
+        timeout: Duration(milliseconds: settings.timeout),
+      ),
+    );
+  }
 
   void stopScan() => _scanner.stopScan();
 

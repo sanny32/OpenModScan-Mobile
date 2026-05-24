@@ -57,4 +57,21 @@ void main() {
     expect(find.text('Системная'), findsOneWidget);
     expect(find.text('Русский'), findsOneWidget);
   });
+
+  testWidgets('Network scan protocol setting persists', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const OModScanApp());
+
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Scan Protocol'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('RTU over TCP/IP'));
+    await tester.pumpAndSettle();
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('scanProtocol'), 'modbusRtuIp');
+    expect(find.text('RTU over TCP/IP'), findsOneWidget);
+  });
 }

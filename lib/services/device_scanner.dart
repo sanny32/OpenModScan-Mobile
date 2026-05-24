@@ -1,14 +1,33 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
-import '../app_flags.dart';
+
 import '../runtime/runtime_ports.dart';
 import 'discovered_device_list.dart';
+import 'modbus_discovery_probe.dart';
+import 'network_scan_subnet.dart';
+
+typedef NetworkInterfacesProvider = Future<List<NetworkInterface>> Function();
+typedef ScanHostsProvider =
+    Future<List<String>> Function(DeviceScanRequest request);
 
 class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
-  static final DeviceScanner instance = DeviceScanner._(AppFlags.demoData);
+  static final DeviceScanner instance = DeviceScanner();
 
-  final bool _includeDemoResults;
+  final ModbusDiscoveryProbe probe;
+  final NetworkInterfacesProvider _networkInterfacesProvider;
+  final ScanHostsProvider? scanHostsProvider;
 
-  DeviceScanner._(this._includeDemoResults) {
+  DeviceScanner({
+    this.probe = const SocketModbusDiscoveryProbe(),
+    NetworkInterfacesProvider? networkInterfacesProvider,
+    this.scanHostsProvider,
+  }) : _networkInterfacesProvider =
+           networkInterfacesProvider ??
+           (() => NetworkInterface.list(
+             type: InternetAddressType.IPv4,
+             includeLoopback: false,
+           )) {
     discoveredDevices.addListener(notifyListeners);
   }
 
@@ -22,35 +41,73 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
 
   @override
   ScannerStateView get state => _state;
+
+  @override
   int get scannedCount => _scanned;
+
+  @override
   int get totalCount => _total;
+
+  @override
   double get progress => _total == 0 ? 0.0 : _scanned / _total;
 
   @override
-  Future<void> startScan(DeviceScanRequest params) async {
+  Future<void> startScan(DeviceScanRequest request) async {
     if (_state == ScannerStateView.scanning) return;
 
     _cancelled = false;
     _scanned = 0;
-    _total = 254;
+    _total = 0;
     _state = ScannerStateView.scanning;
     notifyListeners();
 
-    // TODO: replace with real TCP scan once ModbusClient is implemented
-    await Future.delayed(const Duration(seconds: 2));
+    final hosts = await _hostsFor(request);
+    final ports = request.ports.toList(growable: false);
+    final unitIds = request.unitIds.toList(growable: false);
+    _total = hosts.length * ports.length * unitIds.length;
+    notifyListeners();
 
-    if (!_cancelled) {
-      // Real scan results will replace this fixture branch with Modbus runtime.
-      if (_includeDemoResults) {
-        discoveredDevices.add(params.discoveredDevice('${params.subnet}.50'));
-        discoveredDevices.add(params.discoveredDevice('${params.subnet}.51'));
+    var next = 0;
+    final jobs = [
+      for (final host in hosts)
+        for (final port in ports)
+          for (final unitId in unitIds)
+            _ScanJob(host: host, port: port, unitId: unitId),
+    ];
+
+    Future<void> worker() async {
+      while (!_cancelled) {
+        final index = next++;
+        if (index >= jobs.length) return;
+        final job = jobs[index];
+        final found = await probe
+            .probe(
+              host: job.host,
+              port: job.port,
+              protocol: request.protocol,
+              unitId: job.unitId,
+              requestType: request.requestType,
+              requestAddress: request.requestAddress,
+              timeout: request.timeout,
+            )
+            .catchError((_) => false);
+
+        if (!_cancelled && found) {
+          discoveredDevices.add(
+            request.discoveredDevice(job.host, job.port, job.unitId),
+          );
+        }
+        _scanned++;
+        notifyListeners();
       }
-      _scanned = _total;
-      _state = ScannerStateView.done;
-    } else {
-      _state = ScannerStateView.idle;
     }
 
+    final workerCount = jobs.isEmpty
+        ? 0
+        : request.concurrency.clamp(1, jobs.length).toInt();
+    await Future.wait([for (var i = 0; i < workerCount; i++) worker()]);
+
+    _state = _cancelled ? ScannerStateView.idle : ScannerStateView.done;
     notifyListeners();
   }
 
@@ -59,4 +116,37 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
     if (_state != ScannerStateView.scanning) return;
     _cancelled = true;
   }
+
+  Future<List<String>> _hostsFor(DeviceScanRequest request) async {
+    final customHosts = scanHostsProvider;
+    if (customHosts != null) {
+      return customHosts(request);
+    }
+    final currentAddress = await _currentIpv4Address().catchError((_) => null);
+    if (currentAddress == null) return const [];
+    return Ipv4Subnet.fromAddress(currentAddress, request.subnetPrefix).hosts();
+  }
+
+  Future<String?> _currentIpv4Address() async {
+    final interfaces = await _networkInterfacesProvider();
+    final addresses = [
+      for (final interface in interfaces)
+        for (final address in interface.addresses)
+          if (isUsableIpv4(address)) address.address,
+    ];
+    if (addresses.isEmpty) return null;
+    return addresses.firstWhere(isPrivateIpv4, orElse: () => addresses.first);
+  }
+}
+
+class _ScanJob {
+  final String host;
+  final int port;
+  final int unitId;
+
+  const _ScanJob({
+    required this.host,
+    required this.port,
+    required this.unitId,
+  });
 }
