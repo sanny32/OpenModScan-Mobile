@@ -107,7 +107,7 @@ class DevicesController extends ChangeNotifier {
 
   void stopScan() => _scanner.stopScan();
 
-  void clearDiscoveredDevices() => _scanner.discoveredDevices.clear();
+  void clearDiscoveredDevices() => _scanner.clearResults();
 
   void _forwardChange() => notifyListeners();
 

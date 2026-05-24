@@ -42,6 +42,7 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
   DateTime? _scanStartedAt;
   ProtocolType? _scanProtocol;
   bool _cancelled = false;
+  int _scanGeneration = 0;
 
   @override
   ScannerStateView get state => _state;
@@ -68,6 +69,7 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
   Future<void> startScan(DeviceScanRequest request) async {
     if (_state == ScannerStateView.scanning) return;
 
+    final generation = ++_scanGeneration;
     _cancelled = false;
     _scanned = 0;
     _total = 0;
@@ -125,12 +127,45 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
 
     _state = _cancelled ? ScannerStateView.idle : ScannerStateView.done;
     notifyListeners();
+    if (!_cancelled && discoveredDevices.isEmpty) {
+      _resetEmptyScanAfterDelay(generation);
+    }
   }
 
   @override
   void stopScan() {
     if (_state != ScannerStateView.scanning) return;
     _cancelled = true;
+  }
+
+  @override
+  void clearResults() {
+    _scanGeneration++;
+    _cancelled = true;
+    _scanned = 0;
+    _total = 0;
+    _scanCidr = null;
+    _scanStartedAt = null;
+    _scanProtocol = null;
+    _state = ScannerStateView.idle;
+    discoveredDevices.clear();
+    notifyListeners();
+  }
+
+  Future<void> _resetEmptyScanAfterDelay(int generation) async {
+    await Future<void>.delayed(const Duration(seconds: 1));
+    if (generation != _scanGeneration ||
+        _state != ScannerStateView.done ||
+        !discoveredDevices.isEmpty) {
+      return;
+    }
+    _scanned = 0;
+    _total = 0;
+    _scanCidr = null;
+    _scanStartedAt = null;
+    _scanProtocol = null;
+    _state = ScannerStateView.idle;
+    notifyListeners();
   }
 
   Future<List<String>> _hostsFor(DeviceScanRequest request) async {

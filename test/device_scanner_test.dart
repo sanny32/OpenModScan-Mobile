@@ -51,6 +51,11 @@ void main() {
 
     expect(scanner.discoveredDevices.devices, isEmpty);
     expect(scanner.scannedCount, scanner.totalCount);
+    expect(scanner.state, ScannerStateView.done);
+    await Future<void>.delayed(const Duration(milliseconds: 1100));
+    expect(scanner.state, ScannerStateView.idle);
+    expect(scanner.scannedCount, 0);
+    expect(scanner.totalCount, 0);
   });
 
   test('successful Modbus TCP probe adds a discovered device', () async {
@@ -72,6 +77,8 @@ void main() {
     expect(device.port, 502);
     expect(device.unitId, 1);
     expect(device.protocol, ProtocolType.modbusTcp);
+    await Future<void>.delayed(const Duration(milliseconds: 1100));
+    expect(scanner.state, ScannerStateView.done);
   });
 
   test('unit id range can discover multiple units on one endpoint', () async {

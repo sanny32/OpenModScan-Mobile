@@ -11,7 +11,7 @@
   "unitId": "ID: {id}",
   "devicesSearch": "Поиск устройств",
   "devicesSavedConnections": "Сохранённые подключения",
-  "devicesDiscoveredDevices": "Найденные устройства",
+  "devicesDiscoveredDevices": "Поиск в сети",
   "devicesClearDiscovered": "Очистить",
   "devicesScanStop": "Остановить сканирование",
   "devicesLastUsed": "Последнее использование",

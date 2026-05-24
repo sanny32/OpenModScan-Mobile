@@ -53,13 +53,16 @@ void main() {
       ),
     );
 
+    expect(find.text('Network scan'), findsOneWidget);
     expect(find.text('Scanning...'), findsOneWidget);
+    expect(find.text('Scanning network'), findsNothing);
     expect(find.text('Searching for Modbus TCP devices'), findsOneWidget);
-    expect(find.text('Modbus TCP'), findsOneWidget);
+    expect(find.text('Modbus TCP'), findsNothing);
     expect(find.text('192.168.88.0/24'), findsOneWidget);
     expect(find.text('48%'), findsOneWidget);
     expect(find.textContaining('Elapsed:'), findsOneWidget);
     expect(find.text('Found: 2'), findsOneWidget);
+    expect(find.text('Clear'), findsNothing);
     expect(find.text('192.168.88.104:502'), findsOneWidget);
     expect(find.text('192.168.88.105:502'), findsOneWidget);
     expect(find.text('Modbus TCP • ID: 1'), findsOneWidget);
@@ -97,7 +100,17 @@ void main() {
   });
 
   testWidgets('completed scan panel shows completion details', (tester) async {
-    final scanner = _ScanPort(ScannerStateView.done);
+    final scanner = _ScanPort(
+      ScannerStateView.done,
+      discovered: const [
+        DiscoveredDevice(
+          host: '192.168.88.104',
+          port: 502,
+          unitId: 1,
+          protocol: ProtocolType.modbusTcp,
+        ),
+      ],
+    );
     final controller = DevicesController(
       DeviceRepository.instance,
       PollingConnectionRuntime(),
@@ -113,15 +126,51 @@ void main() {
       ),
     );
 
-    expect(find.text('Scan completed'), findsWidgets);
+    expect(find.text('Network scan'), findsOneWidget);
+    expect(find.text('Scan completed'), findsOneWidget);
     expect(find.text('100%'), findsOneWidget);
     expect(find.textContaining('Duration:'), findsOneWidget);
-    expect(find.text('Found: 0'), findsOneWidget);
+    expect(find.text('Found: 1'), findsOneWidget);
+  });
+
+  testWidgets('clearing discovered devices resets scan panel', (tester) async {
+    final scanner = _ScanPort(
+      ScannerStateView.done,
+      discovered: const [
+        DiscoveredDevice(
+          host: '192.168.88.104',
+          port: 502,
+          unitId: 1,
+          protocol: ProtocolType.modbusTcp,
+        ),
+      ],
+    );
+    final controller = DevicesController(
+      DeviceRepository.instance,
+      PollingConnectionRuntime(),
+      scanner,
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: DevicesScreen(controller: controller, onOpenDevice: (_) {}),
+      ),
+    );
+
+    await tester.tap(find.text('Clear'));
+    await tester.pump();
+
+    expect(scanner.clearCalled, isTrue);
+    expect(find.text('No scans yet'), findsOneWidget);
+    expect(find.text('Start scanning'), findsOneWidget);
   });
 }
 
 class _ScanPort extends ChangeNotifier implements DeviceScannerPort {
-  final ScannerStateView _state;
+  ScannerStateView _state;
 
   _ScanPort(this._state, {List<DiscoveredDevice> discovered = const []}) {
     for (final device in discovered) {
@@ -134,6 +183,7 @@ class _ScanPort extends ChangeNotifier implements DeviceScannerPort {
 
   var stopCalled = false;
   var startCalled = false;
+  var clearCalled = false;
 
   @override
   ScannerStateView get state => _state;
@@ -165,6 +215,14 @@ class _ScanPort extends ChangeNotifier implements DeviceScannerPort {
   @override
   void stopScan() {
     stopCalled = true;
+    notifyListeners();
+  }
+
+  @override
+  void clearResults() {
+    clearCalled = true;
+    _state = ScannerStateView.idle;
+    discoveredDevices.clear();
     notifyListeners();
   }
 }

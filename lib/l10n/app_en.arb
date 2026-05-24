@@ -35,7 +35,7 @@
   "devicesSavedConnections": "Saved connections",
   "@devicesSavedConnections": {},
 
-  "devicesDiscoveredDevices": "Discovered devices",
+  "devicesDiscoveredDevices": "Network scan",
   "@devicesDiscoveredDevices": {},
 
   "devicesClearDiscovered": "Clear",

@@ -78,6 +78,8 @@ abstract interface class DeviceScannerPort implements Listenable {
   Future<void> startScan(DeviceScanRequest request);
 
   void stopScan();
+
+  void clearResults();
 }
 
 enum ScannerStateView { idle, scanning, done }

@@ -61,14 +61,6 @@ class _DevicesScreenState extends State<DevicesScreen> {
 
   List<DeviceInfo> get _filtered => widget.controller.filteredDevices;
 
-  String _scanSectionTitle(AppLocalizations l10n) {
-    return switch (widget.controller.scannerState) {
-      ScannerStateView.scanning => l10n.devicesScanningNetwork,
-      ScannerStateView.done => l10n.devicesScanCompleted,
-      ScannerStateView.idle => l10n.devicesDiscoveredDevices,
-    };
-  }
-
   void _openConnect([DiscoveredDevice? discovered]) async {
     final initial = DeviceInfo(
       name: 'Device #${widget.controller.devices.length + 1}',
@@ -129,6 +121,9 @@ class _DevicesScreenState extends State<DevicesScreen> {
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
     final discovered = widget.controller.discoveredDevices;
+    final canClearDiscovered =
+        widget.controller.hasDiscoveredDevices &&
+        widget.controller.scannerState != ScannerStateView.scanning;
 
     return ScaffoldMessenger(
       child: Scaffold(
@@ -205,8 +200,8 @@ class _DevicesScreenState extends State<DevicesScreen> {
                     ),
                     _sectionHeader(
                       context,
-                      _scanSectionTitle(l10n),
-                      trailing: !widget.controller.hasDiscoveredDevices
+                      l10n.devicesDiscoveredDevices,
+                      trailing: !canClearDiscovered
                           ? null
                           : TextButton(
                               onPressed:
@@ -588,13 +583,6 @@ class _ScanningCard extends StatelessWidget {
                         ),
                       ),
                     ],
-                  ),
-                ),
-                Text(
-                  _protocolLabel(l10n, protocol),
-                  style: tt.labelLarge!.copyWith(
-                    color: cs.primary,
-                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
