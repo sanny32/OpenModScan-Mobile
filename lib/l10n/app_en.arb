@@ -53,6 +53,75 @@
   "devicesScanNetwork": "Scan network",
   "@devicesScanNetwork": {},
 
+  "devicesStartScanning": "Start scanning",
+  "@devicesStartScanning": {},
+
+  "devicesNoScansYet": "No scans yet",
+  "@devicesNoScansYet": {},
+
+  "devicesNoScansYetSubtitle": "Scan the network to discover Modbus devices.",
+  "@devicesNoScansYetSubtitle": {},
+
+  "devicesScanningNetwork": "Scanning network",
+  "@devicesScanningNetwork": {},
+
+  "devicesScanCompleted": "Scan completed",
+  "@devicesScanCompleted": {},
+
+  "devicesScanCompletedTitle": "Scan completed",
+  "@devicesScanCompletedTitle": {},
+
+  "devicesScanningTitle": "Scanning...",
+  "@devicesScanningTitle": {},
+
+  "devicesScanningSubtitle": "Searching for devices",
+  "@devicesScanningSubtitle": {},
+
+  "devicesScanningProtocolSubtitle": "Searching for {protocol} devices",
+  "@devicesScanningProtocolSubtitle": {
+    "placeholders": {
+      "protocol": {"type": "String"}
+    }
+  },
+
+  "devicesFoundCount": "{count} devices found",
+  "@devicesFoundCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "devicesScanStart": "Start: {time}",
+  "@devicesScanStart": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+
+  "devicesScanElapsed": "Elapsed: {time}",
+  "@devicesScanElapsed": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+
+  "devicesScanDuration": "Duration: {time}",
+  "@devicesScanDuration": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+
+  "devicesScanSubnetUnavailable": "Subnet unavailable",
+  "@devicesScanSubnetUnavailable": {},
+
+  "devicesScanFound": "Found: {count}",
+  "@devicesScanFound": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
   "devicesScanProgress": "{scanned}/{total}",
   "@devicesScanProgress": {
     "placeholders": {

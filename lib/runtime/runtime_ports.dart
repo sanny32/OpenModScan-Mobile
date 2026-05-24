@@ -69,6 +69,12 @@ abstract interface class DeviceScannerPort implements Listenable {
 
   double get progress;
 
+  String? get scanCidr;
+
+  DateTime? get scanStartedAt;
+
+  ProtocolType? get scanProtocol;
+
   Future<void> startScan(DeviceScanRequest request);
 
   void stopScan();

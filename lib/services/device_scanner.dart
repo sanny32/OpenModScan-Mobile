@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+import '../models/device_info.dart';
 import '../runtime/runtime_ports.dart';
 import 'discovered_device_list.dart';
 import 'modbus_discovery_probe.dart';
@@ -37,6 +38,9 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
   ScannerStateView _state = ScannerStateView.idle;
   int _scanned = 0;
   int _total = 0;
+  String? _scanCidr;
+  DateTime? _scanStartedAt;
+  ProtocolType? _scanProtocol;
   bool _cancelled = false;
 
   @override
@@ -52,12 +56,24 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
   double get progress => _total == 0 ? 0.0 : _scanned / _total;
 
   @override
+  String? get scanCidr => _scanCidr;
+
+  @override
+  DateTime? get scanStartedAt => _scanStartedAt;
+
+  @override
+  ProtocolType? get scanProtocol => _scanProtocol;
+
+  @override
   Future<void> startScan(DeviceScanRequest request) async {
     if (_state == ScannerStateView.scanning) return;
 
     _cancelled = false;
     _scanned = 0;
     _total = 0;
+    _scanCidr = null;
+    _scanStartedAt = DateTime.now();
+    _scanProtocol = request.protocol;
     _state = ScannerStateView.scanning;
     notifyListeners();
 
@@ -124,7 +140,9 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
     }
     final currentAddress = await _currentIpv4Address().catchError((_) => null);
     if (currentAddress == null) return const [];
-    return Ipv4Subnet.fromAddress(currentAddress, request.subnetPrefix).hosts();
+    final subnet = Ipv4Subnet.fromAddress(currentAddress, request.subnetPrefix);
+    _scanCidr = subnet.cidr;
+    return subnet.hosts();
   }
 
   Future<String?> _currentIpv4Address() async {

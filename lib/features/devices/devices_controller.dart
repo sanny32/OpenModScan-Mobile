@@ -44,6 +44,12 @@ class DevicesController extends ChangeNotifier {
 
   double get scannerProgress => _scanner.progress;
 
+  String? get scannerCidr => _scanner.scanCidr;
+
+  DateTime? get scannerStartedAt => _scanner.scanStartedAt;
+
+  ProtocolType? get scannerProtocol => _scanner.scanProtocol;
+
   DeviceInfo? deviceById(String id) => _repository.findById(id);
 
   bool isConnected(DeviceInfo device) => _connectionRuntime.isConnected(device);
