@@ -38,18 +38,23 @@ void main() {
         ),
       ],
     );
+    final runtime = PollingConnectionRuntime();
     final controller = DevicesController(
       DeviceRepository.instance,
-      PollingConnectionRuntime(),
+      runtime,
       scanner,
     );
+    String? openedDeviceId;
     addTearDown(controller.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: DevicesScreen(controller: controller, onOpenDevice: (_) {}),
+        home: DevicesScreen(
+          controller: controller,
+          onOpenDevice: (id) => openedDeviceId = id,
+        ),
       ),
     );
 
@@ -68,6 +73,14 @@ void main() {
     expect(find.text('Modbus TCP • ID: 1'), findsOneWidget);
     expect(find.text('Modbus TCP • ID: 2'), findsOneWidget);
     expect(find.text('Connect'), findsNWidgets(2));
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Connect').first);
+    await tester.pumpAndSettle();
+
+    final device = controller.devices.single;
+    expect(scanner.stopCalled, isTrue);
+    expect(runtime.isConnected(device), isTrue);
+    expect(openedDeviceId, device.id);
 
     await tester.tap(find.text('Stop scanning'));
     await tester.pump();
@@ -159,13 +172,17 @@ void main() {
       runtime,
       scanner,
     );
+    String? openedDeviceId;
     addTearDown(controller.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: DevicesScreen(controller: controller, onOpenDevice: (_) {}),
+        home: DevicesScreen(
+          controller: controller,
+          onOpenDevice: (id) => openedDeviceId = id,
+        ),
       ),
     );
 
@@ -179,6 +196,7 @@ void main() {
     expect(device.protocol, ProtocolType.modbusTcp);
     expect(device.unitId, 1);
     expect(runtime.isConnected(device), isTrue);
+    expect(openedDeviceId, device.id);
     expect(scanner.discoveredDevices.isEmpty, isTrue);
     expect(find.text('Device #1'), findsOneWidget);
     expect(find.text('Connect to Device'), findsNothing);

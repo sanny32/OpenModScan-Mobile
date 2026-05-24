@@ -97,7 +97,14 @@ class _DevicesScreenState extends State<DevicesScreen> {
 
   Future<void> _connectDiscovered(DiscoveredDevice discovered) async {
     try {
-      await widget.controller.connectDiscoveredDevice(discovered);
+      if (widget.controller.scannerState == ScannerStateView.scanning) {
+        widget.controller.stopScan();
+      }
+      final device = await widget.controller.connectDiscoveredDevice(
+        discovered,
+      );
+      if (!mounted) return;
+      widget.onOpenDevice(device.id);
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
