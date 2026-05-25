@@ -111,8 +111,12 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
   @override
   void dispose() {
     _commentCtrl.dispose();
-    AppSettings.instance.showTypeBadgesNotifier.removeListener(_onSettingChanged);
-    AppSettings.instance.showLastValuesNotifier.removeListener(_onSettingChanged);
+    AppSettings.instance.showTypeBadgesNotifier.removeListener(
+      _onSettingChanged,
+    );
+    AppSettings.instance.showLastValuesNotifier.removeListener(
+      _onSettingChanged,
+    );
     super.dispose();
   }
 
@@ -128,9 +132,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
       registerOrder: _registerOrder,
       byteOrder: _byteOrder,
     );
-    return [
-      for (final type in kRegisterTypes) _Interpretation(type, v(type)),
-    ];
+    return [for (final type in kRegisterTypes) _Interpretation(type, v(type))];
   }
 
   String _displayValueForType(String type) {
@@ -313,6 +315,9 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     final appColors = Theme.of(context).extension<AppColors>()!;
     final entry = widget.entry;
     final currentValue = _displayValueForType(_selectedType);
+    final showPreviousValue =
+        entry.previousValue != null &&
+        AppSettings.instance.showLastValuesNotifier.value;
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerHighest,
@@ -436,13 +441,12 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Divider(height: 1, thickness: 1.2, color: cs.outline),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      if (entry.previousValue != null &&
-                          AppSettings.instance.showLastValuesNotifier.value) ...[
+                  if (showPreviousValue) ...[
+                    const SizedBox(height: 16),
+                    Divider(height: 1, thickness: 1.2, color: cs.outline),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
                         Text(
                           l10n.labelPreviousValue,
                           style: tt.bodySmall!.copyWith(
@@ -473,8 +477,8 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                         ),
                         const SizedBox(width: 8),
                       ],
-                    ],
-                  ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -898,10 +902,7 @@ class _CommentCard extends StatelessWidget {
           context: context,
           builder: (ctx) {
             final ctrl = TextEditingController(text: comment ?? '');
-            return _CommentDialog(
-              ctrl: ctrl,
-              onSaved: onChanged,
-            );
+            return _CommentDialog(ctrl: ctrl, onSaved: onChanged);
           },
         ),
         child: Padding(
@@ -975,4 +976,3 @@ class _CommentDialogState extends State<_CommentDialog> {
     );
   }
 }
-
