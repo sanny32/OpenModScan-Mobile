@@ -15,6 +15,7 @@ import '../../utils/modbus_format.dart';
 import '../../widgets/type_badge.dart';
 import 'register_list_dialogs.dart';
 import 'registers_controller.dart';
+import 'widgets/register_list_dropdown.dart';
 import 'widgets/register_row.dart';
 import 'widgets/registers_range_controls.dart';
 import 'widgets/registers_tab_toolbar.dart';
@@ -383,13 +384,7 @@ class _RegistersScreenState extends State<RegistersScreen>
                   regType: active.regType,
                   onRegTypeChanged: (v) =>
                       _updateActiveList(active..regType = v),
-                  listNames: _lists.map((l) => l.name).toList(),
-                  activeListIndex: _activeList,
-                  onListChanged: (i) {
-                    setState(() => _activeList = i);
-                    widget.controller.selectList(_lists[i].data.id);
-                  },
-                  onAddList: _addList,
+                  listSelector: _buildListSelector(),
                   autoRefresh: active.autoRefresh,
 
                   isActive: _screenActive && _activeTab == 0,
@@ -415,13 +410,7 @@ class _RegistersScreenState extends State<RegistersScreen>
                   statusType: active.coilType,
                   onStatusTypeChanged: (v) =>
                       _updateActiveList(active..coilType = v),
-                  listNames: _lists.map((l) => l.name).toList(),
-                  activeListIndex: _activeList,
-                  onListChanged: (i) {
-                    setState(() => _activeList = i);
-                    widget.controller.selectList(_lists[i].data.id);
-                  },
-                  onAddList: _addList,
+                  listSelector: _buildListSelector(),
                   autoRefresh: active.coilAutoRefresh,
                   isActive: _screenActive && _activeTab == 1,
                   onAutoRefreshChanged: (v) =>
@@ -453,6 +442,18 @@ class _RegistersScreenState extends State<RegistersScreen>
   void _updateActiveList(_ListConfig active) {
     setState(() {});
     widget.controller.updateList(active.data);
+  }
+
+  Widget _buildListSelector() {
+    return RegisterListDropdown(
+      names: _lists.map((l) => l.name).toList(),
+      activeIndex: _activeList,
+      onChanged: (i) {
+        setState(() => _activeList = i);
+        widget.controller.selectList(_lists[i].data.id);
+      },
+      onAdd: _addList,
+    );
   }
 
   void _setActiveTab(int index) {

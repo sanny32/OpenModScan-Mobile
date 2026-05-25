@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
-import 'register_list_dropdown.dart';
 import 'register_segmented_button_style.dart';
 
 class RegistersTabToolbar extends StatelessWidget {
-  final List<String> listNames;
-  final int activeListIndex;
-  final ValueChanged<int> onListChanged;
-  final VoidCallback onAddList;
+  final Widget? leading;
   final List<ButtonSegment<String>> segments;
   final String selectedSegment;
   final ValueChanged<String> onSegmentChanged;
@@ -19,10 +15,7 @@ class RegistersTabToolbar extends StatelessWidget {
 
   const RegistersTabToolbar({
     super.key,
-    required this.listNames,
-    required this.activeListIndex,
-    required this.onListChanged,
-    required this.onAddList,
+    this.leading,
     required this.segments,
     required this.selectedSegment,
     required this.onSegmentChanged,
@@ -42,13 +35,7 @@ class RegistersTabToolbar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
       child: Row(
         children: [
-          RegisterListDropdown(
-            names: listNames,
-            activeIndex: activeListIndex,
-            onChanged: onListChanged,
-            onAdd: onAddList,
-          ),
-          const SizedBox(width: 8),
+          if (leading != null) ...[leading!, const SizedBox(width: 8)],
           SegmentedButton<String>(
             segments: segments,
             selected: {selectedSegment},

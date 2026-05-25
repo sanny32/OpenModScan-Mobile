@@ -430,7 +430,7 @@ void main() {
     returnDeviceId.dispose();
   });
 
-  testWidgets('List dropdown switches between lists', (
+  testWidgets('Shared list dropdown switches between tabs and lists', (
     WidgetTester tester,
   ) async {
     final device = DeviceInfo(
@@ -470,11 +470,19 @@ void main() {
 
     expect(find.text('Alpha'), findsOneWidget);
 
+    await tester.tap(find.text('Status'));
+    await tester.pumpAndSettle();
+    expect(find.text('Alpha'), findsOneWidget);
+
     await tester.tap(find.text('Alpha'));
     await tester.pumpAndSettle();
     expect(find.text('Beta'), findsWidgets);
 
     await tester.tap(find.text('Beta').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Beta'), findsOneWidget);
+
+    await tester.tap(find.text('Registers'));
     await tester.pumpAndSettle();
     expect(find.text('Beta'), findsOneWidget);
 
@@ -527,72 +535,73 @@ void main() {
     returnDeviceId.dispose();
   });
 
-  testWidgets('Register row shows address, type below address, comment, value', (
-    WidgetTester tester,
-  ) async {
-    final device = DeviceInfo(
-      id: 'row-layout-device',
-      name: 'Row PLC',
-      host: '127.0.0.34',
-      port: 502,
-      protocol: ProtocolType.modbusTcp,
-      unitId: 1,
-      registerLists: [
-        RegisterList(
-          id: 'row-list',
-          name: 'Row List',
-          startAddress: 1,
-          count: 1,
-          autoRefresh: false,
-          entries: [
-            RegisterConfig(
-              address: 40001,
-              typeName: 'UInt32',
-              comment: 'Speed setpoint',
-            ),
-          ],
+  testWidgets(
+    'Register row shows address, type below address, comment, value',
+    (WidgetTester tester) async {
+      final device = DeviceInfo(
+        id: 'row-layout-device',
+        name: 'Row PLC',
+        host: '127.0.0.34',
+        port: 502,
+        protocol: ProtocolType.modbusTcp,
+        unitId: 1,
+        registerLists: [
+          RegisterList(
+            id: 'row-list',
+            name: 'Row List',
+            startAddress: 1,
+            count: 1,
+            autoRefresh: false,
+            entries: [
+              RegisterConfig(
+                address: 40001,
+                typeName: 'UInt32',
+                comment: 'Speed setpoint',
+              ),
+            ],
+          ),
+        ],
+      );
+      await DeviceRepository.instance.replaceAll([device]);
+
+      final controller = RegistersController(
+        DeviceRepository.instance,
+        PollingConnectionRuntime(),
+        const DemoRegisterRuntime(enabled: false),
+      );
+      final returnDeviceId = ValueNotifier<String?>(null);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RegistersScreen(
+            controller: controller,
+            returnDeviceId: returnDeviceId,
+            onReturnToDevice: () {},
+          ),
         ),
-      ],
-    );
-    await DeviceRepository.instance.replaceAll([device]);
+      );
+      await tester.pump();
 
-    final controller = RegistersController(
-      DeviceRepository.instance,
-      PollingConnectionRuntime(),
-      const DemoRegisterRuntime(enabled: false),
-    );
-    final returnDeviceId = ValueNotifier<String?>(null);
+      expect(find.text('40001'), findsOneWidget);
+      expect(find.text('UInt32'), findsOneWidget);
+      expect(find.text('Speed setpoint'), findsOneWidget);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.lightTheme,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: RegistersScreen(
-          controller: controller,
-          returnDeviceId: returnDeviceId,
-          onReturnToDevice: () {},
-        ),
-      ),
-    );
-    await tester.pump();
+      final addressOffset = tester.getTopLeft(find.text('40001'));
+      final typeOffset = tester.getTopLeft(find.text('UInt32'));
+      final commentOffset = tester.getTopLeft(find.text('Speed setpoint'));
 
-    expect(find.text('40001'), findsOneWidget);
-    expect(find.text('UInt32'), findsOneWidget);
-    expect(find.text('Speed setpoint'), findsOneWidget);
+      expect(typeOffset.dy, greaterThan(addressOffset.dy));
+      expect(typeOffset.dx, closeTo(addressOffset.dx, 4));
+      expect(commentOffset.dx, greaterThanOrEqualTo(addressOffset.dx + 72));
 
-    final addressOffset = tester.getTopLeft(find.text('40001'));
-    final typeOffset = tester.getTopLeft(find.text('UInt32'));
-    final commentOffset = tester.getTopLeft(find.text('Speed setpoint'));
-
-    expect(typeOffset.dy, greaterThan(addressOffset.dy));
-    expect(typeOffset.dx, closeTo(addressOffset.dx, 4));
-    expect(commentOffset.dx, greaterThanOrEqualTo(addressOffset.dx + 72));
-
-    await tester.pumpWidget(const SizedBox.shrink());
-    controller.dispose();
-    returnDeviceId.dispose();
-  });
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+      returnDeviceId.dispose();
+    },
+  );
 
   testWidgets('Status row shows comment left, switch right', (
     WidgetTester tester,
@@ -683,30 +692,31 @@ void main() {
     expect(find.text('100500'), findsWidgets);
   });
 
-  testWidgets('Register detail interpretations use rawWords for multi-word types', (
-    WidgetTester tester,
-  ) async {
-    // MSRF: hi = rawWords[addr]=1, lo = rawWords[addr+1]=2 → UInt32 = (1<<16)|2 = 65538
-    const entry = RegisterEntry(
-      address: 40001,
-      value: '1',
-      typeName: 'UInt32',
-      rawWords: {40001: 1, 40002: 2},
-    );
+  testWidgets(
+    'Register detail interpretations use rawWords for multi-word types',
+    (WidgetTester tester) async {
+      // MSRF: hi = rawWords[addr]=1, lo = rawWords[addr+1]=2 → UInt32 = (1<<16)|2 = 65538
+      const entry = RegisterEntry(
+        address: 40001,
+        value: '1',
+        typeName: 'UInt32',
+        rawWords: {40001: 1, 40002: 2},
+      );
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.lightTheme,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: RegisterDetailScreen(entry: entry, canWrite: false),
-      ),
-    );
-    await tester.pump();
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RegisterDetailScreen(entry: entry, canWrite: false),
+        ),
+      );
+      await tester.pump();
 
-    // UInt32 row in interpretations list and header both show 65538
-    expect(find.text('65538'), findsWidgets);
-  });
+      // UInt32 row in interpretations list and header both show 65538
+      expect(find.text('65538'), findsWidgets);
+    },
+  );
 
   testWidgets('Register detail shows previous value in selected type', (
     WidgetTester tester,

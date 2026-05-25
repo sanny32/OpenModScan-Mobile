@@ -3,10 +3,7 @@ part of 'registers_screen.dart';
 class _RegistersTab extends StatefulWidget {
   final String regType;
   final ValueChanged<String> onRegTypeChanged;
-  final List<String> listNames;
-  final int activeListIndex;
-  final ValueChanged<int> onListChanged;
-  final VoidCallback onAddList;
+  final Widget listSelector;
   final bool autoRefresh;
   final bool isActive;
   final ValueChanged<bool> onAutoRefreshChanged;
@@ -34,10 +31,7 @@ class _RegistersTab extends StatefulWidget {
   const _RegistersTab({
     required this.regType,
     required this.onRegTypeChanged,
-    required this.listNames,
-    required this.activeListIndex,
-    required this.onListChanged,
-    required this.onAddList,
+    required this.listSelector,
     required this.autoRefresh,
     required this.isActive,
     required this.onAutoRefreshChanged,
@@ -225,10 +219,7 @@ class _RegistersTabState extends State<_RegistersTab> {
     return Column(
       children: [
         RegistersTabToolbar(
-          listNames: widget.listNames,
-          activeListIndex: widget.activeListIndex,
-          onListChanged: widget.onListChanged,
-          onAddList: widget.onAddList,
+          leading: widget.listSelector,
           segments: const [
             ButtonSegment(value: '4xxxx', label: Text('4xxxx')),
             ButtonSegment(value: '3xxxx', label: Text('3xxxx')),
