@@ -163,10 +163,6 @@ class _DevicesScreenState extends State<DevicesScreen> {
                       icon: const Icon(Icons.add),
                       onPressed: _openConnect,
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.more_horiz),
-                      onPressed: () {},
-                    ),
                   ],
                 ),
               ),
