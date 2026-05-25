@@ -385,6 +385,123 @@ void main() {
     returnDeviceId.dispose();
   });
 
+  testWidgets('Disconnected register values use unavailable color', (
+    WidgetTester tester,
+  ) async {
+    final device = DeviceInfo(
+      id: 'disconnected-values-device',
+      name: 'Disconnected PLC',
+      host: '127.0.0.32',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [
+        RegisterList(id: 'disconnected-values-list', name: 'List 1', count: 1),
+      ],
+    );
+    await DeviceRepository.instance.replaceAll([device]);
+
+    final controller = RegistersController(
+      DeviceRepository.instance,
+      PollingConnectionRuntime(),
+      const DemoRegisterRuntime(enabled: false),
+    );
+    final returnDeviceId = ValueNotifier<String?>(null);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegistersScreen(
+          controller: controller,
+          returnDeviceId: returnDeviceId,
+          onReturnToDevice: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Text &&
+            widget.data == '0' &&
+            widget.style?.color == AppColors.light.unavailableValueColor,
+      ),
+      findsOneWidget,
+    );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+    returnDeviceId.dispose();
+  });
+
+  testWidgets('Modbus exception register values use exception color', (
+    WidgetTester tester,
+  ) async {
+    final device = DeviceInfo(
+      id: 'exception-values-device',
+      name: 'Exception PLC',
+      host: '127.0.0.33',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [
+        RegisterList(id: 'exception-values-list', name: 'List 1', count: 1),
+      ],
+    );
+    await DeviceRepository.instance.replaceAll([device]);
+
+    final connections = ThrowingRegisterConnectionRuntime();
+    await connections.connect(device);
+    final controller = RegistersController(
+      DeviceRepository.instance,
+      connections,
+      const DemoRegisterRuntime(enabled: false),
+    );
+    final returnDeviceId = ValueNotifier<String?>(null);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegistersScreen(
+          controller: controller,
+          returnDeviceId: returnDeviceId,
+          onReturnToDevice: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text('Read'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Text &&
+            widget.data == 'Illegal Data Address' &&
+            widget.style?.color == AppColors.light.exceptionValueColor,
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Text &&
+            widget.data == '0' &&
+            widget.style?.color == AppColors.light.exceptionValueColor,
+      ),
+      findsOneWidget,
+    );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+    returnDeviceId.dispose();
+  });
+
   testWidgets('Status tab shows SegmentedButton with 0xxxx and 1xxxx', (
     WidgetTester tester,
   ) async {

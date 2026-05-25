@@ -11,11 +11,14 @@ const kRegisterTypes = [
   'Binary',
 ];
 
+enum RegisterValueState { received, unavailable, exception }
+
 class RegisterEntry {
   final int address;
   final String value; // raw uint16 as decimal string
   final String? displayValue; // type-formatted value for display in list
   final String? previousValue;
+  final RegisterValueState valueState;
   final String typeName;
   final String? comment;
   final String? timestamp;
@@ -28,6 +31,7 @@ class RegisterEntry {
     required this.value,
     this.displayValue,
     this.previousValue,
+    this.valueState = RegisterValueState.received,
     required this.typeName,
     this.comment,
     this.timestamp,

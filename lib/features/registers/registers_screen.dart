@@ -9,6 +9,7 @@ import '../../models/register_address_type.dart';
 import '../../models/register_entry.dart';
 import '../../models/register_list.dart';
 import '../../models/status_entry.dart';
+import '../../theme/app_theme.dart';
 import '../../widgets/connection_info_bar.dart';
 import '../../widgets/connection_status_chip.dart';
 import '../../utils/modbus_format.dart';
@@ -53,6 +54,8 @@ class _RegistersScreenState extends State<RegistersScreen>
   String _listSignature = '';
   int _activeList = 0;
   var _activeTab = 0;
+  var _registerValueState = RegisterValueState.received;
+  String? _registerValueStatusLabel;
 
   DeviceInfo? get _selectedDevice => widget.controller.selectedDevice;
   bool get _screenActive => widget.screenActive?.value ?? true;
@@ -138,6 +141,8 @@ class _RegistersScreenState extends State<RegistersScreen>
     if (!mounted) return;
     final signature = _currentListSignature;
     if (signature != _listSignature) {
+      _registerValueState = RegisterValueState.received;
+      _registerValueStatusLabel = null;
       for (final list in _lists) {
         list.dispose();
       }
@@ -153,6 +158,14 @@ class _RegistersScreenState extends State<RegistersScreen>
       if (activeType.isBit) {
         _tabController.animateTo(1);
       }
+    }
+    if (_selectedDevice != null &&
+        !widget.controller.isConnected(_selectedDevice!)) {
+      _registerValueState = RegisterValueState.unavailable;
+      _registerValueStatusLabel = null;
+    } else if (_registerValueState == RegisterValueState.unavailable) {
+      _registerValueState = RegisterValueState.received;
+      _registerValueStatusLabel = null;
     }
     setState(() {});
   }
@@ -286,6 +299,13 @@ class _RegistersScreenState extends State<RegistersScreen>
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
     final active = _lists[_activeList];
+    final selectedDeviceConnected =
+        _selectedDevice != null &&
+        widget.controller.isConnected(_selectedDevice!);
+    final appColors = Theme.of(context).extension<AppColors>()!;
+    final showRegisterException =
+        selectedDeviceConnected &&
+        _registerValueState == RegisterValueState.exception;
 
     return Scaffold(
       appBar: AppBar(
@@ -308,9 +328,13 @@ class _RegistersScreenState extends State<RegistersScreen>
             ),
             const SizedBox(height: 2),
             ConnectionStatusChip(
-              connected:
-                  _selectedDevice != null &&
-                  widget.controller.isConnected(_selectedDevice!),
+              connected: selectedDeviceConnected,
+              label: showRegisterException
+                  ? _registerValueStatusLabel ?? 'Modbus exception'
+                  : null,
+              color: showRegisterException
+                  ? appColors.exceptionValueColor
+                  : null,
             ),
           ],
         ),
@@ -399,9 +423,18 @@ class _RegistersScreenState extends State<RegistersScreen>
                   runtimeValues: widget.controller.runtimeValues,
                   lastReadAt: widget.controller.lastRegisterReadAt,
                   referenceRegisters: widget.controller.referenceRegisters,
-                  canRead:
-                      _selectedDevice != null &&
-                      widget.controller.isConnected(_selectedDevice!),
+                  isConnected: selectedDeviceConnected,
+                  canRead: selectedDeviceConnected,
+                  onValueStateChanged: (state, label) {
+                    if (_registerValueState == state &&
+                        _registerValueStatusLabel == label) {
+                      return;
+                    }
+                    setState(() {
+                      _registerValueState = state;
+                      _registerValueStatusLabel = label;
+                    });
+                  },
                   onRead: widget.controller.readRegisters,
                   onEntryChanged: _onEntryChanged,
                   onValueWritten: _onValueWritten,
@@ -424,9 +457,7 @@ class _RegistersScreenState extends State<RegistersScreen>
                   runtimeValues: widget.controller.runtimeStatusValues,
                   lastReadAt: widget.controller.lastStatusReadAt,
                   referenceStatuses: widget.controller.referenceStatuses,
-                  canRead:
-                      _selectedDevice != null &&
-                      widget.controller.isConnected(_selectedDevice!),
+                  canRead: selectedDeviceConnected,
                   onRead: widget.controller.readStatuses,
                   onEntryChanged: (address, comment) => widget.controller
                       .updateStatusEntry(active.coilType, address, comment),

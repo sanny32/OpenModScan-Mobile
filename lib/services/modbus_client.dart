@@ -2,6 +2,7 @@ import 'package:modbus_client/modbus_client.dart' as modbus;
 import 'package:modbus_client_tcp/modbus_client_tcp.dart' as modbus_tcp;
 
 import '../models/device_info.dart';
+import '../models/modbus_exception.dart';
 
 class ModbusClient {
   static const _maxRegistersPerRead = 125;
@@ -78,7 +79,7 @@ class ModbusClient {
     final group = modbus.ModbusElementsGroup(registers);
     final response = await _requireTcpClient().send(group.getReadRequest());
     if (response != modbus.ModbusResponseCode.requestSucceed) {
-      throw ModbusClientException('Modbus read failed: ${response.name}.');
+      throw _exceptionForResponse(response);
     }
 
     return [for (final register in registers) _valueFor(register)];
@@ -106,7 +107,7 @@ class ModbusClient {
     final group = modbus.ModbusElementsGroup(bits);
     final response = await _requireTcpClient().send(group.getReadRequest());
     if (response != modbus.ModbusResponseCode.requestSucceed) {
-      throw ModbusClientException('Modbus read failed: ${response.name}.');
+      throw _exceptionForResponse(response);
     }
 
     return [for (final bit in bits) _bitValueFor(bit)];
@@ -167,9 +168,24 @@ class ModbusClient {
 
 class ModbusClientException implements Exception {
   final String message;
+  final ModbusExceptionCode? exceptionCode;
 
-  const ModbusClientException(this.message);
+  const ModbusClientException(this.message) : exceptionCode = null;
+
+  ModbusClientException.modbus(ModbusExceptionCode code)
+    : message = code.label,
+      exceptionCode = code;
 
   @override
   String toString() => 'ModbusClientException: $message';
+}
+
+ModbusClientException _exceptionForResponse(
+  modbus.ModbusResponseCode response,
+) {
+  final exception = ModbusExceptionCode.fromCode(response.code);
+  if (exception != null) {
+    return ModbusClientException.modbus(exception);
+  }
+  return ModbusClientException(response.name);
 }

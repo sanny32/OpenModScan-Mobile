@@ -29,6 +29,7 @@ class RegisterRow extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>()!;
+    final valueColor = _valueColor(context, entry.valueState);
     return InkWell(
       onTap: () => Navigator.push(
         context,
@@ -92,7 +93,7 @@ class RegisterRow extends StatelessWidget {
                   Text(
                     entry.displayValue ?? entry.value,
                     style: tt.bodyLarge!.copyWith(
-                      color: appColors.valueColor,
+                      color: valueColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -106,7 +107,7 @@ class RegisterRow extends StatelessWidget {
                       return Text(
                         _formatPreviousValue(entry),
                         style: tt.bodySmall!.copyWith(
-                          color: cs.onSurfaceVariant,
+                          color: appColors.previousValueColor,
                         ),
                       );
                     },
@@ -130,6 +131,7 @@ Future<void> _showWriteRegisterDialog(
   final l10n = context.l10n;
   final cs = Theme.of(context).colorScheme;
   final tt = Theme.of(context).textTheme;
+  final appColors = Theme.of(context).extension<AppColors>()!;
   final ctrl = TextEditingController(text: entry.value);
   String? error;
 
@@ -169,7 +171,9 @@ Future<void> _showWriteRegisterDialog(
                   const SizedBox(width: 8),
                   Text(
                     '← ${entry.previousValue}',
-                    style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                    style: tt.bodySmall!.copyWith(
+                      color: appColors.previousValueColor,
+                    ),
                   ),
                 ],
               ],
@@ -222,6 +226,15 @@ Future<void> _showWriteRegisterDialog(
       ),
     ),
   );
+}
+
+Color _valueColor(BuildContext context, RegisterValueState state) {
+  final appColors = Theme.of(context).extension<AppColors>()!;
+  return switch (state) {
+    RegisterValueState.received => appColors.valueColor,
+    RegisterValueState.unavailable => appColors.unavailableValueColor,
+    RegisterValueState.exception => appColors.exceptionValueColor,
+  };
 }
 
 String _formatPreviousValue(RegisterEntry entry) {

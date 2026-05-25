@@ -17,7 +17,10 @@ class _RegistersTab extends StatefulWidget {
   final DateTime? lastReadAt;
   final List<RegisterEntry> Function(int startAddress, int count)
   referenceRegisters;
+  final bool isConnected;
   final bool canRead;
+  final void Function(RegisterValueState state, String? label)
+  onValueStateChanged;
   final Future<void> Function({
     required String regType,
     required int startAddress,
@@ -44,7 +47,9 @@ class _RegistersTab extends StatefulWidget {
     required this.runtimeValues,
     required this.lastReadAt,
     required this.referenceRegisters,
+    required this.isConnected,
     required this.canRead,
+    required this.onValueStateChanged,
     required this.onRead,
     required this.onEntryChanged,
     required this.onValueWritten,
@@ -57,6 +62,7 @@ class _RegistersTab extends StatefulWidget {
 class _RegistersTabState extends State<_RegistersTab> {
   var _reading = false;
   var _manualReadInProgress = false;
+  var _readValueState = RegisterValueState.received;
   Timer? _autoRefreshTimer;
 
   void _onCtrlChanged() => setState(() {});
@@ -86,8 +92,12 @@ class _RegistersTabState extends State<_RegistersTab> {
     if (old.autoRefresh != widget.autoRefresh ||
         old.isActive != widget.isActive ||
         old.autoRefreshIntervalMs != widget.autoRefreshIntervalMs ||
+        old.isConnected != widget.isConnected ||
         old.canRead != widget.canRead ||
         old.regType != widget.regType) {
+      if (!widget.isConnected) {
+        _readValueState = RegisterValueState.unavailable;
+      }
       _syncAutoRefresh(
         readImmediately:
             widget.autoRefresh &&
@@ -149,7 +159,18 @@ class _RegistersTabState extends State<_RegistersTab> {
         count: count,
       );
       if (!mounted) return;
+      setState(() => _readValueState = RegisterValueState.received);
+      widget.onValueStateChanged(_readValueState, null);
     } catch (error) {
+      if (mounted) {
+        setState(() => _readValueState = _valueStateForReadError(error));
+        widget.onValueStateChanged(
+          _readValueState,
+          _readValueState == RegisterValueState.exception
+              ? _readErrorLabel(error)
+              : null,
+        );
+      }
       if (!mounted || !showErrors) return;
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
@@ -198,11 +219,19 @@ class _RegistersTabState extends State<_RegistersTab> {
       final runtime = widget.runtimeValues[addr];
       final typeName = config?.typeName ?? mock?.typeName ?? 'UInt16';
       final rawStr = runtime?.$1 ?? mock?.value ?? '0';
+      final valueState = !widget.isConnected
+          ? RegisterValueState.unavailable
+          : _readValueState == RegisterValueState.exception
+          ? RegisterValueState.exception
+          : runtime == null && mock == null
+          ? RegisterValueState.unavailable
+          : _readValueState;
       return RegisterEntry(
         address: addr,
         value: rawStr,
         displayValue: computeDisplayValue(addr, typeName, rawInts),
         previousValue: runtime?.$2 ?? mock?.previousValue,
+        valueState: valueState,
         typeName: typeName,
         comment: config?.comment ?? mock?.comment,
         timestamp: runtime?.$3 == null
@@ -304,4 +333,23 @@ class _RegistersTabState extends State<_RegistersTab> {
       ],
     );
   }
+}
+
+RegisterValueState _valueStateForReadError(Object error) {
+  final message = error.toString().toLowerCase();
+  if (message.contains('not connected')) {
+    return RegisterValueState.unavailable;
+  }
+  return RegisterValueState.exception;
+}
+
+String _readErrorLabel(Object error) {
+  final raw = error.toString();
+  const prefixes = ['ModbusClientException: ', 'Exception: '];
+  for (final prefix in prefixes) {
+    if (raw.startsWith(prefix)) {
+      return raw.substring(prefix.length);
+    }
+  }
+  return raw;
 }

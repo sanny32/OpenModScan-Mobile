@@ -3,15 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:omodscan_mobile/features/registers/register_list_dialogs.dart';
 import 'package:omodscan_mobile/l10n/l10n.dart';
 import 'package:omodscan_mobile/models/device_info.dart';
+import 'package:omodscan_mobile/models/modbus_exception.dart';
 import 'package:omodscan_mobile/runtime/runtime_ports.dart';
+import 'package:omodscan_mobile/services/modbus_client.dart';
 
 class RegisterListDialogHarness extends StatelessWidget {
   final List<String> existingNames;
 
-  const RegisterListDialogHarness({
-    super.key,
-    this.existingNames = const [],
-  });
+  const RegisterListDialogHarness({super.key, this.existingNames = const []});
 
   @override
   Widget build(BuildContext context) {
@@ -90,4 +89,22 @@ class PollingConnectionRuntime implements ConnectionRuntime {
     required int startAddress,
     required int count,
   }) async => List.filled(count, false);
+}
+
+class ThrowingRegisterConnectionRuntime extends PollingConnectionRuntime {
+  final Object error;
+
+  ThrowingRegisterConnectionRuntime({Object? error})
+    : error =
+          error ??
+          ModbusClientException.modbus(ModbusExceptionCode.illegalDataAddress);
+
+  @override
+  Future<List<int>> readHoldingRegisters(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  }) async {
+    throw error;
+  }
 }

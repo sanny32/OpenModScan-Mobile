@@ -4,29 +4,42 @@ import '../theme/app_theme.dart';
 
 class ConnectionStatusChip extends StatelessWidget {
   final bool connected;
+  final String? label;
+  final Color? color;
 
-  const ConnectionStatusChip({super.key, required this.connected});
+  const ConnectionStatusChip({
+    super.key,
+    required this.connected,
+    this.label,
+    this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColors>()!;
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
-    final color = connected
-        ? appColors.connectedColor
-        : appColors.disconnectedColor;
+    final statusColor =
+        color ??
+        (connected ? appColors.connectedColor : appColors.disconnectedColor);
+    final statusLabel =
+        label ?? (connected ? l10n.statusConnected : l10n.statusDisconnected);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
         ),
         const SizedBox(width: 5),
-        Text(
-          connected ? l10n.statusConnected : l10n.statusDisconnected,
-          style: tt.bodySmall!.copyWith(color: color),
+        Flexible(
+          child: Text(
+            statusLabel,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: tt.bodySmall!.copyWith(color: statusColor),
+          ),
         ),
       ],
     );

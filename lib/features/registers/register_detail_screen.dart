@@ -315,6 +315,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     final appColors = Theme.of(context).extension<AppColors>()!;
     final entry = widget.entry;
     final currentValue = _displayValueForType(_selectedType);
+    final valueColor = _valueColor(context, entry.valueState);
     final showPreviousValue =
         entry.previousValue != null &&
         AppSettings.instance.showLastValuesNotifier.value;
@@ -431,7 +432,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                           maxLines: 1,
                           softWrap: false,
                           style: tt.displaySmall?.copyWith(
-                            color: appColors.valueColor,
+                            color: valueColor,
                             fontSize: 42,
                             height: 0.95,
                             fontWeight: FontWeight.bold,
@@ -450,7 +451,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                         Text(
                           l10n.labelPreviousValue,
                           style: tt.bodySmall!.copyWith(
-                            color: cs.onSurfaceVariant,
+                            color: appColors.previousValueColor,
                             fontSize: 12,
                           ),
                         ),
@@ -458,7 +459,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                         Icon(
                           Icons.arrow_back_rounded,
                           size: 15,
-                          color: cs.onSurfaceVariant,
+                          color: appColors.previousValueColor,
                         ),
                         const SizedBox(width: 4),
                         Flexible(
@@ -466,7 +467,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                             _displayPreviousValue(entry.previousValue!),
                             overflow: TextOverflow.ellipsis,
                             style: tt.bodyMedium!.copyWith(
-                              color: cs.onSurfaceVariant,
+                              color: appColors.previousValueColor,
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               fontFeatures: const [
@@ -544,6 +545,15 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
           : null,
     );
   }
+}
+
+Color _valueColor(BuildContext context, RegisterValueState state) {
+  final appColors = Theme.of(context).extension<AppColors>()!;
+  return switch (state) {
+    RegisterValueState.received => appColors.valueColor,
+    RegisterValueState.unavailable => appColors.unavailableValueColor,
+    RegisterValueState.exception => appColors.exceptionValueColor,
+  };
 }
 
 class _InterpretationsHeader extends StatelessWidget {

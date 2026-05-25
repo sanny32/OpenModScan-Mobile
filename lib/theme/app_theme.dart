@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 @immutable
 class AppColors extends ThemeExtension<AppColors> {
   final Color valueColor;
+  final Color previousValueColor;
+  final Color unavailableValueColor;
+  final Color exceptionValueColor;
   final Color typeColor;
   final Color txColor;
   final Color rxColor;
@@ -17,6 +20,9 @@ class AppColors extends ThemeExtension<AppColors> {
 
   const AppColors({
     required this.valueColor,
+    required this.previousValueColor,
+    required this.unavailableValueColor,
+    required this.exceptionValueColor,
     required this.typeColor,
     required this.txColor,
     required this.rxColor,
@@ -31,6 +37,9 @@ class AppColors extends ThemeExtension<AppColors> {
 
   static const dark = AppColors(
     valueColor: Color(0xFF66BB6A),
+    previousValueColor: Color(0xFF90A4AE),
+    unavailableValueColor: Color(0xFF6B6B6B),
+    exceptionValueColor: Color(0xFFFF9800),
     typeColor: Color(0xFF64B5F6),
     txColor: Color(0xFF64B5F6),
     rxColor: Color(0xFF66BB6A),
@@ -45,6 +54,9 @@ class AppColors extends ThemeExtension<AppColors> {
 
   static const light = AppColors(
     valueColor: Color(0xFF2E7D32),
+    previousValueColor: Color(0xFF607D8B),
+    unavailableValueColor: Color(0xFFB0B0B0),
+    exceptionValueColor: Color(0xFFE65100),
     typeColor: Color(0xFF1565C0),
     txColor: Color(0xFF1565C0),
     rxColor: Color(0xFF2E7D32),
@@ -60,6 +72,9 @@ class AppColors extends ThemeExtension<AppColors> {
   @override
   AppColors copyWith({
     Color? valueColor,
+    Color? previousValueColor,
+    Color? unavailableValueColor,
+    Color? exceptionValueColor,
     Color? typeColor,
     Color? txColor,
     Color? rxColor,
@@ -72,6 +87,9 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? brandGreen,
   }) => AppColors(
     valueColor: valueColor ?? this.valueColor,
+    previousValueColor: previousValueColor ?? this.previousValueColor,
+    unavailableValueColor: unavailableValueColor ?? this.unavailableValueColor,
+    exceptionValueColor: exceptionValueColor ?? this.exceptionValueColor,
     typeColor: typeColor ?? this.typeColor,
     txColor: txColor ?? this.txColor,
     rxColor: rxColor ?? this.rxColor,
@@ -89,6 +107,21 @@ class AppColors extends ThemeExtension<AppColors> {
     if (other is! AppColors) return this;
     return AppColors(
       valueColor: Color.lerp(valueColor, other.valueColor, t)!,
+      previousValueColor: Color.lerp(
+        previousValueColor,
+        other.previousValueColor,
+        t,
+      )!,
+      unavailableValueColor: Color.lerp(
+        unavailableValueColor,
+        other.unavailableValueColor,
+        t,
+      )!,
+      exceptionValueColor: Color.lerp(
+        exceptionValueColor,
+        other.exceptionValueColor,
+        t,
+      )!,
       typeColor: Color.lerp(typeColor, other.typeColor, t)!,
       txColor: Color.lerp(txColor, other.txColor, t)!,
       rxColor: Color.lerp(rxColor, other.rxColor, t)!,
