@@ -11,10 +11,16 @@ class DevicesController extends ChangeNotifier {
   final DeviceRepository _repository;
   final ConnectionRuntime _connectionRuntime;
   final DeviceScannerPort _scanner;
+  final AppSettings _settings;
 
   String _search = '';
 
-  DevicesController(this._repository, this._connectionRuntime, this._scanner) {
+  DevicesController(
+    this._repository,
+    this._connectionRuntime,
+    this._scanner,
+    this._settings,
+  ) {
     _repository.devices.addListener(_forwardChange);
     _connectionRuntime.connectedDeviceIds.addListener(_forwardChange);
     _scanner.addListener(_forwardChange);
@@ -104,18 +110,17 @@ class DevicesController extends ChangeNotifier {
       _repository.removeRegisterList(deviceId, listId);
 
   Future<void> startScan() {
-    final settings = AppSettings.instance;
     return _scanner.startScan(
       DeviceScanRequest(
-        protocol: settings.scanProtocol,
-        subnetPrefix: settings.scanSubnetPrefix,
-        portStart: settings.scanPortStart,
-        portEnd: settings.scanPortEnd,
-        unitIdStart: settings.scanUnitIdStart,
-        unitIdEnd: settings.scanUnitIdEnd,
-        requestType: settings.scanRequestType,
-        requestAddress: settings.scanRequestAddress,
-        timeout: Duration(milliseconds: settings.timeout),
+        protocol: _settings.scanProtocol,
+        subnetPrefix: _settings.scanSubnetPrefix,
+        portStart: _settings.scanPortStart,
+        portEnd: _settings.scanPortEnd,
+        unitIdStart: _settings.scanUnitIdStart,
+        unitIdEnd: _settings.scanUnitIdEnd,
+        requestType: _settings.scanRequestType,
+        requestAddress: _settings.scanRequestAddress,
+        timeout: Duration(milliseconds: _settings.timeout),
       ),
     );
   }
@@ -141,15 +146,14 @@ class DevicesController extends ChangeNotifier {
   }
 
   DeviceInfo _deviceFromDiscovered(DiscoveredDevice discovered) {
-    final settings = AppSettings.instance;
     return DeviceInfo(
       name: _nextDeviceName(),
       host: discovered.host,
       port: discovered.port,
       protocol: discovered.protocol,
       unitId: discovered.unitId,
-      timeout: settings.timeout,
-      reconnectDelay: settings.reconnectDelay,
+      timeout: _settings.timeout,
+      reconnectDelay: _settings.reconnectDelay,
     );
   }
 

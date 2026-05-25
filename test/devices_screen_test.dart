@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:omodscan_mobile/features/devices/devices_controller.dart';
 import 'package:omodscan_mobile/features/devices/devices_screen.dart';
 import 'package:omodscan_mobile/l10n/l10n.dart';
+import 'package:omodscan_mobile/models/app_settings.dart';
 import 'package:omodscan_mobile/models/discovered_device.dart';
 import 'package:omodscan_mobile/models/device_info.dart';
 import 'package:omodscan_mobile/runtime/runtime_ports.dart';
@@ -43,6 +44,7 @@ void main() {
       DeviceRepository.instance,
       runtime,
       scanner,
+      AppSettings.instance,
     );
     String? openedDeviceId;
     addTearDown(controller.dispose);
@@ -94,6 +96,7 @@ void main() {
       DeviceRepository.instance,
       PollingConnectionRuntime(),
       scanner,
+      AppSettings.instance,
     );
     addTearDown(controller.dispose);
 
@@ -128,6 +131,7 @@ void main() {
       DeviceRepository.instance,
       PollingConnectionRuntime(),
       scanner,
+      AppSettings.instance,
     );
     addTearDown(controller.dispose);
 
@@ -171,6 +175,7 @@ void main() {
       DeviceRepository.instance,
       runtime,
       scanner,
+      AppSettings.instance,
     );
     String? openedDeviceId;
     addTearDown(controller.dispose);
@@ -218,6 +223,7 @@ void main() {
       DeviceRepository.instance,
       PollingConnectionRuntime(),
       scanner,
+      AppSettings.instance,
     );
     addTearDown(controller.dispose);
 

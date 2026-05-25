@@ -83,6 +83,7 @@ class _AppShellState extends State<AppShell> {
       DeviceRepository.instance,
       ConnectionManager.instance,
       DeviceScanner.instance,
+      AppSettings.instance,
     );
     _registersController = RegistersController(
       DeviceRepository.instance,

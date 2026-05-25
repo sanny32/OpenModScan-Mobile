@@ -110,6 +110,7 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
             )
             .catchError((_) => false);
 
+        if (generation != _scanGeneration) return;
         if (!_cancelled && found) {
           discoveredDevices.add(
             request.discoveredDevice(job.host, job.port, job.unitId),
@@ -125,6 +126,7 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
         : request.concurrency.clamp(1, jobs.length).toInt();
     await Future.wait([for (var i = 0; i < workerCount; i++) worker()]);
 
+    if (generation != _scanGeneration) return;
     _state = _cancelled ? ScannerStateView.idle : ScannerStateView.done;
     notifyListeners();
     if (!_cancelled && discoveredDevices.isEmpty) {
@@ -136,6 +138,8 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
   void stopScan() {
     if (_state != ScannerStateView.scanning) return;
     _cancelled = true;
+    _state = ScannerStateView.idle;
+    notifyListeners();
   }
 
   @override
