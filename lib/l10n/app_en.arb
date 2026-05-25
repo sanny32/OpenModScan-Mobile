@@ -35,7 +35,7 @@
   "devicesSavedConnections": "Saved connections",
   "@devicesSavedConnections": {},
 
-  "devicesDiscoveredDevices": "Network scan",
+  "devicesDiscoveredDevices": "Network scanner",
   "@devicesDiscoveredDevices": {},
 
   "devicesClearDiscovered": "Clear",
@@ -388,7 +388,7 @@
   "settingsDefaultUnitId": "Default Unit ID (Slave ID)",
   "@settingsDefaultUnitId": {},
 
-  "settingsSectionNetworkScan": "Network scan",
+  "settingsSectionNetworkScan": "Network scanner",
   "@settingsSectionNetworkScan": {},
 
   "settingsScanProtocol": "Scan Protocol",

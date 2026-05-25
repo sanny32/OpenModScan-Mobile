@@ -58,7 +58,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Network scan'), findsOneWidget);
+    expect(find.text('Network scanner'), findsOneWidget);
     expect(find.text('Scanning...'), findsOneWidget);
     expect(find.text('Scanning network'), findsNothing);
     expect(find.text('Searching for Modbus TCP devices'), findsOneWidget);
@@ -139,7 +139,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Network scan'), findsOneWidget);
+    expect(find.text('Network scanner'), findsOneWidget);
     expect(find.text('Scan completed'), findsOneWidget);
     expect(find.text('100%'), findsOneWidget);
     expect(find.textContaining('Duration:'), findsOneWidget);
