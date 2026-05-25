@@ -18,14 +18,13 @@ import 'register_list_dialogs.dart';
 import 'registers_controller.dart';
 import 'register_detail_screen.dart';
 import 'status_detail_screen.dart';
+import 'widgets/max_count_formatter.dart';
+import 'widgets/register_list_dropdown.dart';
+import 'widgets/register_segmented_button_style.dart';
 
 part 'registers_list_config.dart';
 
-enum _MenuAction {
-  selectDevice,
-  removeRegs,
-  setAllTypes,
-}
+enum _MenuAction { selectDevice, removeRegs, setAllTypes }
 
 class RegistersScreen extends StatefulWidget {
   final RegistersController controller;
@@ -695,7 +694,7 @@ class _RegistersTabState extends State<_RegistersTab> {
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
           child: Row(
             children: [
-              _ListDropdown(
+              RegisterListDropdown(
                 names: widget.listNames,
                 activeIndex: widget.activeListIndex,
                 onChanged: widget.onListChanged,
@@ -709,7 +708,7 @@ class _RegistersTabState extends State<_RegistersTab> {
                 ],
                 selected: {widget.regType},
                 onSelectionChanged: (s) => widget.onRegTypeChanged(s.first),
-                style: _segmentedButtonStyle(context),
+                style: registerSegmentedButtonStyle(context),
               ),
               const Spacer(),
               ElevatedButton.icon(
@@ -783,7 +782,7 @@ class _RegistersTabState extends State<_RegistersTab> {
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
-                    _MaxCountFormatter(),
+                    MaxCountFormatter(),
                   ],
                   style: tt.bodyMedium,
                   textAlign: TextAlign.center,
@@ -832,7 +831,7 @@ class _RegistersTabState extends State<_RegistersTab> {
                     textInputAction: TextInputAction.done,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
-                      _MaxCountFormatter(max: kMaxRegisterRefreshIntervalMs),
+                      MaxCountFormatter(max: kMaxRegisterRefreshIntervalMs),
                     ],
                     style: tt.bodyMedium,
                     textAlign: TextAlign.center,
@@ -1160,7 +1159,7 @@ class _CoilsTabState extends State<_CoilsTab> {
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
           child: Row(
             children: [
-              _ListDropdown(
+              RegisterListDropdown(
                 names: widget.listNames,
                 activeIndex: widget.activeListIndex,
                 onChanged: widget.onListChanged,
@@ -1174,7 +1173,7 @@ class _CoilsTabState extends State<_CoilsTab> {
                 ],
                 selected: {widget.coilType},
                 onSelectionChanged: (s) => widget.onCoilTypeChanged(s.first),
-                style: _segmentedButtonStyle(context),
+                style: registerSegmentedButtonStyle(context),
               ),
               const Spacer(),
               ElevatedButton.icon(
@@ -1248,7 +1247,7 @@ class _CoilsTabState extends State<_CoilsTab> {
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
-                    _MaxCountFormatter(max: 2000),
+                    MaxCountFormatter(max: 2000),
                   ],
                   style: tt.bodyMedium,
                   textAlign: TextAlign.center,
@@ -1297,7 +1296,7 @@ class _CoilsTabState extends State<_CoilsTab> {
                     textInputAction: TextInputAction.done,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
-                      _MaxCountFormatter(max: kMaxRegisterRefreshIntervalMs),
+                      MaxCountFormatter(max: kMaxRegisterRefreshIntervalMs),
                     ],
                     style: tt.bodyMedium,
                     textAlign: TextAlign.center,
@@ -1464,124 +1463,6 @@ class _StatusRow extends StatelessWidget {
   }
 }
 
-class _MaxCountFormatter extends TextInputFormatter {
-  final int max;
-
-  const _MaxCountFormatter({this.max = 125});
-
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    if (newValue.text.isEmpty) return newValue;
-    final n = int.tryParse(newValue.text);
-    if (n == null || n > max) return oldValue;
-    return newValue;
-  }
-}
-
-ButtonStyle _segmentedButtonStyle(BuildContext context) {
-  final cs = Theme.of(context).colorScheme;
-  final tt = Theme.of(context).textTheme;
-  return ButtonStyle(
-    textStyle: WidgetStatePropertyAll(tt.bodyMedium),
-    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    visualDensity: VisualDensity.compact,
-    padding: const WidgetStatePropertyAll(
-      EdgeInsets.symmetric(horizontal: 12),
-    ),
-    shape: const WidgetStatePropertyAll(
-      RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(6)),
-      ),
-    ),
-    backgroundColor: WidgetStateProperty.resolveWith((states) {
-      if (states.contains(WidgetState.selected)) return cs.primary;
-      return cs.surfaceContainerHighest;
-    }),
-    foregroundColor: WidgetStateProperty.resolveWith((states) {
-      if (states.contains(WidgetState.selected)) return cs.onPrimary;
-      return cs.onSurface;
-    }),
-    iconColor: WidgetStateProperty.resolveWith((states) {
-      if (states.contains(WidgetState.selected)) return cs.onPrimary;
-      return cs.onSurface;
-    }),
-    side: WidgetStatePropertyAll(
-      BorderSide(color: Theme.of(context).dividerColor),
-    ),
-  );
-}
-
-class _ListDropdown extends StatelessWidget {
-  final List<String> names;
-  final int activeIndex;
-  final ValueChanged<int> onChanged;
-  final VoidCallback onAdd;
-  const _ListDropdown({
-    required this.names,
-    required this.activeIndex,
-    required this.onChanged,
-    required this.onAdd,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    return IntrinsicWidth(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 100),
-        child: SizedBox(
-          height: 36,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Theme.of(context).dividerColor),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: activeIndex,
-                isDense: true,
-                dropdownColor: cs.surfaceContainerHighest,
-                style: tt.bodyMedium!.copyWith(color: cs.onSurface),
-                items: [
-                  for (var i = 0; i < names.length; i++)
-                    DropdownMenuItem(value: i, child: Text(names[i])),
-                  DropdownMenuItem(
-                    value: -1,
-                    child: Row(
-                      children: [
-                        Icon(Icons.add, size: 16, color: cs.primary),
-                        const SizedBox(width: 4),
-                        Text(
-                          'New List',
-                          style: tt.bodyMedium!.copyWith(color: cs.primary),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                onChanged: (v) {
-                  if (v == null) return;
-                  if (v == -1) {
-                    onAdd();
-                  } else {
-                    onChanged(v);
-                  }
-                },
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 Future<void> _showWriteRegisterDialog(
   BuildContext context,
   RegisterEntry entry,
@@ -1688,11 +1569,9 @@ String _formatPreviousValue(RegisterEntry entry) {
   if (raw == null) return '';
   final rawInt = int.tryParse(raw);
   if (rawInt == null) return raw;
-  return computeDisplayValue(
-    entry.address,
-    entry.typeName,
-    {entry.address: rawInt},
-  );
+  return computeDisplayValue(entry.address, entry.typeName, {
+    entry.address: rawInt,
+  });
 }
 
 class _RegisterRow extends StatelessWidget {
@@ -1743,7 +1622,8 @@ class _RegisterRow extends StatelessWidget {
                 children: [
                   Text('${entry.address}', style: tt.bodyLarge),
                   ValueListenableBuilder<bool>(
-                    valueListenable: AppSettings.instance.showTypeBadgesNotifier,
+                    valueListenable:
+                        AppSettings.instance.showTypeBadgesNotifier,
                     builder: (_, showBadges, _) => showBadges
                         ? TypeBadge(type: entry.typeName)
                         : Text(

@@ -1,13 +1,17 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/device_info.dart';
 import '../models/register_list.dart';
+import 'device_store.dart';
 
 class DeviceRepository {
-  static const _key = 'devicesV2';
-  static final DeviceRepository instance = DeviceRepository._();
-  DeviceRepository._();
+  static final DeviceRepository instance = DeviceRepository(
+    const SharedPreferencesDeviceStore(),
+  );
+
+  final DeviceStore _store;
+
+  DeviceRepository(this._store);
 
   final ValueNotifier<List<DeviceInfo>> devices = ValueNotifier(const []);
   bool _initialized = false;
@@ -28,23 +32,11 @@ class DeviceRepository {
     _initialized = true;
   }
 
-  Future<List<DeviceInfo>> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw == null) return [];
-    final list = jsonDecode(raw) as List<dynamic>;
-    return list
-        .map((e) => DeviceInfo.fromJson(e as Map<String, dynamic>))
-        .toList();
-  }
+  Future<List<DeviceInfo>> load() => _store.load();
 
   Future<void> replaceAll(List<DeviceInfo> newDevices) async {
     devices.value = List.of(newDevices);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _key,
-      jsonEncode(newDevices.map((d) => d.toJson()).toList()),
-    );
+    await _store.save(newDevices);
   }
 
   Future<void> add(DeviceInfo device) async {
