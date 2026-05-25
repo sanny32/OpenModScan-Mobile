@@ -207,6 +207,30 @@ void main() {
     expect(find.text('Connect to Device'), findsNothing);
   });
 
+  test('unsupported discovered protocol is not saved or removed', () async {
+    final discovered = DiscoveredDevice(
+      host: '192.168.88.104',
+      port: 502,
+      unitId: 1,
+      protocol: ProtocolType.modbusRtuIp,
+    );
+    final scanner = _ScanPort(ScannerStateView.done, discovered: [discovered]);
+    final controller = DevicesController(
+      DeviceRepository.instance,
+      PollingConnectionRuntime(),
+      scanner,
+      AppSettings.instance,
+    );
+    addTearDown(controller.dispose);
+
+    await expectLater(
+      controller.connectDiscoveredDevice(discovered),
+      throwsUnsupportedError,
+    );
+    expect(controller.devices, isEmpty);
+    expect(scanner.discoveredDevices.devices, [discovered]);
+  });
+
   testWidgets('clearing discovered devices resets scan panel', (tester) async {
     final scanner = _ScanPort(
       ScannerStateView.done,

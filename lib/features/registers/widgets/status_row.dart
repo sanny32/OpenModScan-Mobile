@@ -1,0 +1,79 @@
+import 'package:flutter/material.dart';
+
+import '../../../models/status_entry.dart';
+import '../status_detail_screen.dart';
+
+class StatusRow extends StatelessWidget {
+  final StatusEntry entry;
+  final bool canWrite;
+  final ValueChanged<bool>? onChanged;
+  final void Function(int address, String? comment)? onEntryChanged;
+
+  const StatusRow({
+    super.key,
+    required this.entry,
+    required this.canWrite,
+    required this.onChanged,
+    required this.onEntryChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => StatusDetailScreen(
+            address: entry.address,
+            initialValue: entry.value,
+            comment: entry.comment,
+            canWrite: canWrite,
+            timestamp: entry.timestamp,
+            date: entry.date,
+            onSaved: onEntryChanged == null
+                ? null
+                : (comment) => onEntryChanged!(entry.address, comment),
+          ),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 72,
+              child: Text(
+                entry.address.toString().padLeft(5, '0'),
+                style: tt.bodyLarge,
+              ),
+            ),
+            Expanded(
+              child: Text(
+                entry.comment,
+                style: tt.bodyMedium,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Transform.scale(
+                scale: 0.82,
+                alignment: Alignment.centerRight,
+                child: Switch(
+                  value: entry.value,
+                  onChanged: canWrite ? onChanged : null,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ),
+            Icon(Icons.chevron_right, color: cs.onSurfaceVariant, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}

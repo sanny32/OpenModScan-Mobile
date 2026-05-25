@@ -15,8 +15,8 @@ class ModbusClient {
   bool get isConnected => _tcpClient?.isConnected ?? false;
 
   Future<void> connect() async {
-    if (device.protocol != ProtocolType.modbusTcp) {
-      throw UnsupportedError('Only Modbus TCP connections are implemented.');
+    if (!device.protocol.supportsConnection) {
+      throw UnsupportedError(device.protocol.unsupportedConnectionMessage);
     }
 
     final timeout = Duration(milliseconds: device.timeout);

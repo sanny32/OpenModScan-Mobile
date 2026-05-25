@@ -24,6 +24,9 @@ class ConnectionManager implements ConnectionRuntime {
 
   @override
   Future<void> connect(DeviceInfo device) async {
+    if (!device.protocol.supportsConnection) {
+      throw UnsupportedError(device.protocol.unsupportedConnectionMessage);
+    }
     final client = ModbusClient(device);
     await client.connect();
     clients.value = {...clients.value, device.id: client};

@@ -2,6 +2,19 @@ import 'register_list.dart';
 
 enum ProtocolType { modbusTcp, modbusRtuIp }
 
+extension ProtocolTypeX on ProtocolType {
+  bool get supportsConnection => switch (this) {
+    ProtocolType.modbusTcp => true,
+    ProtocolType.modbusRtuIp => false,
+  };
+
+  String get unsupportedConnectionMessage => switch (this) {
+    ProtocolType.modbusTcp => '',
+    ProtocolType.modbusRtuIp =>
+      'Modbus RTU/IP connections are not implemented yet.',
+  };
+}
+
 class DeviceInfo {
   static int _idSequence = 0;
 

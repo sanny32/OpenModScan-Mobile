@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../models/device_info.dart';
+import '../../models/register_address_type.dart';
 import '../../models/register_entry.dart';
 import '../../models/register_list.dart';
 import '../../models/status_entry.dart';
@@ -154,7 +155,7 @@ class RegistersController extends ChangeNotifier {
   Future<void> setAllTypes(String typeName) async {
     final list = activeList;
     if (list == null) return;
-    final offset = _regTypeOffset(list.regType);
+    final offset = RegisterAddressType.fromCode(list.regType).displayOffset;
     final startAddress = offset + list.startAddress;
     final entries = List.of(list.entries);
 
@@ -213,21 +214,25 @@ class RegistersController extends ChangeNotifier {
       throw StateError('${device.name} is not connected.');
     }
 
-    final modbusStartAddress = _modbusRegisterAddress(regType, startAddress);
-    final values = switch (regType) {
-      '4xxxx' => await _connectionRuntime.readHoldingRegisters(
-        device,
-        startAddress: modbusStartAddress,
-        count: count,
-      ),
-      '3xxxx' => await _connectionRuntime.readInputRegisters(
-        device,
-        startAddress: modbusStartAddress,
-        count: count,
-      ),
-      _ => throw UnsupportedError(
-        'Reading $regType registers is not implemented.',
-      ),
+    final addressType = RegisterAddressType.tryParse(regType);
+    if (addressType == null || !addressType.supportsRegisterRead) {
+      throw UnsupportedError('Reading $regType is not implemented.');
+    }
+    final modbusStartAddress = addressType.toModbusAddress(startAddress);
+    final values = switch (addressType) {
+      RegisterAddressType.holdingRegisters =>
+        await _connectionRuntime.readHoldingRegisters(
+          device,
+          startAddress: modbusStartAddress,
+          count: count,
+        ),
+      RegisterAddressType.inputRegisters =>
+        await _connectionRuntime.readInputRegisters(
+          device,
+          startAddress: modbusStartAddress,
+          count: count,
+        ),
+      _ => throw UnsupportedError('Reading $regType is not implemented.'),
     };
 
     final readAt = DateTime.now();
@@ -252,20 +257,23 @@ class RegistersController extends ChangeNotifier {
       throw StateError('${device.name} is not connected.');
     }
 
-    final values = switch (statusType) {
-      '0xxxx' => await _connectionRuntime.readCoils(
+    final addressType = RegisterAddressType.tryParse(statusType);
+    if (addressType == null || !addressType.supportsStatusRead) {
+      throw UnsupportedError('Reading $statusType is not implemented.');
+    }
+    final values = switch (addressType) {
+      RegisterAddressType.coils => await _connectionRuntime.readCoils(
         device,
         startAddress: startAddress,
         count: count,
       ),
-      '1xxxx' => await _connectionRuntime.readDiscreteInputs(
-        device,
-        startAddress: startAddress,
-        count: count,
-      ),
-      _ => throw UnsupportedError(
-        'Reading $statusType status values is not implemented.',
-      ),
+      RegisterAddressType.discreteInputs =>
+        await _connectionRuntime.readDiscreteInputs(
+          device,
+          startAddress: startAddress,
+          count: count,
+        ),
+      _ => throw UnsupportedError('Reading $statusType is not implemented.'),
     };
 
     final readAt = DateTime.now();
@@ -306,21 +314,6 @@ class RegistersController extends ChangeNotifier {
     _connectionRuntime.connectedDeviceIds.removeListener(_forwardChange);
     super.dispose();
   }
-}
-
-int _regTypeOffset(String regType) => switch (regType) {
-  '4xxxx' => 40000,
-  '3xxxx' => 30000,
-  '1xxxx' => 10000,
-  _ => 0,
-};
-
-int _modbusRegisterAddress(String regType, int displayAddress) {
-  final registerNumber = displayAddress - _regTypeOffset(regType);
-  if (registerNumber < 0) {
-    throw RangeError.value(displayAddress, 'startAddress');
-  }
-  return registerNumber == 0 ? 0 : registerNumber - 1;
 }
 
 DateTime? _latestReadAt(Iterable<DateTime?> timestamps) {

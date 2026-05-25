@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/l10n.dart';
 import '../../models/device_info.dart';
 
+import '../../models/register_address_type.dart';
 import '../../models/register_list.dart';
 import '../../navigation/navigation_targets.dart';
 import '../../theme/app_theme.dart';
@@ -10,20 +11,9 @@ import '../registers/register_list_dialogs.dart';
 import 'devices_controller.dart';
 import 'device_form_sheet.dart';
 
-int _regTypeOffset(String t) => switch (t) {
-  '4xxxx' => 40000,
-  '3xxxx' => 30000,
-  '1xxxx' => 10000,
-  _ => 0,
-};
+int _regTypeOffset(String t) => RegisterAddressType.fromCode(t).displayOffset;
 
-String _regTypeLabel(String t) => switch (t) {
-  '4xxxx' => 'Holding (4xxxx)',
-  '3xxxx' => 'Input (3xxxx)',
-  '1xxxx' => 'Discrete Input (1xxxx)',
-  '0xxxx' => 'Coils (0xxxx)',
-  _ => t,
-};
+String _regTypeLabel(String t) => RegisterAddressType.tryParse(t)?.label ?? t;
 
 class DeviceScreen extends StatefulWidget {
   final String deviceId;
@@ -68,9 +58,8 @@ class _DeviceScreenState extends State<DeviceScreen> {
     context: context,
     builder: (_) => _NotesDialog(
       initial: _device.notes,
-      onSaved: (text) => widget.controller.updateDevice(
-        _device.copyWith(notes: text),
-      ),
+      onSaved: (text) =>
+          widget.controller.updateDevice(_device.copyWith(notes: text)),
     ),
   );
 
@@ -133,7 +122,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
       _device.registerLists[index].id,
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -330,7 +318,11 @@ class _DeviceScreenState extends State<DeviceScreen> {
                         ],
                       ),
                     ),
-                    Icon(Icons.edit_outlined, size: 18, color: cs.onSurfaceVariant),
+                    Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: cs.onSurfaceVariant,
+                    ),
                   ],
                 ),
               ),

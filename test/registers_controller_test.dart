@@ -116,6 +116,47 @@ void main() {
     controller.dispose();
   });
 
+  test('reads input registers using register address type mapping', () async {
+    final repository = DeviceRepository.instance;
+    final device = DeviceInfo(
+      id: 'device-input',
+      name: 'PLC Input',
+      host: '127.0.0.8',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [RegisterList(id: 'list-input', name: 'List 1')],
+    );
+    await repository.replaceAll([device]);
+
+    final connections = _TestConnectionRuntime()..inputValues = [31, 37];
+    await connections.connect(device);
+    final controller = RegistersController(
+      repository,
+      connections,
+      const DemoRegisterRuntime(enabled: false),
+    );
+    await controller.selectTarget(
+      const RegistersRouteArgs(
+        deviceId: 'device-input',
+        registerListId: 'list-input',
+      ),
+    );
+
+    await controller.readRegisters(
+      regType: '3xxxx',
+      startAddress: 30001,
+      count: 2,
+    );
+
+    expect(connections.lastInputStartAddress, 0);
+    expect(connections.lastInputCount, 2);
+    expect(controller.runtimeValues[30001]?.$1, '31');
+    expect(controller.runtimeValues[30002]?.$1, '37');
+
+    controller.dispose();
+  });
+
   test('reads coils into runtime status values', () async {
     final repository = DeviceRepository.instance;
     final device = DeviceInfo(
@@ -171,6 +212,48 @@ void main() {
     controller.dispose();
   });
 
+  test('reads discrete inputs using status address type mapping', () async {
+    final repository = DeviceRepository.instance;
+    final device = DeviceInfo(
+      id: 'device-discrete',
+      name: 'PLC Discrete',
+      host: '127.0.0.9',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [RegisterList(id: 'list-discrete', name: 'List 1')],
+    );
+    await repository.replaceAll([device]);
+
+    final connections = _TestConnectionRuntime()
+      ..discreteInputValues = [false, true];
+    await connections.connect(device);
+    final controller = RegistersController(
+      repository,
+      connections,
+      const DemoRegisterRuntime(enabled: false),
+    );
+    await controller.selectTarget(
+      const RegistersRouteArgs(
+        deviceId: 'device-discrete',
+        registerListId: 'list-discrete',
+      ),
+    );
+
+    await controller.readStatuses(
+      statusType: '1xxxx',
+      startAddress: 12,
+      count: 2,
+    );
+
+    expect(connections.lastDiscreteInputStartAddress, 12);
+    expect(connections.lastDiscreteInputCount, 2);
+    expect(controller.runtimeStatusValues[('1xxxx', 12)]?.$1, isFalse);
+    expect(controller.runtimeStatusValues[('1xxxx', 13)]?.$1, isTrue);
+
+    controller.dispose();
+  });
+
   test('updates status comment through repository', () async {
     final repository = DeviceRepository.instance;
     await repository.replaceAll([
@@ -212,11 +295,17 @@ void main() {
 class _TestConnectionRuntime implements ConnectionRuntime {
   final _ids = ValueNotifier<Set<String>>(const {});
   var holdingValues = <int>[];
+  var inputValues = <int>[];
   var coilValues = <bool>[];
+  var discreteInputValues = <bool>[];
   int? lastHoldingStartAddress;
   int? lastHoldingCount;
+  int? lastInputStartAddress;
+  int? lastInputCount;
   int? lastCoilStartAddress;
   int? lastCoilCount;
+  int? lastDiscreteInputStartAddress;
+  int? lastDiscreteInputCount;
 
   @override
   ValueListenable<Set<String>> get connectedDeviceIds => _ids;
@@ -250,7 +339,11 @@ class _TestConnectionRuntime implements ConnectionRuntime {
     DeviceInfo device, {
     required int startAddress,
     required int count,
-  }) async => const [];
+  }) async {
+    lastInputStartAddress = startAddress;
+    lastInputCount = count;
+    return inputValues.take(count).toList();
+  }
 
   @override
   Future<List<bool>> readCoils(
@@ -268,5 +361,9 @@ class _TestConnectionRuntime implements ConnectionRuntime {
     DeviceInfo device, {
     required int startAddress,
     required int count,
-  }) async => const [];
+  }) async {
+    lastDiscreteInputStartAddress = startAddress;
+    lastDiscreteInputCount = count;
+    return discreteInputValues.take(count).toList();
+  }
 }

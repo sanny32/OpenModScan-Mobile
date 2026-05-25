@@ -75,6 +75,9 @@ class DevicesController extends ChangeNotifier {
   Future<DeviceInfo> connectDiscoveredDevice(
     DiscoveredDevice discovered,
   ) async {
+    if (!discovered.protocol.supportsConnection) {
+      throw UnsupportedError(discovered.protocol.unsupportedConnectionMessage);
+    }
     final existing = _findDiscoveredDevice(discovered);
     final device = existing ?? _deviceFromDiscovered(discovered);
     if (existing == null) {
