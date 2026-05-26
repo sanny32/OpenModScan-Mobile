@@ -826,6 +826,33 @@ void main() {
     await _disposeRegistersHarness(tester, harness);
   });
 
+  testWidgets('Register list shows consecutive multi-word starts as groups', (
+    WidgetTester tester,
+  ) async {
+    final harness = await _pumpRegistersHarness(
+      tester,
+      RegisterList(
+        id: 'consecutive-groups-list',
+        name: 'Consecutive Groups List',
+        startAddress: 1,
+        count: 4,
+        autoRefresh: false,
+        entries: [
+          RegisterConfig(address: 40001, typeName: 'UInt32'),
+          RegisterConfig(address: 40002, typeName: 'UInt32'),
+        ],
+      ),
+    );
+
+    expect(find.text('40001'), findsOneWidget);
+    expect(find.text('40002'), findsOneWidget);
+    expect(find.text('40003'), findsNothing);
+    expect(find.text('40004'), findsOneWidget);
+    expect(find.text('2 regs'), findsNWidgets(2));
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
   testWidgets('Register list groups Float64 across four registers', (
     WidgetTester tester,
   ) async {
@@ -873,7 +900,7 @@ void main() {
     await _disposeRegistersHarness(tester, harness);
   });
 
-  testWidgets('Register list leaves setAllTypes UInt32 rows ungrouped', (
+  testWidgets('Register list keeps setAllTypes UInt32 rows visible', (
     WidgetTester tester,
   ) async {
     final harness = await _pumpRegistersHarness(
@@ -895,7 +922,7 @@ void main() {
     expect(find.text('40001'), findsOneWidget);
     expect(find.text('40002'), findsOneWidget);
     expect(find.text('40003'), findsOneWidget);
-    expect(find.text('2 regs'), findsNothing);
+    expect(find.text('2 regs'), findsNWidgets(2));
 
     await _disposeRegistersHarness(tester, harness);
   });

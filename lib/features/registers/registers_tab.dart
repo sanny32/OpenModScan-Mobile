@@ -246,9 +246,15 @@ class _RegistersTabState extends State<_RegistersTab> {
       );
     });
     final displayItems = <_RegisterDisplayItem>[];
-    for (var i = 0; i < visibleRegisters.length;) {
+    final coveredTailAddresses = <int>{};
+    for (var i = 0; i < visibleRegisters.length; i++) {
       final entry = visibleRegisters[i];
       final wordCount = registerWordCount(entry.typeName);
+      final startsOwnGroup = wordCount > 1;
+      if (coveredTailAddresses.contains(entry.address) && !startsOwnGroup) {
+        continue;
+      }
+
       final fitsVisibleRange = entry.address + wordCount - 1 <= endAddr;
       final hasTailConfig = Iterable.generate(
         wordCount - 1,
@@ -259,7 +265,16 @@ class _RegistersTabState extends State<_RegistersTab> {
       displayItems.add(
         _RegisterDisplayItem(entry: entry, wordCount: isGroup ? wordCount : 1),
       );
-      i += isGroup ? wordCount : 1;
+      if (isGroup) {
+        for (var j = 1; j < wordCount; j++) {
+          final tailIndex = i + j;
+          if (tailIndex >= visibleRegisters.length) break;
+          final tailEntry = visibleRegisters[tailIndex];
+          if (registerWordCount(tailEntry.typeName) == 1) {
+            coveredTailAddresses.add(tailEntry.address);
+          }
+        }
+      }
     }
 
     return Column(
@@ -380,6 +395,7 @@ class _RegisterDisplayItem {
 
 bool _blocksRegisterGroup(RegisterConfig? config) {
   if (config == null) return false;
+  if (registerWordCount(config.typeName) > 1) return false;
   return config.typeName != 'UInt16' ||
       (config.comment?.trim().isNotEmpty ?? false);
 }
