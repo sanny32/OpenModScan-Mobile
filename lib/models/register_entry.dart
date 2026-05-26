@@ -11,6 +11,21 @@ const kRegisterTypes = [
   'Binary',
 ];
 
+int registerWordCount(String typeName) {
+  switch (typeName) {
+    case 'UInt32':
+    case 'Int32':
+    case 'Float32':
+      return 2;
+    case 'UInt64':
+    case 'Int64':
+    case 'Float64':
+      return 4;
+    default:
+      return 1;
+  }
+}
+
 enum RegisterValueState { received, unavailable, exception }
 
 class RegisterEntry {

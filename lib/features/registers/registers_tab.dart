@@ -63,6 +63,7 @@ class _RegistersTabState extends State<_RegistersTab> {
   var _reading = false;
   var _manualReadInProgress = false;
   var _readValueState = RegisterValueState.received;
+  final _expandedRegisterGroups = <int>{};
   Timer? _autoRefreshTimer;
 
   void _onCtrlChanged() => setState(() {});
@@ -244,6 +245,22 @@ class _RegistersTabState extends State<_RegistersTab> {
         },
       );
     });
+    final displayItems = <_RegisterDisplayItem>[];
+    for (var i = 0; i < visibleRegisters.length;) {
+      final entry = visibleRegisters[i];
+      final wordCount = registerWordCount(entry.typeName);
+      final fitsVisibleRange = entry.address + wordCount - 1 <= endAddr;
+      final hasTailConfig = Iterable.generate(
+        wordCount - 1,
+        (j) => entry.address + j + 1,
+      ).map((address) => configByAddress[address]).any(_blocksRegisterGroup);
+      final isGroup = wordCount > 1 && fitsVisibleRange && !hasTailConfig;
+
+      displayItems.add(
+        _RegisterDisplayItem(entry: entry, wordCount: isGroup ? wordCount : 1),
+      );
+      i += isGroup ? wordCount : 1;
+    }
 
     return Column(
       children: [
@@ -299,14 +316,31 @@ class _RegistersTabState extends State<_RegistersTab> {
         Divider(height: 1, color: dividerColor),
         Expanded(
           child: ListView.separated(
-            itemCount: visibleRegisters.length,
+            itemCount: displayItems.length,
             separatorBuilder: (_, _) => Divider(height: 1, color: dividerColor),
-            itemBuilder: (context, i) => RegisterRow(
-              entry: visibleRegisters[i],
-              canWrite: RegisterAddressType.fromCode(widget.regType).canWrite,
-              onEntryChanged: widget.onEntryChanged,
-              onValueWritten: widget.onValueWritten,
-            ),
+            itemBuilder: (context, i) {
+              final item = displayItems[i];
+              return RegisterRow(
+                entry: item.entry,
+                canWrite: RegisterAddressType.fromCode(widget.regType).canWrite,
+                groupWordCount: item.wordCount,
+                groupExpanded: _expandedRegisterGroups.contains(
+                  item.entry.address,
+                ),
+                onGroupExpansionToggled: item.isGroup
+                    ? () {
+                        setState(() {
+                          final address = item.entry.address;
+                          if (!_expandedRegisterGroups.add(address)) {
+                            _expandedRegisterGroups.remove(address);
+                          }
+                        });
+                      }
+                    : null,
+                onEntryChanged: widget.onEntryChanged,
+                onValueWritten: widget.onValueWritten,
+              );
+            },
           ),
         ),
         Container(
@@ -333,6 +367,21 @@ class _RegistersTabState extends State<_RegistersTab> {
       ],
     );
   }
+}
+
+class _RegisterDisplayItem {
+  final RegisterEntry entry;
+  final int wordCount;
+
+  const _RegisterDisplayItem({required this.entry, required this.wordCount});
+
+  bool get isGroup => wordCount > 1;
+}
+
+bool _blocksRegisterGroup(RegisterConfig? config) {
+  if (config == null) return false;
+  return config.typeName != 'UInt16' ||
+      (config.comment?.trim().isNotEmpty ?? false);
 }
 
 RegisterValueState _valueStateForReadError(Object error) {

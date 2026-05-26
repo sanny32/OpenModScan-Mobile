@@ -51,6 +51,51 @@ void main() {
     controller.dispose();
   });
 
+  test('setAllTypes still writes multi-word types to every address', () async {
+    final repository = DeviceRepository.instance;
+    await repository.replaceAll([
+      DeviceInfo(
+        id: 'device-set-all',
+        name: 'PLC Set All',
+        host: '127.0.0.12',
+        port: 502,
+        protocol: ProtocolType.modbusTcp,
+        unitId: 1,
+        registerLists: [
+          RegisterList(
+            id: 'list-set-all',
+            name: 'List 1',
+            startAddress: 1,
+            count: 3,
+          ),
+        ],
+      ),
+    ]);
+    final controller = RegistersController(
+      repository,
+      _TestConnectionRuntime(),
+      DemoRegisterRuntime(),
+    );
+
+    await controller.selectTarget(
+      const RegistersRouteArgs(
+        deviceId: 'device-set-all',
+        registerListId: 'list-set-all',
+      ),
+    );
+    await controller.setAllTypes('UInt32');
+
+    final entries = repository
+        .findById('device-set-all')!
+        .registerLists
+        .single
+        .entries;
+    expect(entries.map((entry) => entry.address), [40001, 40002, 40003]);
+    expect(entries.every((entry) => entry.typeName == 'UInt32'), isTrue);
+
+    controller.dispose();
+  });
+
   test('demo runtime can expose an empty non-demo mode', () {
     const registers = DemoRegisterRuntime(enabled: false);
     const logs = DemoTrafficLogSource(enabled: false);

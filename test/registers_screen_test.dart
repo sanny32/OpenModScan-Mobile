@@ -720,6 +720,186 @@ void main() {
     },
   );
 
+  testWidgets('Register list groups UInt32 tail register by default', (
+    WidgetTester tester,
+  ) async {
+    final harness = await _pumpRegistersHarness(
+      tester,
+      RegisterList(
+        id: 'group-list',
+        name: 'Group List',
+        startAddress: 1,
+        count: 3,
+        autoRefresh: false,
+        entries: [RegisterConfig(address: 40001, typeName: 'UInt32')],
+      ),
+    );
+
+    expect(find.text('40001'), findsOneWidget);
+    expect(find.text('40002'), findsNothing);
+    expect(find.text('40003'), findsOneWidget);
+    expect(find.text('2 regs'), findsOneWidget);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Register group expands and collapses raw UInt16 words', (
+    WidgetTester tester,
+  ) async {
+    final harness = await _pumpRegistersHarness(
+      tester,
+      RegisterList(
+        id: 'expand-list',
+        name: 'Expand List',
+        startAddress: 1,
+        count: 2,
+        autoRefresh: false,
+        entries: [RegisterConfig(address: 40001, typeName: 'UInt32')],
+      ),
+    );
+
+    expect(find.text('40002'), findsNothing);
+    expect(find.text('Raw UInt16'), findsNothing);
+
+    await tester.tap(find.byTooltip('Show raw words for 40001'));
+    await tester.pumpAndSettle();
+    expect(find.text('40002'), findsOneWidget);
+    expect(find.text('Raw UInt16'), findsNWidgets(2));
+
+    await tester.tap(find.byTooltip('Hide raw words for 40001'));
+    await tester.pumpAndSettle();
+    expect(find.text('40002'), findsNothing);
+    expect(find.text('Raw UInt16'), findsNothing);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Register list keeps explicitly configured tail visible', (
+    WidgetTester tester,
+  ) async {
+    final harness = await _pumpRegistersHarness(
+      tester,
+      RegisterList(
+        id: 'conflict-list',
+        name: 'Conflict List',
+        startAddress: 1,
+        count: 3,
+        autoRefresh: false,
+        entries: [
+          RegisterConfig(address: 40001, typeName: 'UInt32'),
+          RegisterConfig(address: 40002, comment: 'Tail comment'),
+        ],
+      ),
+    );
+
+    expect(find.text('40001'), findsOneWidget);
+    expect(find.text('40002'), findsOneWidget);
+    expect(find.text('Tail comment'), findsOneWidget);
+    expect(find.text('2 regs'), findsNothing);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Register list ignores empty UInt16 tail config when grouping', (
+    WidgetTester tester,
+  ) async {
+    final harness = await _pumpRegistersHarness(
+      tester,
+      RegisterList(
+        id: 'default-tail-list',
+        name: 'Default Tail List',
+        startAddress: 1,
+        count: 3,
+        autoRefresh: false,
+        entries: [
+          RegisterConfig(address: 40001, typeName: 'UInt32'),
+          RegisterConfig(address: 40002),
+        ],
+      ),
+    );
+
+    expect(find.text('40001'), findsOneWidget);
+    expect(find.text('40002'), findsNothing);
+    expect(find.text('40003'), findsOneWidget);
+    expect(find.text('2 regs'), findsOneWidget);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Register list groups Float64 across four registers', (
+    WidgetTester tester,
+  ) async {
+    final harness = await _pumpRegistersHarness(
+      tester,
+      RegisterList(
+        id: 'float64-list',
+        name: 'Float64 List',
+        startAddress: 1,
+        count: 5,
+        autoRefresh: false,
+        entries: [RegisterConfig(address: 40001, typeName: 'Float64')],
+      ),
+    );
+
+    expect(find.text('40001'), findsOneWidget);
+    expect(find.text('40002'), findsNothing);
+    expect(find.text('40003'), findsNothing);
+    expect(find.text('40004'), findsNothing);
+    expect(find.text('40005'), findsOneWidget);
+    expect(find.text('4 regs'), findsOneWidget);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Register list does not group when span exceeds visible range', (
+    WidgetTester tester,
+  ) async {
+    final harness = await _pumpRegistersHarness(
+      tester,
+      RegisterList(
+        id: 'boundary-list',
+        name: 'Boundary List',
+        startAddress: 1,
+        count: 1,
+        autoRefresh: false,
+        entries: [RegisterConfig(address: 40001, typeName: 'UInt32')],
+      ),
+    );
+
+    expect(find.text('40001'), findsOneWidget);
+    expect(find.text('2 regs'), findsNothing);
+    expect(find.byTooltip('Show raw words for 40001'), findsNothing);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Register list leaves setAllTypes UInt32 rows ungrouped', (
+    WidgetTester tester,
+  ) async {
+    final harness = await _pumpRegistersHarness(
+      tester,
+      RegisterList(
+        id: 'set-all-ui-list',
+        name: 'Set All UI List',
+        startAddress: 1,
+        count: 3,
+        autoRefresh: false,
+        entries: [
+          RegisterConfig(address: 40001, typeName: 'UInt32'),
+          RegisterConfig(address: 40002, typeName: 'UInt32'),
+          RegisterConfig(address: 40003, typeName: 'UInt32'),
+        ],
+      ),
+    );
+
+    expect(find.text('40001'), findsOneWidget);
+    expect(find.text('40002'), findsOneWidget);
+    expect(find.text('40003'), findsOneWidget);
+    expect(find.text('2 regs'), findsNothing);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
   testWidgets('Status row shows comment left, switch right', (
     WidgetTester tester,
   ) async {
@@ -869,4 +1049,57 @@ void main() {
 
     expect(find.text('0x0102'), findsOneWidget);
   });
+}
+
+typedef _RegistersHarness = ({
+  RegistersController controller,
+  ValueNotifier<String?> returnDeviceId,
+});
+
+Future<_RegistersHarness> _pumpRegistersHarness(
+  WidgetTester tester,
+  RegisterList registerList,
+) async {
+  final device = DeviceInfo(
+    id: '${registerList.id}-device',
+    name: '${registerList.name} PLC',
+    host: '127.0.0.40',
+    port: 502,
+    protocol: ProtocolType.modbusTcp,
+    unitId: 1,
+    registerLists: [registerList],
+  );
+  await DeviceRepository.instance.replaceAll([device]);
+
+  final controller = RegistersController(
+    DeviceRepository.instance,
+    PollingConnectionRuntime(),
+    const DemoRegisterRuntime(enabled: false),
+  );
+  final returnDeviceId = ValueNotifier<String?>(null);
+
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: AppTheme.lightTheme,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: RegistersScreen(
+        controller: controller,
+        returnDeviceId: returnDeviceId,
+        onReturnToDevice: () {},
+      ),
+    ),
+  );
+  await tester.pump();
+
+  return (controller: controller, returnDeviceId: returnDeviceId);
+}
+
+Future<void> _disposeRegistersHarness(
+  WidgetTester tester,
+  _RegistersHarness harness,
+) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  harness.controller.dispose();
+  harness.returnDeviceId.dispose();
 }

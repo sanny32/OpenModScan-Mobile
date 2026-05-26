@@ -12,6 +12,9 @@ import '../register_detail_screen.dart';
 class RegisterRow extends StatelessWidget {
   final RegisterEntry entry;
   final bool canWrite;
+  final int groupWordCount;
+  final bool groupExpanded;
+  final VoidCallback? onGroupExpansionToggled;
   final void Function(int address, String typeName, String? comment)?
   onEntryChanged;
   final void Function(int address, String value)? onValueWritten;
@@ -20,6 +23,9 @@ class RegisterRow extends StatelessWidget {
     super.key,
     required this.entry,
     required this.canWrite,
+    this.groupWordCount = 1,
+    this.groupExpanded = false,
+    this.onGroupExpansionToggled,
     this.onEntryChanged,
     this.onValueWritten,
   });
@@ -30,95 +36,173 @@ class RegisterRow extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>()!;
     final valueColor = _valueColor(context, entry.valueState);
-    return InkWell(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => RegisterDetailScreen(
-            entry: entry,
-            canWrite: canWrite,
-            onSaved: onEntryChanged != null
-                ? (type, comment) =>
-                      onEntryChanged!(entry.address, type, comment)
-                : null,
-            onValueWritten: onValueWritten != null
-                ? (v) => onValueWritten!(entry.address, v)
-                : null,
+    final isGroup = groupWordCount > 1 && onGroupExpansionToggled != null;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        InkWell(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => RegisterDetailScreen(
+                entry: entry,
+                canWrite: canWrite,
+                onSaved: onEntryChanged != null
+                    ? (type, comment) =>
+                          onEntryChanged!(entry.address, type, comment)
+                    : null,
+                onValueWritten: onValueWritten != null
+                    ? (v) => onValueWritten!(entry.address, v)
+                    : null,
+              ),
+            ),
           ),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 72,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('${entry.address}', style: tt.bodyLarge),
-                  ValueListenableBuilder<bool>(
-                    valueListenable:
-                        AppSettings.instance.showTypeBadgesNotifier,
-                    builder: (_, showBadges, _) => showBadges
-                        ? TypeBadge(type: entry.typeName)
-                        : Text(
-                            entry.typeName,
-                            style: tt.bodySmall!.copyWith(
-                              color: appColors.typeColor,
-                            ),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Text(
-                entry.comment ?? '',
-                style: tt.bodyMedium!.copyWith(color: cs.onSurface),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 8),
-            InkWell(
-              onTap: canWrite
-                  ? () => _showWriteRegisterDialog(context, entry)
-                  : null,
-              borderRadius: BorderRadius.circular(4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    entry.displayValue ?? entry.value,
-                    style: tt.bodyLarge!.copyWith(
-                      color: valueColor,
-                      fontWeight: FontWeight.bold,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(isGroup ? 4 : 16, 10, 16, 10),
+            child: Row(
+              children: [
+                if (isGroup)
+                  Tooltip(
+                    message: groupExpanded
+                        ? 'Hide raw words for ${entry.address}'
+                        : 'Show raw words for ${entry.address}',
+                    child: SizedBox(
+                      width: 28,
+                      height: 32,
+                      child: InkResponse(
+                        radius: 18,
+                        onTap: onGroupExpansionToggled,
+                        child: Icon(
+                          groupExpanded
+                              ? Icons.keyboard_arrow_up
+                              : Icons.keyboard_arrow_down,
+                          color: cs.onSurfaceVariant,
+                          size: 20,
+                        ),
+                      ),
                     ),
                   ),
-                  ValueListenableBuilder<bool>(
-                    valueListenable:
-                        AppSettings.instance.showLastValuesNotifier,
-                    builder: (_, showLastValues, _) {
-                      if (!showLastValues || entry.previousValue == null) {
-                        return const SizedBox.shrink();
-                      }
-                      return Text(
-                        _formatPreviousValue(entry),
-                        style: tt.bodySmall!.copyWith(
-                          color: appColors.previousValueColor,
+                SizedBox(
+                  width: 72,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('${entry.address}', style: tt.bodyLarge),
+                      ValueListenableBuilder<bool>(
+                        valueListenable:
+                            AppSettings.instance.showTypeBadgesNotifier,
+                        builder: (_, showBadges, _) => showBadges
+                            ? TypeBadge(type: entry.typeName)
+                            : Text(
+                                entry.typeName,
+                                style: tt.bodySmall!.copyWith(
+                                  color: appColors.typeColor,
+                                ),
+                              ),
+                      ),
+                      if (isGroup)
+                        Text(
+                          '$groupWordCount regs',
+                          style: tt.labelSmall!.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
                         ),
-                      );
-                    },
+                    ],
                   ),
-                ],
-              ),
+                ),
+                Expanded(
+                  child: Text(
+                    entry.comment ?? '',
+                    style: tt.bodyMedium!.copyWith(color: cs.onSurface),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: canWrite
+                      ? () => _showWriteRegisterDialog(context, entry)
+                      : null,
+                  borderRadius: BorderRadius.circular(4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        entry.displayValue ?? entry.value,
+                        style: tt.bodyLarge!.copyWith(
+                          color: valueColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      ValueListenableBuilder<bool>(
+                        valueListenable:
+                            AppSettings.instance.showLastValuesNotifier,
+                        builder: (_, showLastValues, _) {
+                          if (!showLastValues || entry.previousValue == null) {
+                            return const SizedBox.shrink();
+                          }
+                          return Text(
+                            _formatPreviousValue(entry),
+                            style: tt.bodySmall!.copyWith(
+                              color: appColors.previousValueColor,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.chevron_right, color: cs.onSurfaceVariant, size: 20),
+              ],
             ),
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right, color: cs.onSurfaceVariant, size: 20),
-          ],
+          ),
         ),
+        if (isGroup && groupExpanded)
+          for (var i = 0; i < groupWordCount; i++)
+            _RawRegisterWordRow(
+              address: entry.address + i,
+              value: entry.rawWords[entry.address + i] ?? 0,
+            ),
+      ],
+    );
+  }
+}
+
+class _RawRegisterWordRow extends StatelessWidget {
+  final int address;
+  final int value;
+
+  const _RawRegisterWordRow({required this.address, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Container(
+      color: cs.surfaceContainerHighest,
+      padding: const EdgeInsets.fromLTRB(40, 6, 40, 6),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 72,
+            child: Text(
+              '$address',
+              style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              'Raw UInt16',
+              style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+            ),
+          ),
+          Text(
+            '$value',
+            style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+          ),
+        ],
       ),
     );
   }
