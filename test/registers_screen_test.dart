@@ -342,6 +342,74 @@ void main() {
     returnDeviceId.dispose();
   });
 
+  testWidgets(
+    'Register detail returns to register table after type selection',
+    (WidgetTester tester) async {
+      final device = DeviceInfo(
+        id: 'type-return-device',
+        name: 'Type Return PLC',
+        host: '127.0.0.23',
+        port: 502,
+        protocol: ProtocolType.modbusTcp,
+        unitId: 1,
+        registerLists: [
+          RegisterList(
+            id: 'type-return-list',
+            name: 'Type Return List',
+            count: 1,
+            autoRefresh: false,
+          ),
+        ],
+      );
+      await DeviceRepository.instance.replaceAll([device]);
+
+      final controller = RegistersController(
+        DeviceRepository.instance,
+        PollingConnectionRuntime(),
+        const DemoRegisterRuntime(enabled: false),
+      );
+      final returnDeviceId = ValueNotifier<String?>(null);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RegistersScreen(
+            controller: controller,
+            returnDeviceId: returnDeviceId,
+            onReturnToDevice: () {},
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('40001'));
+      await tester.pumpAndSettle();
+      expect(find.byType(RegisterDetailScreen), findsOneWidget);
+
+      await tester.tap(find.text('UInt32 (32 bit)'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RegisterDetailScreen), findsNothing);
+      expect(find.byType(RegistersScreen), findsOneWidget);
+      expect(
+        DeviceRepository.instance
+            .findById('type-return-device')!
+            .registerLists
+            .single
+            .entries
+            .single
+            .typeName,
+        'UInt32',
+      );
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+      returnDeviceId.dispose();
+    },
+  );
+
   testWidgets('Registers tab shows SegmentedButton with 4xxxx and 3xxxx', (
     WidgetTester tester,
   ) async {

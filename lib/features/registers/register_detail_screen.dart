@@ -106,6 +106,9 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     setState(() => _selectedType = type);
     final comment = _commentCtrl.text.trim();
     widget.onSaved?.call(type, comment.isEmpty ? null : comment);
+    if (widget.onSaved != null) {
+      Navigator.maybePop(context);
+    }
   }
 
   @override
