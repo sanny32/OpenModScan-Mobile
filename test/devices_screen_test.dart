@@ -569,6 +569,116 @@ void main() {
     );
   });
 
+  testWidgets('scan sheet action button stays visible with many devices', (
+    tester,
+  ) async {
+    // Width > 420 avoids overflow in _ScanTimeLabels (Row vs Column layout threshold).
+    tester.view.physicalSize = const Size(500, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scanner = _ScanPort(
+      ScannerStateView.done,
+      discovered: const [
+        DiscoveredDevice(
+          host: '192.168.0.101',
+          port: 502,
+          unitId: 1,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.102',
+          port: 502,
+          unitId: 2,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.103',
+          port: 502,
+          unitId: 3,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.104',
+          port: 502,
+          unitId: 4,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.105',
+          port: 502,
+          unitId: 5,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.106',
+          port: 502,
+          unitId: 6,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.107',
+          port: 502,
+          unitId: 7,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.108',
+          port: 502,
+          unitId: 8,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.109',
+          port: 502,
+          unitId: 9,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.110',
+          port: 502,
+          unitId: 10,
+          protocol: ProtocolType.modbusTcp,
+        ),
+      ],
+    );
+    final controller = DevicesController(
+      DeviceRepository.instance,
+      PollingConnectionRuntime(),
+      scanner,
+      AppSettings.instance,
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: DevicesScreen(controller: controller, onOpenDevice: (_) {}),
+      ),
+    );
+
+    await tester.tap(find.text('Scan network'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Network scanner'), findsOneWidget);
+    expect(find.text('Scan completed'), findsOneWidget);
+
+    // Not all 10 devices fit — later entries are hidden.
+    expect(find.text('192.168.0.101:502'), findsWidgets); // first device visible
+    expect(find.text('192.168.0.110:502'), findsNothing); // last device hidden
+
+    // Action button is rendered within the visible screen area.
+    final actionButton = find
+        .widgetWithText(OutlinedButton, 'Scan network')
+        .last;
+    final buttonBottom = tester.getRect(actionButton).bottom;
+    final screenHeight =
+        tester.view.physicalSize.height / tester.view.devicePixelRatio;
+    expect(buttonBottom, lessThanOrEqualTo(screenHeight));
+  });
+
   testWidgets('clearing discovered devices resets scan panel', (tester) async {
     final scanner = _ScanPort(
       ScannerStateView.done,

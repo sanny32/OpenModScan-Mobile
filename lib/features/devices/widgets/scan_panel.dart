@@ -139,71 +139,96 @@ class _ScanSheetState extends State<ScanSheet> {
       initialChildSize: 0.86,
       minChildSize: 0.55,
       maxChildSize: 0.95,
-      builder: (_, scrollController) => Container(
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 8, bottom: 4),
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: cs.onSurfaceVariant,
-                borderRadius: BorderRadius.circular(2),
+      builder: (_, scrollController) => LayoutBuilder(
+        builder: (context, innerConstraints) {
+          // innerConstraints.maxHeight is the actual current height of the sheet,
+          // and updates as the user drags it. Reserve 68pt for the action button
+          // pinned below the list (top padding 8 + button 44 + bottom padding 16).
+          const buttonAreaHeight = 68.0;
+          return Container(
+            decoration: BoxDecoration(
+              color: cs.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              child: Row(
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(l10n.cancel),
+            child: Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 8, bottom: 4),
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: cs.onSurfaceVariant,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  Expanded(
-                    child: Text(
-                      l10n.devicesDiscoveredDevices,
-                      textAlign: TextAlign.center,
-                      style: tt.titleMedium,
-                    ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 8,
                   ),
-                  const SizedBox(width: 72),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: ListView(
-                controller: scrollController,
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _ScanningCard(
-                    progress: controller.scannerProgress,
-                    total: controller.scannerTotalCount,
-                    foundCount: discovered.length,
-                    discoveredDevices: discovered,
-                    cidr: controller.scannerCidr,
-                    startedAt: controller.scannerStartedAt,
-                    protocol: controller.scannerProtocol,
-                    completed:
-                        controller.scannerState != ScannerStateView.scanning,
-                    onConnect: _connect,
-                    onStop: controller.scannerState == ScannerStateView.scanning
-                        ? controller.stopScan
-                        : null,
-                    onRestart:
+                  child: Row(
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(l10n.cancel),
+                      ),
+                      Expanded(
+                        child: Text(
+                          l10n.devicesDiscoveredDevices,
+                          textAlign: TextAlign.center,
+                          style: tt.titleMedium,
+                        ),
+                      ),
+                      const SizedBox(width: 72),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      _ScanningCard(
+                        progress: controller.scannerProgress,
+                        total: controller.scannerTotalCount,
+                        foundCount: discovered.length,
+                        discoveredDevices: discovered,
+                        cidr: controller.scannerCidr,
+                        startedAt: controller.scannerStartedAt,
+                        protocol: controller.scannerProtocol,
+                        completed:
+                            controller.scannerState !=
+                            ScannerStateView.scanning,
+                        onConnect: _connect,
+                        availableSheetHeight:
+                            innerConstraints.maxHeight - buttonAreaHeight,
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: _ScanActionButton(
+                    icon: controller.scannerState == ScannerStateView.scanning
+                        ? Icons.stop_circle_outlined
+                        : Icons.radar_outlined,
+                    label: controller.scannerState == ScannerStateView.scanning
+                        ? l10n.devicesScanStop
+                        : l10n.devicesScanNetwork,
+                    onPressed:
                         controller.scannerState == ScannerStateView.scanning
-                        ? null
+                        ? controller.stopScan
                         : controller.startScan,
+                    color: cs.primary,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -239,6 +264,7 @@ class ScanPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.sizeOf(context).height;
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -256,6 +282,7 @@ class ScanPanel extends StatelessWidget {
               protocol: protocol,
               onConnect: onConnect,
               onStop: onStop,
+              availableSheetHeight: screenHeight,
             ),
           ],
         ),
@@ -273,6 +300,7 @@ class ScanPanel extends StatelessWidget {
               completed: true,
               onConnect: onConnect,
               onRestart: onTap,
+              availableSheetHeight: screenHeight,
             ),
           ],
         ),
@@ -349,6 +377,7 @@ class _ScanningCard extends StatelessWidget {
   final void Function(DiscoveredDevice) onConnect;
   final VoidCallback? onStop;
   final VoidCallback? onRestart;
+  final double availableSheetHeight;
 
   const _ScanningCard({
     required this.progress,
@@ -359,6 +388,7 @@ class _ScanningCard extends StatelessWidget {
     required this.startedAt,
     required this.protocol,
     required this.onConnect,
+    required this.availableSheetHeight,
     this.completed = false,
     this.onStop,
     this.onRestart,
@@ -375,7 +405,32 @@ class _ScanningCard extends StatelessWidget {
         ? (appColors?.connectedColor ?? Colors.green)
         : cs.primary;
     final protocolName = _protocolLabel(l10n, protocol);
-    final visibleDiscoveredDevices = discoveredDevices.take(2).toList();
+    // Whether an action button (stop or restart) renders inside this card.
+    final hasActionButton =
+        (!completed && onStop != null) || (completed && onRestart != null);
+    // Fixed overhead: sheet header (71) + list padding (32) + card padding (26) +
+    // icon row (44) + spacers (38) + progress (16) + subnet/time (20) +
+    // divider+spacer before devices (13) + action button+spacer (56, when present).
+    // When the button is pinned outside the card (hasActionButton == false), the
+    // caller subtracts the external button area from availableSheetHeight so the
+    // reduced overhead (260) still gives the correct available space.
+    final fixedOverhead = hasActionButton ? 316.0 : 260.0;
+    const deviceRowHeight = 62.0;
+    const footerHeight = 52.0;
+
+    final available = availableSheetHeight - fixedOverhead;
+    int maxVisible;
+    if (discoveredDevices.isEmpty) {
+      maxVisible = 0;
+    } else {
+      maxVisible = (available / deviceRowHeight).floor();
+      if (maxVisible < discoveredDevices.length) {
+        maxVisible = ((available - footerHeight) / deviceRowHeight).floor();
+      }
+      maxVisible = maxVisible.clamp(1, discoveredDevices.length);
+    }
+
+    final visibleDiscoveredDevices = discoveredDevices.take(maxVisible).toList();
     final hiddenDiscoveredCount =
         discoveredDevices.length - visibleDiscoveredDevices.length;
 
