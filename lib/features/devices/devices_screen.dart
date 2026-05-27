@@ -7,6 +7,7 @@ import '../../models/device_info.dart';
 import '../../models/discovered_device.dart';
 import '../../runtime/runtime_ports.dart';
 import 'device_form_sheet.dart';
+import 'discovered_devices_screen.dart';
 import 'devices_controller.dart';
 import 'saved_devices_screen.dart';
 import 'widgets/device_card.dart';
@@ -146,6 +147,30 @@ class _DevicesScreenState extends State<DevicesScreen> {
     );
   }
 
+  void _openScanSheet({required bool startOnOpen}) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ScanSheet(
+        controller: widget.controller,
+        startOnOpen: startOnOpen,
+        onConnect: _connectDiscovered,
+      ),
+    );
+  }
+
+  void _openDiscoveredDevices() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => DiscoveredDevicesScreen(
+          controller: widget.controller,
+          onConnect: _connectDiscovered,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -158,6 +183,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
     final canClearDiscovered =
         widget.controller.hasDiscoveredDevices &&
         widget.controller.scannerState != ScannerStateView.scanning;
+    final hasDiscoveredDevices = discovered.isNotEmpty;
 
     return ScaffoldMessenger(
       child: Scaffold(
@@ -238,39 +264,77 @@ class _DevicesScreenState extends State<DevicesScreen> {
                         totalCount: widget.controller.devices.length,
                         onShowAll: _openSavedDevices,
                       ),
-                    DevicesSectionHeader(
-                      title: l10n.devicesDiscoveredDevices,
-                      trailing: !canClearDiscovered
-                          ? null
-                          : TextButton(
-                              onPressed:
-                                  widget.controller.clearDiscoveredDevices,
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    if (hasDiscoveredDevices) ...[
+                      DevicesSectionHeader(
+                        title: l10n.devicesDiscoveredTitle,
+                        trailing: !canClearDiscovered
+                            ? null
+                            : TextButton(
+                                onPressed:
+                                    widget.controller.clearDiscoveredDevices,
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(l10n.devicesClearDiscovered),
                               ),
-                              child: Text(l10n.devicesClearDiscovered),
-                            ),
-                    ),
-                    ScanPanel(
-                      state: widget.controller.scannerState,
-                      progress: widget.controller.scannerProgress,
-                      total: widget.controller.scannerTotalCount,
-                      foundCount: discovered.length,
-                      discoveredDevices: discovered,
-                      cidr: widget.controller.scannerCidr,
-                      startedAt: widget.controller.scannerStartedAt,
-                      protocol: widget.controller.scannerProtocol,
-                      onTap: widget.controller.startScan,
-                      onStop: widget.controller.stopScan,
-                      onConnect: _connectDiscovered,
-                    ),
+                      ),
+                      DiscoveredDevicesPreview(
+                        discoveredDevices: discovered,
+                        onConnect: _connectDiscovered,
+                        onShowAll: _openDiscoveredDevices,
+                      ),
+                    ],
                   ],
+                ),
+              ),
+              _ScanNetworkDock(
+                scanning:
+                    widget.controller.scannerState == ScannerStateView.scanning,
+                onPressed: () => _openScanSheet(
+                  startOnOpen:
+                      widget.controller.scannerState !=
+                      ScannerStateView.scanning,
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ScanNetworkDock extends StatelessWidget {
+  final bool scanning;
+  final VoidCallback onPressed;
+
+  const _ScanNetworkDock({required this.scanning, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: OutlinedButton.icon(
+        icon: Icon(
+          scanning ? Icons.travel_explore : Icons.radar_outlined,
+          size: 18,
+        ),
+        label: Text(
+          scanning ? l10n.devicesScanningTitle : l10n.devicesScanNetwork,
+        ),
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(double.infinity, 52),
+          side: BorderSide(color: cs.primary),
+          foregroundColor: cs.primary,
+          textStyle: tt.labelLarge,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
     );

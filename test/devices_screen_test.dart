@@ -61,8 +61,17 @@ void main() {
       ),
     );
 
-    expect(find.text('Network scanner'), findsOneWidget);
+    expect(find.text('Discovered devices'), findsOneWidget);
     expect(find.text('Scanning...'), findsOneWidget);
+    expect(find.text('Network scanner'), findsNothing);
+    expect(find.text('192.168.88.104:502'), findsOneWidget);
+    expect(find.text('192.168.88.105:502'), findsNothing);
+    expect(find.text('+ 1 more'), findsOneWidget);
+
+    await tester.tap(find.text('Scanning...'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Network scanner'), findsOneWidget);
     expect(find.text('Scanning network'), findsNothing);
     expect(find.text('Searching for Modbus TCP devices'), findsOneWidget);
     expect(find.text('Modbus TCP'), findsNothing);
@@ -71,24 +80,78 @@ void main() {
     expect(find.textContaining('Elapsed:'), findsOneWidget);
     expect(find.text('Found: 2'), findsOneWidget);
     expect(find.text('Clear'), findsNothing);
-    expect(find.text('192.168.88.104:502'), findsOneWidget);
+    expect(find.text('192.168.88.104:502'), findsWidgets);
     expect(find.text('192.168.88.105:502'), findsOneWidget);
-    expect(find.text('Modbus TCP • ID: 1'), findsOneWidget);
+    expect(find.text('Modbus TCP • ID: 1'), findsWidgets);
     expect(find.text('Modbus TCP • ID: 2'), findsOneWidget);
-    expect(find.text('Connect'), findsNWidgets(2));
-
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Connect').first);
-    await tester.pumpAndSettle();
-
-    final device = controller.devices.single;
-    expect(scanner.stopCalled, isTrue);
-    expect(runtime.isConnected(device), isTrue);
-    expect(openedDeviceId, device.id);
+    expect(find.text('Connect'), findsAtLeastNWidgets(2));
 
     await tester.tap(find.text('Stop scanning'));
     await tester.pump();
 
     expect(scanner.stopCalled, isTrue);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Connect').last);
+    await tester.pumpAndSettle();
+
+    final device = controller.devices.single;
+    expect(runtime.isConnected(device), isTrue);
+    expect(openedDeviceId, device.id);
+  });
+
+  testWidgets('discovered show all opens full-screen results list only', (
+    tester,
+  ) async {
+    final scanner = _ScanPort(
+      ScannerStateView.scanning,
+      discovered: const [
+        DiscoveredDevice(
+          host: '192.168.88.104',
+          port: 502,
+          unitId: 1,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.88.105',
+          port: 502,
+          unitId: 2,
+          protocol: ProtocolType.modbusTcp,
+        ),
+      ],
+    );
+    final controller = DevicesController(
+      DeviceRepository.instance,
+      PollingConnectionRuntime(),
+      scanner,
+      AppSettings.instance,
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: DevicesScreen(controller: controller, onOpenDevice: (_) {}),
+      ),
+    );
+
+    await tester.tap(find.text('Show all (2)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Discovered devices'), findsWidgets);
+    expect(find.byType(BackButton), findsOneWidget);
+    expect(find.text('Cancel'), findsNothing);
+    expect(find.text('Network scanner'), findsNothing);
+    expect(find.text('Searching for Modbus TCP devices'), findsNothing);
+    expect(find.text('48%'), findsNothing);
+    expect(find.text('Found: 2'), findsNothing);
+    expect(find.text('Stop scanning'), findsNothing);
+    expect(find.text('192.168.88.104:502'), findsWidgets);
+    expect(find.text('192.168.88.105:502'), findsOneWidget);
+    expect(find.text('Modbus TCP • ID: 1'), findsWidgets);
+    expect(find.text('Modbus TCP • ID: 2'), findsOneWidget);
+    expect(find.text('Connect'), findsAtLeastNWidgets(2));
+    expect(find.byType(TextField), findsNothing);
   });
 
   testWidgets('empty scan panel starts scanning', (tester) async {
@@ -114,6 +177,7 @@ void main() {
     await tester.pump();
 
     expect(scanner.startCalled, isTrue);
+    expect(find.text('Network scanner'), findsOneWidget);
   });
 
   testWidgets('saved devices preview keeps scan button visible', (
@@ -169,11 +233,10 @@ void main() {
     );
 
     final savedTop = tester.getTopLeft(find.text('Saved connections')).dy;
-    final scannerTop = tester.getTopLeft(find.text('Network scanner')).dy;
     final scanCenter = tester.getCenter(find.text('Scan network'));
     final navTop = tester.getTopLeft(find.byType(BottomNavigationBar)).dy;
 
-    expect(savedTop, lessThan(scannerTop));
+    expect(savedTop, lessThan(scanCenter.dy));
     expect(find.text('Device #5'), findsOneWidget);
     expect(find.text('Device #3'), findsOneWidget);
     expect(find.text('Device #2'), findsNothing);
@@ -339,17 +402,16 @@ void main() {
       ),
     );
 
-    expect(find.text('Network scanner'), findsOneWidget);
-    expect(find.text('Scan completed'), findsOneWidget);
-    expect(find.text('100%'), findsOneWidget);
-    expect(find.textContaining('Duration:'), findsOneWidget);
-    expect(find.text('Found: 1'), findsOneWidget);
+    expect(find.text('Discovered devices'), findsOneWidget);
+    expect(find.text('192.168.88.104:502'), findsOneWidget);
+    expect(find.text('Scan completed'), findsNothing);
     expect(find.text('Scan network'), findsOneWidget);
 
     await tester.tap(find.text('Scan network'));
     await tester.pump();
 
     expect(scanner.startCalled, isTrue);
+    expect(find.text('Network scanner'), findsOneWidget);
   });
 
   testWidgets('connect discovered device saves and connects immediately', (

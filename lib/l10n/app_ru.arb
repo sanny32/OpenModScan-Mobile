@@ -18,6 +18,7 @@
   "devicesFavorite": "Добавить в избранное",
   "devicesUnfavorite": "Убрать из избранного",
   "devicesDiscoveredDevices": "Сканер сети",
+  "devicesDiscoveredTitle": "Найденные устройства",
   "devicesClearDiscovered": "Очистить",
   "devicesScanStop": "Остановить сканирование",
   "devicesLastUsed": "Последнее использование",

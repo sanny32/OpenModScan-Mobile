@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
@@ -5,6 +7,207 @@ import '../../../models/device_info.dart';
 import '../../../models/discovered_device.dart';
 import '../../../runtime/runtime_ports.dart';
 import '../../../theme/app_theme.dart';
+import '../devices_controller.dart';
+
+class DiscoveredDevicesPreview extends StatelessWidget {
+  final List<DiscoveredDevice> discoveredDevices;
+  final void Function(DiscoveredDevice) onConnect;
+  final VoidCallback onShowAll;
+
+  const DiscoveredDevicesPreview({
+    super.key,
+    required this.discoveredDevices,
+    required this.onConnect,
+    required this.onShowAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (discoveredDevices.isEmpty) return const SizedBox.shrink();
+
+    final visibleCount = MediaQuery.sizeOf(context).height >= 900 ? 2 : 1;
+    final visibleDevices = discoveredDevices.take(visibleCount).toList();
+    final hiddenCount = discoveredDevices.length - visibleDevices.length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Column(
+        children: [
+          Card(
+            margin: EdgeInsets.zero,
+            child: Column(
+              children: [
+                for (var i = 0; i < visibleDevices.length; i++) ...[
+                  DiscoveredDeviceRow(
+                    device: visibleDevices[i],
+                    onConnect: onConnect,
+                    showBottomDivider:
+                        i < visibleDevices.length - 1 || hiddenCount > 0,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (hiddenCount > 0) ...[
+            const SizedBox(height: 8),
+            _DiscoveredDevicesFooter(
+              hiddenCount: hiddenCount,
+              totalCount: discoveredDevices.length,
+              onTap: onShowAll,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class ScanSheet extends StatefulWidget {
+  final DevicesController controller;
+  final bool startOnOpen;
+  final void Function(DiscoveredDevice) onConnect;
+
+  const ScanSheet({
+    super.key,
+    required this.controller,
+    required this.startOnOpen,
+    required this.onConnect,
+  });
+
+  @override
+  State<ScanSheet> createState() => _ScanSheetState();
+}
+
+class _ScanSheetState extends State<ScanSheet> {
+  Timer? _scanTicker;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_rebuild);
+    _syncScanTicker();
+    if (widget.startOnOpen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted &&
+            widget.controller.scannerState != ScannerStateView.scanning) {
+          widget.controller.startScan();
+        }
+      });
+    }
+  }
+
+  void _rebuild() {
+    if (!mounted) return;
+    setState(() {});
+    _syncScanTicker();
+  }
+
+  void _syncScanTicker() {
+    final scanning =
+        widget.controller.scannerState == ScannerStateView.scanning;
+    if (scanning && _scanTicker == null) {
+      _scanTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    } else if (!scanning && _scanTicker != null) {
+      _scanTicker?.cancel();
+      _scanTicker = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_rebuild);
+    _scanTicker?.cancel();
+    super.dispose();
+  }
+
+  void _connect(DiscoveredDevice device) {
+    Navigator.of(context).pop();
+    widget.onConnect(device);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final l10n = context.l10n;
+    final controller = widget.controller;
+    final discovered = controller.discoveredDevices;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.86,
+      minChildSize: 0.55,
+      maxChildSize: 0.95,
+      builder: (_, scrollController) => Container(
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 8, bottom: 4),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: cs.onSurfaceVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: Row(
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(l10n.cancel),
+                  ),
+                  Expanded(
+                    child: Text(
+                      l10n.devicesDiscoveredDevices,
+                      textAlign: TextAlign.center,
+                      style: tt.titleMedium,
+                    ),
+                  ),
+                  const SizedBox(width: 72),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _ScanningCard(
+                    progress: controller.scannerProgress,
+                    total: controller.scannerTotalCount,
+                    foundCount: discovered.length,
+                    discoveredDevices: discovered,
+                    cidr: controller.scannerCidr,
+                    startedAt: controller.scannerStartedAt,
+                    protocol: controller.scannerProtocol,
+                    completed:
+                        controller.scannerState != ScannerStateView.scanning,
+                    onConnect: _connect,
+                    onStop: controller.scannerState == ScannerStateView.scanning
+                        ? controller.stopScan
+                        : null,
+                    onRestart:
+                        controller.scannerState == ScannerStateView.scanning
+                        ? null
+                        : controller.startScan,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class ScanPanel extends StatelessWidget {
   final ScannerStateView state;
@@ -281,13 +484,12 @@ class _ScanningCard extends StatelessWidget {
               const SizedBox(height: 12),
               Divider(height: 1, color: Theme.of(context).dividerTheme.color),
               for (final device in visibleDiscoveredDevices)
-                _DiscoveredScanRow(device: device, onConnect: onConnect),
+                DiscoveredDeviceRow(device: device, onConnect: onConnect),
               if (hiddenDiscoveredCount > 0)
                 _DiscoveredDevicesFooter(
                   hiddenCount: hiddenDiscoveredCount,
                   totalCount: discoveredDevices.length,
-                  devices: discoveredDevices,
-                  onConnect: onConnect,
+                  onTap: () => _showDiscoveredDevices(context),
                 ),
             ],
             if (!completed && onStop != null) ...[
@@ -314,6 +516,29 @@ class _ScanningCard extends StatelessWidget {
     );
   }
 
+  void _showDiscoveredDevices(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          children: [
+            for (final device in discoveredDevices)
+              DiscoveredDeviceRow(
+                device: device,
+                onConnect: (device) {
+                  Navigator.of(sheetContext).pop();
+                  onConnect(device);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   String _protocolLabel(AppLocalizations l10n, ProtocolType? protocol) {
     return switch (protocol) {
       ProtocolType.modbusRtuIp => l10n.connectTypeRtu,
@@ -322,11 +547,17 @@ class _ScanningCard extends StatelessWidget {
   }
 }
 
-class _DiscoveredScanRow extends StatelessWidget {
+class DiscoveredDeviceRow extends StatelessWidget {
   final DiscoveredDevice device;
   final void Function(DiscoveredDevice) onConnect;
+  final bool showBottomDivider;
 
-  const _DiscoveredScanRow({required this.device, required this.onConnect});
+  const DiscoveredDeviceRow({
+    super.key,
+    required this.device,
+    required this.onConnect,
+    this.showBottomDivider = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -336,7 +567,7 @@ class _DiscoveredScanRow extends StatelessWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               Icon(Icons.wifi, color: cs.primary, size: 28),
@@ -381,7 +612,14 @@ class _DiscoveredScanRow extends StatelessWidget {
             ],
           ),
         ),
-        Divider(height: 1, color: Theme.of(context).dividerTheme.color),
+        if (showBottomDivider)
+          Padding(
+            padding: const EdgeInsets.only(left: 58),
+            child: Divider(
+              height: 1,
+              color: Theme.of(context).dividerTheme.color,
+            ),
+          ),
       ],
     );
   }
@@ -390,14 +628,12 @@ class _DiscoveredScanRow extends StatelessWidget {
 class _DiscoveredDevicesFooter extends StatelessWidget {
   final int hiddenCount;
   final int totalCount;
-  final List<DiscoveredDevice> devices;
-  final void Function(DiscoveredDevice) onConnect;
+  final VoidCallback onTap;
 
   const _DiscoveredDevicesFooter({
     required this.hiddenCount,
     required this.totalCount,
-    required this.devices,
-    required this.onConnect,
+    required this.onTap,
   });
 
   @override
@@ -411,40 +647,24 @@ class _DiscoveredDevicesFooter extends StatelessWidget {
     );
 
     return InkWell(
-      onTap: () => _showDiscoveredDevices(context),
-      child: SizedBox(
-        height: 44,
-        child: Row(
-          children: [
-            Text(l10n.devicesMoreCount(hiddenCount), style: style),
-            const Spacer(),
-            Text(l10n.devicesShowAllCount(totalCount), style: style),
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right, color: cs.primary, size: 18),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showDiscoveredDevices(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          children: [
-            for (final device in devices)
-              _DiscoveredScanRow(
-                device: device,
-                onConnect: (device) {
-                  Navigator.of(sheetContext).pop();
-                  onConnect(device);
-                },
-              ),
-          ],
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SizedBox(
+            height: 52,
+            child: Row(
+              children: [
+                Text(l10n.devicesMoreCount(hiddenCount), style: style),
+                const Spacer(),
+                Text(l10n.devicesShowAllCount(totalCount), style: style),
+                const SizedBox(width: 4),
+                Icon(Icons.chevron_right, color: cs.primary, size: 18),
+              ],
+            ),
+          ),
         ),
       ),
     );

@@ -64,6 +64,9 @@
   "devicesDiscoveredDevices": "Network scanner",
   "@devicesDiscoveredDevices": {},
 
+  "devicesDiscoveredTitle": "Discovered devices",
+  "@devicesDiscoveredTitle": {},
+
   "devicesClearDiscovered": "Clear",
   "@devicesClearDiscovered": {},
 
