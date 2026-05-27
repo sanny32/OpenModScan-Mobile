@@ -8,6 +8,7 @@ import '../../../models/discovered_device.dart';
 import '../../../runtime/runtime_ports.dart';
 import '../../../theme/app_theme.dart';
 import '../devices_controller.dart';
+import '../discovered_devices_screen.dart';
 
 class DiscoveredDevicesPreview extends StatelessWidget {
   final List<DiscoveredDevice> discoveredDevices;
@@ -65,7 +66,7 @@ class DiscoveredDevicesPreview extends StatelessWidget {
 class ScanSheet extends StatefulWidget {
   final DevicesController controller;
   final bool startOnOpen;
-  final void Function(DiscoveredDevice) onConnect;
+  final Future<void> Function(DiscoveredDevice) onConnect;
 
   const ScanSheet({
     super.key,
@@ -122,9 +123,29 @@ class _ScanSheetState extends State<ScanSheet> {
     super.dispose();
   }
 
-  void _connect(DiscoveredDevice device) {
+  Future<void> _connect(DiscoveredDevice device) async {
     Navigator.of(context).pop();
-    widget.onConnect(device);
+    await widget.onConnect(device);
+  }
+
+  void _showAllDevices() {
+    final nav = Navigator.of(context);
+    final controller = widget.controller;
+    final onConnect = widget.onConnect;
+    nav.pop();
+    nav.push(
+      MaterialPageRoute<void>(
+        builder: (_) => DiscoveredDevicesScreen(
+          controller: controller,
+          onConnect: onConnect,
+        ),
+      ),
+    );
+  }
+
+  void _clearResults() {
+    widget.controller.clearDiscoveredDevices();
+    Navigator.of(context).pop();
   }
 
   @override
@@ -181,7 +202,19 @@ class _ScanSheetState extends State<ScanSheet> {
                           style: tt.titleMedium,
                         ),
                       ),
-                      const SizedBox(width: 72),
+                      SizedBox(
+                        width: 72,
+                        child: controller.scannerState !=
+                                ScannerStateView.scanning
+                            ? Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: _clearResults,
+                                  child: Text(l10n.devicesClearDiscovered),
+                                ),
+                              )
+                            : null,
+                      ),
                     ],
                   ),
                 ),
@@ -203,6 +236,7 @@ class _ScanSheetState extends State<ScanSheet> {
                             controller.scannerState !=
                             ScannerStateView.scanning,
                         onConnect: _connect,
+                        onShowAll: _showAllDevices,
                         availableSheetHeight:
                             innerConstraints.maxHeight - buttonAreaHeight,
                       ),
@@ -377,6 +411,7 @@ class _ScanningCard extends StatelessWidget {
   final void Function(DiscoveredDevice) onConnect;
   final VoidCallback? onStop;
   final VoidCallback? onRestart;
+  final VoidCallback? onShowAll;
   final double availableSheetHeight;
 
   const _ScanningCard({
@@ -392,6 +427,7 @@ class _ScanningCard extends StatelessWidget {
     this.completed = false,
     this.onStop,
     this.onRestart,
+    this.onShowAll,
   });
 
   @override
@@ -544,7 +580,7 @@ class _ScanningCard extends StatelessWidget {
                 _DiscoveredDevicesFooter(
                   hiddenCount: hiddenDiscoveredCount,
                   totalCount: discoveredDevices.length,
-                  onTap: () => _showDiscoveredDevices(context),
+                  onTap: onShowAll ?? () => _showDiscoveredDevices(context),
                 ),
             ],
             if (!completed && onStop != null) ...[

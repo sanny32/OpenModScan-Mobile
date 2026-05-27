@@ -679,6 +679,164 @@ void main() {
     expect(buttonBottom, lessThanOrEqualTo(screenHeight));
   });
 
+  testWidgets('scan sheet footer navigates to discovered devices screen', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(500, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scanner = _ScanPort(
+      ScannerStateView.done,
+      discovered: const [
+        DiscoveredDevice(
+          host: '192.168.0.101',
+          port: 502,
+          unitId: 1,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.102',
+          port: 502,
+          unitId: 2,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.103',
+          port: 502,
+          unitId: 3,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.104',
+          port: 502,
+          unitId: 4,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.105',
+          port: 502,
+          unitId: 5,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.106',
+          port: 502,
+          unitId: 6,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.107',
+          port: 502,
+          unitId: 7,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.108',
+          port: 502,
+          unitId: 8,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.109',
+          port: 502,
+          unitId: 9,
+          protocol: ProtocolType.modbusTcp,
+        ),
+        DiscoveredDevice(
+          host: '192.168.0.110',
+          port: 502,
+          unitId: 10,
+          protocol: ProtocolType.modbusTcp,
+        ),
+      ],
+    );
+    final controller = DevicesController(
+      DeviceRepository.instance,
+      PollingConnectionRuntime(),
+      scanner,
+      AppSettings.instance,
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: DevicesScreen(controller: controller, onOpenDevice: (_) {}),
+      ),
+    );
+
+    await tester.tap(find.text('Scan network'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Network scanner'), findsOneWidget);
+
+    // Footer is visible because not all devices fit.
+    // Use .last because the home screen's DiscoveredDevicesPreview also has a
+    // "Show all" footer behind the modal.
+    // ensureVisible scrolls the sheet's ListView so the footer is in the viewport
+    // (not hidden behind the pinned action button).
+    final showAllFinder = find.textContaining('Show all').last;
+    await tester.ensureVisible(showAllFinder);
+    await tester.pumpAndSettle();
+    await tester.tap(showAllFinder);
+    await tester.pumpAndSettle();
+
+    // Sheet is gone, DiscoveredDevicesScreen is shown with all devices.
+    expect(find.text('Network scanner'), findsNothing);
+    expect(find.text('Discovered devices'), findsOneWidget);
+    expect(find.text('192.168.0.110:502'), findsOneWidget);
+  });
+
+  testWidgets('clear button in completed scan sheet clears results and closes', (
+    tester,
+  ) async {
+    final scanner = _ScanPort(
+      ScannerStateView.done,
+      discovered: const [
+        DiscoveredDevice(
+          host: '192.168.88.104',
+          port: 502,
+          unitId: 1,
+          protocol: ProtocolType.modbusTcp,
+        ),
+      ],
+    );
+    final controller = DevicesController(
+      DeviceRepository.instance,
+      PollingConnectionRuntime(),
+      scanner,
+      AppSettings.instance,
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: DevicesScreen(controller: controller, onOpenDevice: (_) {}),
+      ),
+    );
+
+    await tester.tap(find.text('Scan network'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Network scanner'), findsOneWidget);
+    // Two "Clear" buttons exist: one in DevicesScreen header, one in scan sheet header.
+    // Use .last since the modal sheet renders on top (later in widget tree).
+    final clearInSheet = find.text('Clear').last;
+    expect(clearInSheet, findsOneWidget);
+
+    await tester.tap(clearInSheet);
+    await tester.pumpAndSettle();
+
+    // Sheet is closed and results are gone.
+    expect(find.text('Network scanner'), findsNothing);
+    expect(find.text('192.168.88.104:502'), findsNothing);
+  });
+
   testWidgets('clearing discovered devices resets scan panel', (tester) async {
     final scanner = _ScanPort(
       ScannerStateView.done,
