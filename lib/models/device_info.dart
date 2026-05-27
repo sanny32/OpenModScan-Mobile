@@ -2,6 +2,8 @@ import 'register_list.dart';
 
 enum ProtocolType { modbusTcp, modbusRtuIp }
 
+enum DeviceSortMode { lastConnected, created }
+
 extension ProtocolTypeX on ProtocolType {
   bool get supportsConnection => switch (this) {
     ProtocolType.modbusTcp => true,
@@ -27,6 +29,9 @@ class DeviceInfo {
   final int timeout;
   final int reconnectDelay;
   final String notes;
+  final DateTime createdAt;
+  final DateTime? lastConnectedAt;
+  final bool isFavorite;
   final List<RegisterList> registerLists;
 
   DeviceInfo({
@@ -39,8 +44,12 @@ class DeviceInfo {
     this.timeout = 1000,
     this.reconnectDelay = 3000,
     this.notes = '',
+    DateTime? createdAt,
+    this.lastConnectedAt,
+    this.isFavorite = false,
     List<RegisterList>? registerLists,
   }) : id = id ?? _nextId(),
+       createdAt = createdAt ?? DateTime.now(),
        registerLists = registerLists ?? [];
 
   static String _nextId() =>
@@ -56,6 +65,10 @@ class DeviceInfo {
     int? timeout,
     int? reconnectDelay,
     String? notes,
+    DateTime? createdAt,
+    DateTime? lastConnectedAt,
+    bool clearLastConnectedAt = false,
+    bool? isFavorite,
     List<RegisterList>? registerLists,
   }) {
     return DeviceInfo(
@@ -68,6 +81,11 @@ class DeviceInfo {
       timeout: timeout ?? this.timeout,
       reconnectDelay: reconnectDelay ?? this.reconnectDelay,
       notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      lastConnectedAt: clearLastConnectedAt
+          ? null
+          : lastConnectedAt ?? this.lastConnectedAt,
+      isFavorite: isFavorite ?? this.isFavorite,
       registerLists: registerLists ?? List.of(this.registerLists),
     );
   }
@@ -89,10 +107,16 @@ class DeviceInfo {
     'timeout': timeout,
     'reconnectDelay': reconnectDelay,
     'notes': notes,
+    'createdAt': createdAt.toIso8601String(),
+    'lastConnectedAt': lastConnectedAt?.toIso8601String(),
+    'isFavorite': isFavorite,
     'registerLists': registerLists.map((l) => l.toJson()).toList(),
   };
 
-  factory DeviceInfo.fromJson(Map<String, dynamic> json) => DeviceInfo(
+  factory DeviceInfo.fromJson(
+    Map<String, dynamic> json, {
+    DateTime? fallbackCreatedAt,
+  }) => DeviceInfo(
     id: json['id'] as String?,
     name: json['name'] as String,
     host: json['host'] as String,
@@ -105,8 +129,16 @@ class DeviceInfo {
     timeout: json['timeout'] as int,
     reconnectDelay: json['reconnectDelay'] as int,
     notes: (json['notes'] as String?) ?? '',
+    createdAt: _dateTimeFromJson(json['createdAt']) ?? fallbackCreatedAt,
+    lastConnectedAt: _dateTimeFromJson(json['lastConnectedAt']),
+    isFavorite: (json['isFavorite'] as bool?) ?? false,
     registerLists: (json['registerLists'] as List<dynamic>? ?? [])
         .map((e) => RegisterList.fromJson(e as Map<String, dynamic>))
         .toList(),
   );
+}
+
+DateTime? _dateTimeFromJson(Object? value) {
+  if (value is! String) return null;
+  return DateTime.tryParse(value);
 }

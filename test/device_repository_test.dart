@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omodscan_mobile/models/device_info.dart';
 import 'package:omodscan_mobile/models/register_list.dart';
@@ -19,6 +21,9 @@ void main() {
       port: 502,
       protocol: ProtocolType.modbusTcp,
       unitId: 1,
+      createdAt: DateTime(2026, 5, 24, 12),
+      lastConnectedAt: DateTime(2026, 5, 24, 13),
+      isFavorite: true,
       registerLists: [
         RegisterList(
           id: 'list-a',
@@ -35,6 +40,9 @@ void main() {
     final loaded = await store.load();
 
     expect(loaded.single.id, 'device-a');
+    expect(loaded.single.createdAt, DateTime(2026, 5, 24, 12));
+    expect(loaded.single.lastConnectedAt, DateTime(2026, 5, 24, 13));
+    expect(loaded.single.isFavorite, isTrue);
     expect(loaded.single.registerLists.single.id, 'list-a');
     expect(loaded.single.registerLists.single.refreshIntervalMs, 250);
     expect(loaded.single.registerLists.single.coilRefreshIntervalMs, 500);
@@ -46,6 +54,44 @@ void main() {
       loaded.single.registerLists.single.statusEntries.single.comment,
       'Ready',
     );
+  });
+
+  test('SharedPreferences store migrates legacy device metadata', () async {
+    final legacyDevices = [
+      {
+        'id': 'device-old',
+        'name': 'Old',
+        'host': '127.0.0.1',
+        'port': 502,
+        'protocol': 'modbusTcp',
+        'unitId': 1,
+        'timeout': 1000,
+        'reconnectDelay': 3000,
+        'notes': '',
+        'registerLists': [],
+      },
+      {
+        'id': 'device-new',
+        'name': 'New',
+        'host': '127.0.0.2',
+        'port': 502,
+        'protocol': 'modbusTcp',
+        'unitId': 1,
+        'timeout': 1000,
+        'reconnectDelay': 3000,
+        'notes': '',
+        'registerLists': [],
+      },
+    ];
+    SharedPreferences.setMockInitialValues({
+      SharedPreferencesDeviceStore.key: jsonEncode(legacyDevices),
+    });
+
+    final loaded = await const SharedPreferencesDeviceStore().load();
+
+    expect(loaded.map((device) => device.isFavorite), [false, false]);
+    expect(loaded.map((device) => device.lastConnectedAt), [null, null]);
+    expect(loaded.last.createdAt.isAfter(loaded.first.createdAt), isTrue);
   });
 
   test('repository delegates persistence to store', () async {

@@ -33,6 +33,7 @@ class AppSettings {
   static const _scanUnitIdEndKey = 'scanUnitIdEnd';
   static const _scanRequestTypeKey = 'scanRequestType';
   static const _scanRequestAddressKey = 'scanRequestAddress';
+  static const _savedDevicesSortModeKey = 'savedDevicesSortMode';
   static const registerOrders = ['MSRF', 'LSRF'];
   static const byteOrders = ['Direct', 'Swapped'];
   static const addressBases = ['0-based', '1-based'];
@@ -62,6 +63,7 @@ class AppSettings {
   ModbusScanRequestType scanRequestType =
       ModbusScanRequestType.holdingRegisters;
   int scanRequestAddress = 0;
+  DeviceSortMode savedDevicesSortMode = DeviceSortMode.lastConnected;
 
   final showLastValuesNotifier = ValueNotifier<bool>(true);
   final showTypeBadgesNotifier = ValueNotifier<bool>(false);
@@ -115,6 +117,9 @@ class AppSettings {
       prefs.getInt(_scanRequestAddressKey) ?? 0,
       0,
       0xffff,
+    );
+    savedDevicesSortMode = _deviceSortModeFromValue(
+      _getString(prefs, _savedDevicesSortModeKey),
     );
     themeModeNotifier.value = _themeModeFromValue(
       _getString(prefs, _themeModeKey),
@@ -216,6 +221,11 @@ class AppSettings {
     await _saveEditableValues();
   }
 
+  Future<void> setSavedDevicesSortMode(DeviceSortMode value) async {
+    savedDevicesSortMode = value;
+    await _saveEditableValues();
+  }
+
   Future<void> resetToDefaults() async {
     connectionType = 'Modbus TCP';
     timeout = 1000;
@@ -240,6 +250,7 @@ class AppSettings {
     scanUnitIdEnd = 10;
     scanRequestType = ModbusScanRequestType.holdingRegisters;
     scanRequestAddress = 0;
+    savedDevicesSortMode = DeviceSortMode.lastConnected;
     await _saveEditableValues();
     await _setThemeMode(ThemeMode.system);
     await _setLocale(null);
@@ -270,6 +281,7 @@ class AppSettings {
     await prefs.setInt(_scanUnitIdEndKey, scanUnitIdEnd);
     await prefs.setString(_scanRequestTypeKey, scanRequestType.name);
     await prefs.setInt(_scanRequestAddressKey, scanRequestAddress);
+    await prefs.setString(_savedDevicesSortModeKey, savedDevicesSortMode.name);
   }
 
   Future<void> _setThemeMode(ThemeMode value) async {
@@ -342,6 +354,13 @@ class AppSettings {
     return ProtocolType.values.firstWhere(
       (protocol) => protocol.name == value,
       orElse: () => ProtocolType.modbusTcp,
+    );
+  }
+
+  DeviceSortMode _deviceSortModeFromValue(String? value) {
+    return DeviceSortMode.values.firstWhere(
+      (mode) => mode.name == value,
+      orElse: () => DeviceSortMode.lastConnected,
     );
   }
 

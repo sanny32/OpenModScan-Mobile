@@ -8,6 +8,7 @@ import '../../models/discovered_device.dart';
 import '../../runtime/runtime_ports.dart';
 import 'device_form_sheet.dart';
 import 'devices_controller.dart';
+import 'saved_devices_screen.dart';
 import 'widgets/device_card.dart';
 import 'widgets/devices_section_header.dart';
 import 'widgets/scan_panel.dart';
@@ -61,8 +62,6 @@ class _DevicesScreenState extends State<DevicesScreen> {
       _scanTicker = null;
     }
   }
-
-  List<DeviceInfo> get _filtered => widget.controller.filteredDevices;
 
   void _openConnect([DiscoveredDevice? discovered]) async {
     final initial = DeviceInfo(
@@ -136,12 +135,26 @@ class _DevicesScreenState extends State<DevicesScreen> {
       );
   }
 
+  void _openSavedDevices() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SavedDevicesScreen(
+          controller: widget.controller,
+          onOpenDevice: widget.onOpenDevice,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
     final discovered = widget.controller.discoveredDevices;
+    final visibleSavedDevices = widget.controller.visibleHomeDevices;
+    final hiddenSavedDeviceCount =
+        widget.controller.devices.length - visibleSavedDevices.length;
     final canClearDiscovered =
         widget.controller.hasDiscoveredDevices &&
         widget.controller.scannerState != ScannerStateView.scanning;
@@ -186,9 +199,9 @@ class _DevicesScreenState extends State<DevicesScreen> {
                   padding: const EdgeInsets.only(bottom: 8),
                   children: [
                     DevicesSectionHeader(title: l10n.devicesSavedConnections),
-                    ..._filtered.map(
+                    ...visibleSavedDevices.map(
                       (d) => Dismissible(
-                        key: ValueKey(d),
+                        key: ValueKey(d.id),
                         direction: DismissDirection.endToStart,
                         onDismissed: (_) => _deleteDevice(d),
                         background: Container(
@@ -211,10 +224,20 @@ class _DevicesScreenState extends State<DevicesScreen> {
                         child: DeviceCard(
                           device: d,
                           connected: widget.controller.isConnected(d),
+                          favorite: d.isFavorite,
+                          onToggleFavorite: () {
+                            widget.controller.toggleFavorite(d);
+                          },
                           onTap: () => widget.onOpenDevice(d.id),
                         ),
                       ),
                     ),
+                    if (hiddenSavedDeviceCount > 0)
+                      _SavedDevicesFooter(
+                        hiddenCount: hiddenSavedDeviceCount,
+                        totalCount: widget.controller.devices.length,
+                        onShowAll: _openSavedDevices,
+                      ),
                     DevicesSectionHeader(
                       title: l10n.devicesDiscoveredDevices,
                       trailing: !canClearDiscovered
@@ -247,6 +270,52 @@ class _DevicesScreenState extends State<DevicesScreen> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SavedDevicesFooter extends StatelessWidget {
+  final int hiddenCount;
+  final int totalCount;
+  final VoidCallback onShowAll;
+
+  const _SavedDevicesFooter({
+    required this.hiddenCount,
+    required this.totalCount,
+    required this.onShowAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final l10n = context.l10n;
+    final style = tt.labelLarge!.copyWith(
+      color: cs.primary,
+      fontWeight: FontWeight.w700,
+    );
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: InkWell(
+        onTap: onShowAll,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SizedBox(
+            height: 52,
+            child: Row(
+              children: [
+                Text(l10n.devicesMoreCount(hiddenCount), style: style),
+                const Spacer(),
+                Text(l10n.devicesShowAllCount(totalCount), style: style),
+                const SizedBox(width: 4),
+                Icon(Icons.chevron_right, color: cs.primary, size: 18),
+              ],
+            ),
           ),
         ),
       ),

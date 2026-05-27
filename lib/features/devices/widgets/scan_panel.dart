@@ -73,7 +73,7 @@ class ScanPanel extends StatelessWidget {
             ),
           ],
         ),
-        ScannerStateView.idle => _EmptyScanCard(onStart: onTap),
+        ScannerStateView.idle => _ScanNetworkButton(onStart: onTap),
       },
     );
   }
@@ -109,57 +109,26 @@ class _ScanActionButton extends StatelessWidget {
   }
 }
 
-class _EmptyScanCard extends StatelessWidget {
+class _ScanNetworkButton extends StatelessWidget {
   final VoidCallback onStart;
 
-  const _EmptyScanCard({required this.onStart});
+  const _ScanNetworkButton({required this.onStart});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
-    return Card(
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
-        child: Column(
-          children: [
-            Container(
-              width: 76,
-              height: 76,
-              decoration: BoxDecoration(
-                color: cs.primary.withValues(alpha: 0.10),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.travel_explore, size: 40, color: cs.primary),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              l10n.devicesNoScansYet,
-              style: tt.titleMedium!.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              l10n.devicesNoScansYetSubtitle,
-              textAlign: TextAlign.center,
-              style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
-            ),
-            const SizedBox(height: 18),
-            FilledButton.icon(
-              icon: const Icon(Icons.radar_outlined, size: 18),
-              label: Text(l10n.devicesStartScanning),
-              onPressed: onStart,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(180, 44),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ],
-        ),
+    return OutlinedButton.icon(
+      icon: const Icon(Icons.radar_outlined, size: 18),
+      label: Text(l10n.devicesScanNetwork),
+      onPressed: onStart,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(double.infinity, 52),
+        side: BorderSide(color: cs.primary),
+        foregroundColor: cs.primary,
+        textStyle: tt.labelLarge,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -203,20 +172,23 @@ class _ScanningCard extends StatelessWidget {
         ? (appColors?.connectedColor ?? Colors.green)
         : cs.primary;
     final protocolName = _protocolLabel(l10n, protocol);
+    final visibleDiscoveredDevices = discoveredDevices.take(2).toList();
+    final hiddenDiscoveredCount =
+        discoveredDevices.length - visibleDiscoveredDevices.length;
 
     return Card(
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
                 Container(
-                  width: 52,
-                  height: 52,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     color: accent.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
@@ -228,7 +200,7 @@ class _ScanningCard extends StatelessWidget {
                     color: accent,
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,7 +229,7 @@ class _ScanningCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
@@ -281,7 +253,7 @@ class _ScanningCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             LayoutBuilder(
               builder: (context, constraints) {
                 final subnet = _SubnetLabel(text: cidr);
@@ -306,13 +278,20 @@ class _ScanningCard extends StatelessWidget {
               },
             ),
             if (discoveredDevices.isNotEmpty) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Divider(height: 1, color: Theme.of(context).dividerTheme.color),
-              for (final device in discoveredDevices)
+              for (final device in visibleDiscoveredDevices)
                 _DiscoveredScanRow(device: device, onConnect: onConnect),
+              if (hiddenDiscoveredCount > 0)
+                _DiscoveredDevicesFooter(
+                  hiddenCount: hiddenDiscoveredCount,
+                  totalCount: discoveredDevices.length,
+                  devices: discoveredDevices,
+                  onConnect: onConnect,
+                ),
             ],
             if (!completed && onStop != null) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               _ScanActionButton(
                 icon: Icons.stop_circle_outlined,
                 label: l10n.devicesScanStop,
@@ -321,7 +300,7 @@ class _ScanningCard extends StatelessWidget {
               ),
             ],
             if (completed && onRestart != null) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               _ScanActionButton(
                 icon: Icons.radar_outlined,
                 label: l10n.devicesScanNetwork,
@@ -404,6 +383,70 @@ class _DiscoveredScanRow extends StatelessWidget {
         ),
         Divider(height: 1, color: Theme.of(context).dividerTheme.color),
       ],
+    );
+  }
+}
+
+class _DiscoveredDevicesFooter extends StatelessWidget {
+  final int hiddenCount;
+  final int totalCount;
+  final List<DiscoveredDevice> devices;
+  final void Function(DiscoveredDevice) onConnect;
+
+  const _DiscoveredDevicesFooter({
+    required this.hiddenCount,
+    required this.totalCount,
+    required this.devices,
+    required this.onConnect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final l10n = context.l10n;
+    final style = tt.labelLarge!.copyWith(
+      color: cs.primary,
+      fontWeight: FontWeight.w700,
+    );
+
+    return InkWell(
+      onTap: () => _showDiscoveredDevices(context),
+      child: SizedBox(
+        height: 44,
+        child: Row(
+          children: [
+            Text(l10n.devicesMoreCount(hiddenCount), style: style),
+            const Spacer(),
+            Text(l10n.devicesShowAllCount(totalCount), style: style),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right, color: cs.primary, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDiscoveredDevices(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          children: [
+            for (final device in devices)
+              _DiscoveredScanRow(
+                device: device,
+                onConnect: (device) {
+                  Navigator.of(sheetContext).pop();
+                  onConnect(device);
+                },
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

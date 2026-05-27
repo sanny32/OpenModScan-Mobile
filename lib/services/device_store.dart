@@ -21,9 +21,14 @@ class SharedPreferencesDeviceStore implements DeviceStore {
     final raw = prefs.getString(key);
     if (raw == null) return [];
     final list = jsonDecode(raw) as List<dynamic>;
-    return list
-        .map((e) => DeviceInfo.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final migratedBase = DateTime.fromMillisecondsSinceEpoch(0);
+    return [
+      for (var index = 0; index < list.length; index++)
+        DeviceInfo.fromJson(
+          list[index] as Map<String, dynamic>,
+          fallbackCreatedAt: migratedBase.add(Duration(milliseconds: index)),
+        ),
+    ];
   }
 
   @override

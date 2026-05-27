@@ -12,6 +12,7 @@ final demoDevices = [
     port: 502,
     protocol: ProtocolType.modbusTcp,
     unitId: 1,
+    createdAt: DateTime(2026, 5, 24, 12, 4),
     registerLists: [RegisterList(id: 'demo-list-1', name: 'List 1')],
   ),
   DeviceInfo(
@@ -21,6 +22,7 @@ final demoDevices = [
     port: 502,
     protocol: ProtocolType.modbusTcp,
     unitId: 1,
+    createdAt: DateTime(2026, 5, 24, 12, 3),
     registerLists: [RegisterList(id: 'demo-list-2', name: 'List 1')],
   ),
   DeviceInfo(
@@ -30,6 +32,7 @@ final demoDevices = [
     port: 502,
     protocol: ProtocolType.modbusTcp,
     unitId: 1,
+    createdAt: DateTime(2026, 5, 24, 12, 2),
     registerLists: [RegisterList(id: 'demo-list-3', name: 'List 1')],
   ),
   DeviceInfo(
@@ -39,6 +42,7 @@ final demoDevices = [
     port: 502,
     protocol: ProtocolType.modbusTcp,
     unitId: 1,
+    createdAt: DateTime(2026, 5, 24, 12, 1),
     registerLists: [RegisterList(id: 'demo-list-4', name: 'List 1')],
   ),
   DeviceInfo(
@@ -48,6 +52,7 @@ final demoDevices = [
     port: 502,
     protocol: ProtocolType.modbusTcp,
     unitId: 2,
+    createdAt: DateTime(2026, 5, 24, 12),
     registerLists: [RegisterList(id: 'demo-list-5', name: 'List 1')],
   ),
 ];

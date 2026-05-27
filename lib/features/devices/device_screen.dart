@@ -86,6 +86,10 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
   }
 
+  Future<void> _toggleFavorite() async {
+    await widget.controller.toggleFavorite(_device);
+  }
+
   void _editDevice() {
     showModalBottomSheet<DeviceFormResult>(
       context: context,
@@ -151,6 +155,13 @@ class _DeviceScreenState extends State<DeviceScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: Icon(_device.isFavorite ? Icons.star : Icons.star_border),
+            tooltip: _device.isFavorite
+                ? l10n.devicesUnfavorite
+                : l10n.devicesFavorite,
+            onPressed: _toggleFavorite,
+          ),
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             onPressed: _editDevice,

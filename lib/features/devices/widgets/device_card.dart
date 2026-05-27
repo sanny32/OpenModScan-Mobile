@@ -7,13 +7,17 @@ import '../../../theme/app_theme.dart';
 class DeviceCard extends StatelessWidget {
   final DeviceInfo device;
   final bool connected;
+  final bool favorite;
   final VoidCallback onTap;
+  final VoidCallback? onToggleFavorite;
 
   const DeviceCard({
     super.key,
     required this.device,
     required this.connected,
+    this.favorite = false,
     required this.onTap,
+    this.onToggleFavorite,
   });
 
   @override
@@ -67,6 +71,17 @@ class DeviceCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
+              if (onToggleFavorite != null)
+                IconButton(
+                  icon: Icon(
+                    favorite ? Icons.star : Icons.star_border,
+                    color: favorite ? cs.primary : cs.onSurfaceVariant,
+                  ),
+                  tooltip: favorite
+                      ? l10n.devicesUnfavorite
+                      : l10n.devicesFavorite,
+                  onPressed: onToggleFavorite,
+                ),
               Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
             ],
           ),

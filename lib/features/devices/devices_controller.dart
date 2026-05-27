@@ -28,14 +28,20 @@ class DevicesController extends ChangeNotifier {
 
   List<DeviceInfo> get devices => _repository.snapshot;
 
-  List<DeviceInfo> get filteredDevices => devices
-      .where(
-        (device) =>
-            _search.isEmpty ||
-            device.name.toLowerCase().contains(_search.toLowerCase()) ||
-            device.address.contains(_search),
-      )
-      .toList();
+  List<DeviceInfo> get savedDevicesSortedNewestFirst =>
+      _sortByCreatedNewestFirst(devices);
+
+  List<DeviceInfo> get visibleHomeDevices {
+    final filtered = filteredDevices;
+    final favorites = filtered.where((device) => device.isFavorite).toList();
+    final source = favorites.isNotEmpty ? favorites : filtered;
+    return _sortByCreatedNewestFirst(source).take(3).toList();
+  }
+
+  List<DeviceInfo> get filteredDevices =>
+      devices.where((device) => _matchesSearch(device, _search)).toList();
+
+  DeviceSortMode get savedDevicesSortMode => _settings.savedDevicesSortMode;
 
   List<DiscoveredDevice> get discoveredDevices =>
       _scanner.discoveredDevices.devices;
@@ -60,9 +66,14 @@ class DevicesController extends ChangeNotifier {
 
   bool isConnected(DeviceInfo device) => _connectionRuntime.isConnected(device);
 
-  Future<void> toggleConnection(DeviceInfo device) => isConnected(device)
-      ? _connectionRuntime.disconnect(device)
-      : _connectionRuntime.connect(device);
+  Future<void> toggleConnection(DeviceInfo device) async {
+    if (isConnected(device)) {
+      await _connectionRuntime.disconnect(device);
+      return;
+    }
+    await _connectionRuntime.connect(device);
+    await updateDevice(device.copyWith(lastConnectedAt: DateTime.now()));
+  }
 
   void setSearch(String value) {
     if (_search == value) return;
@@ -71,6 +82,25 @@ class DevicesController extends ChangeNotifier {
   }
 
   Future<void> addDevice(DeviceInfo device) => _repository.add(device);
+
+  Future<void> toggleFavorite(DeviceInfo device) =>
+      updateDevice(device.copyWith(isFavorite: !device.isFavorite));
+
+  Future<void> setSavedDevicesSortMode(DeviceSortMode value) async {
+    await _settings.setSavedDevicesSortMode(value);
+    notifyListeners();
+  }
+
+  List<DeviceInfo> devicesForSearchAndSort(
+    String query,
+    DeviceSortMode sortMode,
+  ) {
+    final filtered = devices.where((device) => _matchesSearch(device, query));
+    return switch (sortMode) {
+      DeviceSortMode.created => _sortByCreatedNewestFirst(filtered),
+      DeviceSortMode.lastConnected => _sortByLastConnectedNewestFirst(filtered),
+    };
+  }
 
   Future<DeviceInfo> connectDiscoveredDevice(
     DiscoveredDevice discovered,
@@ -87,7 +117,9 @@ class DevicesController extends ChangeNotifier {
     if (!_connectionRuntime.isConnected(device)) {
       await _connectionRuntime.connect(device);
     }
-    return device;
+    final connectedDevice = device.copyWith(lastConnectedAt: DateTime.now());
+    await _repository.update(connectedDevice);
+    return connectedDevice;
   }
 
   Future<void> updateDevice(DeviceInfo device) => _repository.update(device);
@@ -133,6 +165,35 @@ class DevicesController extends ChangeNotifier {
   void clearDiscoveredDevices() => _scanner.clearResults();
 
   void _forwardChange() => notifyListeners();
+
+  bool _matchesSearch(DeviceInfo device, String query) {
+    final normalized = query.toLowerCase();
+    return normalized.isEmpty ||
+        device.name.toLowerCase().contains(normalized) ||
+        device.address.toLowerCase().contains(normalized);
+  }
+
+  List<DeviceInfo> _sortByCreatedNewestFirst(Iterable<DeviceInfo> devices) {
+    return List.of(devices)..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  List<DeviceInfo> _sortByLastConnectedNewestFirst(
+    Iterable<DeviceInfo> devices,
+  ) {
+    return List.of(devices)..sort((a, b) {
+      final aConnected = a.lastConnectedAt;
+      final bConnected = b.lastConnectedAt;
+      if (aConnected != null && bConnected != null) {
+        final connectedCompare = bConnected.compareTo(aConnected);
+        if (connectedCompare != 0) return connectedCompare;
+      } else if (aConnected != null) {
+        return -1;
+      } else if (bConnected != null) {
+        return 1;
+      }
+      return b.createdAt.compareTo(a.createdAt);
+    });
+  }
 
   DeviceInfo? _findDiscoveredDevice(DiscoveredDevice discovered) {
     for (final device in devices) {

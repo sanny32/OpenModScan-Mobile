@@ -35,6 +35,32 @@
   "devicesSavedConnections": "Saved connections",
   "@devicesSavedConnections": {},
 
+  "devicesMoreCount": "+ {count} more",
+  "@devicesMoreCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "devicesShowAllCount": "Show all ({count})",
+  "@devicesShowAllCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "devicesSortLastConnected": "Last connected",
+  "@devicesSortLastConnected": {},
+
+  "devicesSortCreated": "Created",
+  "@devicesSortCreated": {},
+
+  "devicesFavorite": "Add to favorites",
+  "@devicesFavorite": {},
+
+  "devicesUnfavorite": "Remove from favorites",
+  "@devicesUnfavorite": {},
+
   "devicesDiscoveredDevices": "Network scanner",
   "@devicesDiscoveredDevices": {},
 

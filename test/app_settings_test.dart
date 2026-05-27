@@ -18,6 +18,7 @@ void main() {
     await settings.setReadFailureAttempts(5);
     await settings.setSaveLogToFile(true);
     await settings.setShowTypeBadges(true);
+    await settings.setSavedDevicesSortMode(DeviceSortMode.created);
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('addressBase'), '1-based');
@@ -25,6 +26,11 @@ void main() {
     expect(prefs.getInt('readFailureAttempts'), 5);
     expect(prefs.getBool('saveLogToFile'), isTrue);
     expect(prefs.getBool('showTypeBadges'), isTrue);
+    expect(prefs.getString('savedDevicesSortMode'), 'created');
+
+    await settings.setSavedDevicesSortMode(DeviceSortMode.lastConnected);
+    await settings.load();
+    expect(settings.savedDevicesSortMode, DeviceSortMode.lastConnected);
   });
 
   test('network scan settings persist and reset to defaults', () async {
@@ -39,6 +45,7 @@ void main() {
     expect(settings.scanUnitIdEnd, 10);
     expect(settings.scanRequestType, ModbusScanRequestType.holdingRegisters);
     expect(settings.scanRequestAddress, 0);
+    expect(settings.savedDevicesSortMode, DeviceSortMode.lastConnected);
 
     await settings.setScanProtocol(ProtocolType.modbusRtuIp);
     await settings.setScanSubnetPrefix(20);
