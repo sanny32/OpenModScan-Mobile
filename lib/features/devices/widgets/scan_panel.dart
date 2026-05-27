@@ -14,19 +14,43 @@ class DiscoveredDevicesPreview extends StatelessWidget {
   final List<DiscoveredDevice> discoveredDevices;
   final void Function(DiscoveredDevice) onConnect;
   final VoidCallback onShowAll;
+  // When provided, fills available space with as many rows as fit.
+  final double? availableHeight;
 
   const DiscoveredDevicesPreview({
     super.key,
     required this.discoveredDevices,
     required this.onConnect,
     required this.onShowAll,
+    this.availableHeight,
   });
 
   @override
   Widget build(BuildContext context) {
     if (discoveredDevices.isEmpty) return const SizedBox.shrink();
 
-    final visibleCount = MediaQuery.sizeOf(context).height >= 900 ? 2 : 1;
+    int visibleCount;
+    if (availableHeight != null) {
+      // Row with divider: 63pt. Footer+gap: 60pt. Bottom padding: 12pt.
+      const rowHeight = 63.0;
+      const footerWithGap = 60.0;
+      const bottomPad = 12.0;
+      final space = availableHeight! - bottomPad;
+      // Can all devices fit without a footer?
+      final countWithoutFooter = ((space + 1) / rowHeight).floor();
+      if (countWithoutFooter >= discoveredDevices.length) {
+        visibleCount = discoveredDevices.length;
+      } else {
+        visibleCount =
+            ((space - footerWithGap) / rowHeight).floor().clamp(
+              1,
+              discoveredDevices.length,
+            );
+      }
+    } else {
+      visibleCount = MediaQuery.sizeOf(context).height >= 900 ? 2 : 1;
+    }
+
     final visibleDevices = discoveredDevices.take(visibleCount).toList();
     final hiddenCount = discoveredDevices.length - visibleDevices.length;
 

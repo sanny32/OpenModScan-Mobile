@@ -184,6 +184,64 @@ class _DevicesScreenState extends State<DevicesScreen> {
         widget.controller.hasDiscoveredDevices &&
         widget.controller.scannerState != ScannerStateView.scanning;
     final hasDiscoveredDevices = discovered.isNotEmpty;
+    final hasSavedDevices = widget.controller.devices.isNotEmpty;
+    final useSplitLayout = hasDiscoveredDevices && hasSavedDevices;
+
+    Widget buildDismissible(DeviceInfo d) => Dismissible(
+      key: ValueKey(d.id),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => _deleteDevice(d),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          color: cs.error,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(Icons.delete_outline, color: cs.onError, size: 26),
+      ),
+      child: DeviceCard(
+        device: d,
+        connected: widget.controller.isConnected(d),
+        favorite: d.isFavorite,
+        onToggleFavorite: () => widget.controller.toggleFavorite(d),
+        onTap: () => widget.onOpenDevice(d.id),
+      ),
+    );
+
+    final savedChildren = <Widget>[
+      DevicesSectionHeader(title: l10n.devicesSavedConnections),
+      ...visibleSavedDevices.map(buildDismissible),
+      if (hiddenSavedDeviceCount > 0)
+        _SavedDevicesFooter(
+          hiddenCount: hiddenSavedDeviceCount,
+          totalCount: widget.controller.devices.length,
+          onShowAll: _openSavedDevices,
+        ),
+    ];
+
+    final discoveredChildren = <Widget>[
+      DevicesSectionHeader(
+        title: l10n.devicesDiscoveredTitle,
+        trailing: !canClearDiscovered
+            ? null
+            : TextButton(
+                onPressed: widget.controller.clearDiscoveredDevices,
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(l10n.devicesClearDiscovered),
+              ),
+      ),
+      DiscoveredDevicesPreview(
+        discoveredDevices: discovered,
+        onConnect: _connectDiscovered,
+        onShowAll: _openDiscoveredDevices,
+      ),
+    ];
 
     return ScaffoldMessenger(
       child: Scaffold(
@@ -221,74 +279,67 @@ class _DevicesScreenState extends State<DevicesScreen> {
                 ),
               ),
               Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  children: [
-                    DevicesSectionHeader(title: l10n.devicesSavedConnections),
-                    ...visibleSavedDevices.map(
-                      (d) => Dismissible(
-                        key: ValueKey(d.id),
-                        direction: DismissDirection.endToStart,
-                        onDismissed: (_) => _deleteDevice(d),
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: cs.error,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.delete_outline,
-                            color: cs.onError,
-                            size: 26,
-                          ),
-                        ),
-                        child: DeviceCard(
-                          device: d,
-                          connected: widget.controller.isConnected(d),
-                          favorite: d.isFavorite,
-                          onToggleFavorite: () {
-                            widget.controller.toggleFavorite(d);
-                          },
-                          onTap: () => widget.onOpenDevice(d.id),
-                        ),
-                      ),
-                    ),
-                    if (hiddenSavedDeviceCount > 0)
-                      _SavedDevicesFooter(
-                        hiddenCount: hiddenSavedDeviceCount,
-                        totalCount: widget.controller.devices.length,
-                        onShowAll: _openSavedDevices,
-                      ),
-                    if (hasDiscoveredDevices) ...[
-                      DevicesSectionHeader(
-                        title: l10n.devicesDiscoveredTitle,
-                        trailing: !canClearDiscovered
-                            ? null
-                            : TextButton(
-                                onPressed:
-                                    widget.controller.clearDiscoveredDevices,
-                                style: TextButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
+                child: useSplitLayout
+                    ? LayoutBuilder(
+                        builder: (context, constraints) {
+                          final maxSavedHeight = constraints.maxHeight * 2 / 3;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxHeight: maxSavedHeight,
                                 ),
-                                child: Text(l10n.devicesClearDiscovered),
+                                child: ListView(
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.zero,
+                                  children: savedChildren,
+                                ),
                               ),
+                              DevicesSectionHeader(
+                                title: l10n.devicesDiscoveredTitle,
+                                trailing: !canClearDiscovered
+                                    ? null
+                                    : TextButton(
+                                        onPressed:
+                                            widget
+                                                .controller
+                                                .clearDiscoveredDevices,
+                                        style: TextButton.styleFrom(
+                                          padding: EdgeInsets.zero,
+                                          minimumSize: Size.zero,
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        child: Text(
+                                          l10n.devicesClearDiscovered,
+                                        ),
+                                      ),
+                              ),
+                              Expanded(
+                                child: LayoutBuilder(
+                                  builder: (context, discoveredConstraints) {
+                                    return DiscoveredDevicesPreview(
+                                      discoveredDevices: discovered,
+                                      onConnect: _connectDiscovered,
+                                      onShowAll: _openDiscoveredDevices,
+                                      availableHeight:
+                                          discoveredConstraints.maxHeight,
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      )
+                    : ListView(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        children: [
+                          ...savedChildren,
+                          if (hasDiscoveredDevices) ...discoveredChildren,
+                        ],
                       ),
-                      DiscoveredDevicesPreview(
-                        discoveredDevices: discovered,
-                        onConnect: _connectDiscovered,
-                        onShowAll: _openDiscoveredDevices,
-                      ),
-                    ],
-                  ],
-                ),
               ),
               _ScanNetworkDock(
                 scanning:
