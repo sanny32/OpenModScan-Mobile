@@ -84,6 +84,8 @@
   "errorConnectionTitle": "Не удалось подключиться",
   "errorConnectionBody": "Не удалось связаться с {address}. Проверьте IP-адрес, порт и доступность устройства в сети.",
   "errorConnectionBodyUnknown": "Не удалось связаться с устройством. Проверьте IP-адрес, порт и доступность устройства в сети.",
+  "errorTimeoutTitle": "Таймаут запроса",
+  "errorTimeoutBody": "Устройство не ответило за отведённое время. Увеличьте таймаут или проверьте сеть и нагрузку на устройство.",
   "errorModbusTitle": "Устройство вернуло ошибку",
   "errorModbusBody": "Исключение Modbus: {message}.",
   "errorNotConnectedTitle": "Устройство не подключено",

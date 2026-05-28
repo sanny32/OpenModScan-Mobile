@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../l10n/l10n.dart';
@@ -30,6 +32,13 @@ ErrorFeedbackMessage errorFeedbackMessage(BuildContext context, Object error) {
     );
   }
 
+  if (_isTimeoutError(error, lowerMessage)) {
+    return ErrorFeedbackMessage(
+      title: l10n.errorTimeoutTitle,
+      body: l10n.errorTimeoutBody,
+    );
+  }
+
   if (error is ModbusClientException && error.exceptionCode != null) {
     return ErrorFeedbackMessage(
       title: l10n.errorModbusTitle,
@@ -45,6 +54,10 @@ ErrorFeedbackMessage errorFeedbackMessage(BuildContext context, Object error) {
   }
 
   return ErrorFeedbackMessage(title: l10n.errorGenericTitle, body: rawMessage);
+}
+
+bool isTimeoutError(Object error) {
+  return _isTimeoutError(error, _rawErrorMessage(error).toLowerCase());
 }
 
 void showErrorSnackBar(BuildContext context, Object error) {
@@ -91,6 +104,13 @@ void showErrorSnackBar(BuildContext context, Object error) {
         ),
       ),
     );
+}
+
+bool _isTimeoutError(Object error, String lowerMessage) {
+  return error is TimeoutException ||
+      lowerMessage == 'requesttimeout' ||
+      lowerMessage.contains('timed out') ||
+      lowerMessage.contains('timeout');
 }
 
 String _rawErrorMessage(Object error) {

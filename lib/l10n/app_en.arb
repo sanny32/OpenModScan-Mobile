@@ -313,6 +313,12 @@
   "errorConnectionBodyUnknown": "Could not reach the device. Check the IP address, port, and network availability.",
   "@errorConnectionBodyUnknown": {},
 
+  "errorTimeoutTitle": "Request timed out",
+  "@errorTimeoutTitle": {},
+
+  "errorTimeoutBody": "The device did not respond in time. Increase the timeout or check the network and device load.",
+  "@errorTimeoutBody": {},
+
   "errorModbusTitle": "Device returned an error",
   "@errorModbusTitle": {},
 

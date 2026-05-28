@@ -69,4 +69,32 @@ void main() {
     expect(find.textContaining('Could not reach the device'), findsOneWidget);
     expect(find.textContaining('ModbusClientException'), findsNothing);
   });
+
+  testWidgets('formats request timeout errors as readable text', (
+    tester,
+  ) async {
+    late BuildContext capturedContext;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (context) {
+            capturedContext = context;
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+
+    final message = errorFeedbackMessage(
+      capturedContext,
+      const ModbusClientException('requestTimeout'),
+    );
+
+    expect(message.title, 'Request timed out');
+    expect(message.body, contains('did not respond in time'));
+    expect(message.title, isNot(contains('requestTimeout')));
+  });
 }

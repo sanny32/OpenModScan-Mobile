@@ -168,7 +168,7 @@ class _RegistersTabState extends State<_RegistersTab> {
         widget.onValueStateChanged(
           _readValueState,
           _readValueState == RegisterValueState.exception
-              ? _readErrorLabel(error)
+              ? _readErrorLabel(context, error)
               : null,
         );
       }
@@ -406,13 +406,18 @@ RegisterValueState _valueStateForReadError(Object error) {
   return RegisterValueState.exception;
 }
 
-String _readErrorLabel(Object error) {
+String _readErrorLabel(BuildContext context, Object error) {
   final raw = error.toString();
   const prefixes = ['ModbusClientException: ', 'Exception: '];
   for (final prefix in prefixes) {
     if (raw.startsWith(prefix)) {
-      return raw.substring(prefix.length);
+      final message = raw.substring(prefix.length);
+      return isTimeoutError(error)
+          ? errorFeedbackMessage(context, error).title
+          : message;
     }
   }
-  return raw;
+  return isTimeoutError(error)
+      ? errorFeedbackMessage(context, error).title
+      : raw;
 }
