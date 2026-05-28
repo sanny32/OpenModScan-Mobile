@@ -261,6 +261,16 @@ class _RegistersScreenState extends State<RegistersScreen>
   Future<void> _onValueWritten(int address, String value) =>
       widget.controller.writeValue(address, value);
 
+  Future<void> _onStatusValueWritten({
+    required String statusType,
+    required int address,
+    required bool value,
+  }) => widget.controller.writeStatusValue(
+    statusType: statusType,
+    address: address,
+    value: value,
+  );
+
   Future<void> _onEntryChanged(int address, String typeName, String? comment) =>
       widget.controller.updateEntry(address, typeName, comment);
 
@@ -477,6 +487,7 @@ class _RegistersScreenState extends State<RegistersScreen>
                   onRead: widget.controller.readStatuses,
                   onEntryChanged: (address, comment) => widget.controller
                       .updateStatusEntry(active.coilType, address, comment),
+                  onValueWritten: _onStatusValueWritten,
                 ),
               ],
             ),

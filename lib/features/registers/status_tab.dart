@@ -32,6 +32,12 @@ class _StatusTab extends StatefulWidget {
   })
   onRead;
   final void Function(int address, String? comment) onEntryChanged;
+  final Future<void> Function({
+    required String statusType,
+    required int address,
+    required bool value,
+  })
+  onValueWritten;
 
   const _StatusTab({
     required this.statusType,
@@ -54,6 +60,7 @@ class _StatusTab extends StatefulWidget {
     required this.onValueStateChanged,
     required this.onRead,
     required this.onEntryChanged,
+    required this.onValueWritten,
   });
 
   @override
@@ -61,7 +68,6 @@ class _StatusTab extends StatefulWidget {
 }
 
 class _StatusTabState extends State<_StatusTab> {
-  final _manualValues = <int, bool>{};
   var _reading = false;
   var _manualReadInProgress = false;
   Timer? _autoRefreshTimer;
@@ -212,8 +218,7 @@ class _StatusTabState extends State<_StatusTab> {
       final address = start + i;
       final reference = references[address];
       final runtime = widget.runtimeValues[(widget.statusType, address)];
-      final value =
-          runtime?.$1 ?? _manualValues[address] ?? reference?.value ?? false;
+      final value = runtime?.$1 ?? reference?.value ?? false;
       return StatusEntry(
         address: address,
         value: value,
@@ -285,14 +290,19 @@ class _StatusTabState extends State<_StatusTab> {
             itemBuilder: (context, i) => StatusRow(
               entry: visibleStatuses[i],
               valueState: widget.valueState,
-              canWrite: _canWrite,
+              canWrite:
+                  _canWrite &&
+                  AppSettings.instance.writeEnabled &&
+                  widget.valueState != RegisterValueState.exception,
               onEntryChanged: widget.onEntryChanged,
               onChanged:
-                  _canWrite && widget.valueState != RegisterValueState.exception
-                  ? (value) => setState(() {
-                      _manualValues[visibleStatuses[i].address] = value;
-                    })
+                  _canWrite &&
+                      AppSettings.instance.writeEnabled &&
+                      widget.valueState != RegisterValueState.exception
+                  ? (value) => _writeStatusValue(visibleStatuses[i], value)
                   : null,
+              onDetailValueWritten: (value) =>
+                  _writeStatusValue(visibleStatuses[i], value),
             ),
           ),
         ),
@@ -319,5 +329,42 @@ class _StatusTabState extends State<_StatusTab> {
         ),
       ],
     );
+  }
+
+  Future<void> _writeStatusValue(StatusEntry entry, bool value) async {
+    if (!_canWrite || !AppSettings.instance.writeEnabled) return;
+
+    if (AppSettings.instance.confirmBeforeWrite) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(context.l10n.writeCoilTitle),
+          content: Text(
+            context.l10n.writeCoilConfirm(entry.address, value ? 'ON' : 'OFF'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(context.l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(context.l10n.btnWrite),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+
+    try {
+      await widget.onValueWritten(
+        statusType: widget.statusType,
+        address: entry.address,
+        value: value,
+      );
+    } catch (error) {
+      if (mounted) showErrorSnackBar(context, error);
+    }
   }
 }

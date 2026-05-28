@@ -19,6 +19,7 @@ class AppSettings {
   static const _addressBaseKey = 'addressBase';
   static const _registerOrderKey = 'registerOrder';
   static const _byteOrderKey = 'byteOrder';
+  static const _writeEnabledKey = 'writeEnabled';
   static const _confirmBeforeWriteKey = 'confirmBeforeWrite';
   static const _showLastValuesKey = 'showLastValues';
   static const _showTypeBadgesKey = 'showTypeBadges';
@@ -51,7 +52,8 @@ class AppSettings {
   String addressBase = addressBases.first;
   String registerOrder = registerOrders.first;
   String byteOrder = byteOrders.first;
-  bool confirmBeforeWrite = true;
+  bool writeEnabled = true;
+  bool confirmBeforeWrite = false;
   bool saveLogToFile = false;
   bool clearLogOnDisconnect = false;
   int maxLogEntries = 1000;
@@ -95,7 +97,8 @@ class AppSettings {
     registerOrder =
         _getString(prefs, _registerOrderKey) ?? registerOrders.first;
     byteOrder = _getString(prefs, _byteOrderKey) ?? byteOrders.first;
-    confirmBeforeWrite = prefs.getBool(_confirmBeforeWriteKey) ?? true;
+    writeEnabled = prefs.getBool(_writeEnabledKey) ?? true;
+    confirmBeforeWrite = prefs.getBool(_confirmBeforeWriteKey) ?? false;
     showLastValuesNotifier.value = prefs.getBool(_showLastValuesKey) ?? true;
     showTypeBadgesNotifier.value = prefs.getBool(_showTypeBadgesKey) ?? false;
     saveLogToFile = prefs.getBool(_saveLogToFileKey) ?? false;
@@ -162,6 +165,11 @@ class AppSettings {
 
   Future<void> setByteOrder(String value) async {
     byteOrder = value;
+    await _saveEditableValues();
+  }
+
+  Future<void> setWriteEnabled(bool value) async {
+    writeEnabled = value;
     await _saveEditableValues();
   }
 
@@ -244,7 +252,8 @@ class AppSettings {
     addressBase = addressBases.first;
     registerOrder = registerOrders.first;
     byteOrder = byteOrders.first;
-    confirmBeforeWrite = true;
+    writeEnabled = true;
+    confirmBeforeWrite = false;
     showLastValues = true;
     showTypeBadges = false;
     saveLogToFile = false;
@@ -276,6 +285,7 @@ class AppSettings {
     await prefs.setString(_addressBaseKey, addressBase);
     await prefs.setString(_registerOrderKey, registerOrder);
     await prefs.setString(_byteOrderKey, byteOrder);
+    await prefs.setBool(_writeEnabledKey, writeEnabled);
     await prefs.setBool(_confirmBeforeWriteKey, confirmBeforeWrite);
     await prefs.setBool(_showLastValuesKey, showLastValues);
     await prefs.setBool(_showTypeBadgesKey, showTypeBadges);

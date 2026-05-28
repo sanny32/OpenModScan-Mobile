@@ -61,6 +61,37 @@ class ModbusClient {
   Future<List<bool>> readDiscreteInputs(int startAddress, int quantity) =>
       _readBits(modbus.ModbusElementType.discreteInput, startAddress, quantity);
 
+  Future<void> writeHoldingRegister(int address, int value) async {
+    _validateWriteAddress(address);
+    if (value < 0 || value > 0xffff) {
+      throw RangeError.range(value, 0, 0xffff, 'value');
+    }
+
+    final register = modbus.ModbusUint16Register(
+      name: 'Register $address',
+      address: address,
+      type: modbus.ModbusElementType.holdingRegister,
+    );
+    final response = await _requireTcpClient().send(
+      register.getWriteRequest(value, rawValue: true),
+    );
+    if (response != modbus.ModbusResponseCode.requestSucceed) {
+      throw _exceptionForResponse(response);
+    }
+  }
+
+  Future<void> writeCoil(int address, bool value) async {
+    _validateWriteAddress(address);
+
+    final coil = modbus.ModbusCoil(name: 'Coil $address', address: address);
+    final response = await _requireTcpClient().send(
+      coil.getWriteRequest(value),
+    );
+    if (response != modbus.ModbusResponseCode.requestSucceed) {
+      throw _exceptionForResponse(response);
+    }
+  }
+
   Future<List<int>> _readRegisters(
     modbus.ModbusElementType type,
     int startAddress,
@@ -162,6 +193,12 @@ class ModbusClient {
     }
     if (startAddress + quantity > 0x10000) {
       throw RangeError('Read range exceeds Modbus bit address space.');
+    }
+  }
+
+  void _validateWriteAddress(int address) {
+    if (address < 0 || address > 0xffff) {
+      throw RangeError.range(address, 0, 0xffff, 'address');
     }
   }
 }

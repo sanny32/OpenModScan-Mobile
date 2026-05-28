@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../models/app_settings.dart';
 import '../../models/device_info.dart';
 import '../../models/register_address_type.dart';
 import '../../models/register_entry.dart';
@@ -190,14 +191,50 @@ class RegistersController extends ChangeNotifier {
   Future<void> writeValue(int address, String value) async {
     final device = selectedDevice;
     if (device == null) return;
+    if (!AppSettings.instance.writeEnabled) return;
+    if (!_connectionRuntime.isConnected(device)) {
+      throw StateError('${device.name} is not connected.');
+    }
+    final raw = int.tryParse(value);
+    if (raw == null || raw < 0 || raw > 0xffff) {
+      throw ArgumentError.value(value, 'value');
+    }
+    final modbusAddress = RegisterAddressType.holdingRegisters.toModbusAddress(
+      address,
+    );
     final runtimeValue = _runtimeValues[address];
     final previous = runtimeValue?.$1;
-    await _registerRuntime.writeRegister(
-      deviceId: device.id,
-      address: address,
-      value: value,
+    await _connectionRuntime.writeHoldingRegister(
+      device,
+      address: modbusAddress,
+      value: raw,
     );
-    _runtimeValues[address] = (value, previous, runtimeValue?.$3);
+    _runtimeValues[address] = (value, previous, DateTime.now());
+    notifyListeners();
+  }
+
+  Future<void> writeStatusValue({
+    required String statusType,
+    required int address,
+    required bool value,
+  }) async {
+    final device = selectedDevice;
+    if (device == null) return;
+    if (!AppSettings.instance.writeEnabled) return;
+    if (!_connectionRuntime.isConnected(device)) {
+      throw StateError('${device.name} is not connected.');
+    }
+
+    final addressType = RegisterAddressType.tryParse(statusType);
+    if (addressType != RegisterAddressType.coils) {
+      throw UnsupportedError('Writing $statusType is not implemented.');
+    }
+
+    final key = (statusType, address);
+    final runtimeValue = _runtimeStatusValues[key];
+    final previous = runtimeValue?.$1;
+    await _connectionRuntime.writeCoil(device, address: address, value: value);
+    _runtimeStatusValues[key] = (value, previous, DateTime.now());
     notifyListeners();
   }
 

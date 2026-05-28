@@ -68,6 +68,20 @@ class ConnectionManager implements ConnectionRuntime {
     required int count,
   }) => _clientFor(device).readDiscreteInputs(startAddress, count);
 
+  @override
+  Future<void> writeHoldingRegister(
+    DeviceInfo device, {
+    required int address,
+    required int value,
+  }) => _clientFor(device).writeHoldingRegister(address, value);
+
+  @override
+  Future<void> writeCoil(
+    DeviceInfo device, {
+    required int address,
+    required bool value,
+  }) => _clientFor(device).writeCoil(address, value);
+
   ModbusClient _clientFor(DeviceInfo device) {
     final client = clients.value[device.id];
     if (client == null || !client.isConnected) {

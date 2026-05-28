@@ -5,6 +5,7 @@ import '../../models/app_settings.dart';
 import '../../models/register_entry.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/modbus_format.dart';
+import '../../widgets/error_feedback.dart';
 import '../../widgets/type_badge.dart';
 
 String _typeDescription(String type) {
@@ -43,7 +44,7 @@ class RegisterDetailScreen extends StatefulWidget {
   final RegisterEntry entry;
   final bool canWrite;
   final void Function(String typeName, String? comment)? onSaved;
-  final void Function(String newValue)? onValueWritten;
+  final Future<void> Function(String newValue)? onValueWritten;
 
   const RegisterDetailScreen({
     super.key,
@@ -152,6 +153,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     final tt = Theme.of(context).textTheme;
     final ctrl = TextEditingController(text: widget.entry.value);
     String? error;
+    var writing = false;
 
     await showDialog<void>(
       context: context,
@@ -209,19 +211,37 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                 onChanged: (_) {
                   if (error != null) setInnerState(() => error = null);
                 },
-                onSubmitted: (_) =>
-                    _doWrite(ctx, ctrl, l10n, setInnerState, (e) => error = e),
+                onSubmitted: (_) {
+                  if (!writing) {
+                    _doWrite(
+                      ctx,
+                      ctrl,
+                      l10n,
+                      setInnerState,
+                      (e) => error = e,
+                      (value) => writing = value,
+                    );
+                  }
+                },
               ),
             ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: writing ? null : () => Navigator.pop(ctx),
               child: Text(l10n.cancel),
             ),
             TextButton(
-              onPressed: () =>
-                  _doWrite(ctx, ctrl, l10n, setInnerState, (e) => error = e),
+              onPressed: writing
+                  ? null
+                  : () => _doWrite(
+                      ctx,
+                      ctrl,
+                      l10n,
+                      setInnerState,
+                      (e) => error = e,
+                      (value) => writing = value,
+                    ),
               child: Text(l10n.btnWrite),
             ),
           ],
@@ -230,21 +250,29 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     );
   }
 
-  void _doWrite(
+  Future<void> _doWrite(
     BuildContext ctx,
     TextEditingController ctrl,
     dynamic l10n,
     StateSetter setInnerState,
     void Function(String?) setError,
-  ) {
+    void Function(bool) setWriting,
+  ) async {
     final raw = int.tryParse(ctrl.text);
     if (raw == null || raw < 0 || raw > 65535) {
       setInnerState(() => setError(l10n.writeValueRange));
       return;
     }
-    // TODO: perform actual Modbus write.
-    widget.onValueWritten?.call(ctrl.text);
-    Navigator.pop(ctx);
+    setInnerState(() => setWriting(true));
+    try {
+      await widget.onValueWritten?.call(ctrl.text);
+      if (ctx.mounted) Navigator.pop(ctx);
+    } catch (error) {
+      if (ctx.mounted && mounted) {
+        setInnerState(() => setWriting(false));
+        showErrorSnackBar(context, error);
+      }
+    }
   }
 
   Future<void> _showDataLayoutSheet() async {

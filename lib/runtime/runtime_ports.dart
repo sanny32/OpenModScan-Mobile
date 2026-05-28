@@ -40,6 +40,18 @@ abstract interface class ConnectionRuntime {
     required int startAddress,
     required int count,
   });
+
+  Future<void> writeHoldingRegister(
+    DeviceInfo device, {
+    required int address,
+    required int value,
+  });
+
+  Future<void> writeCoil(
+    DeviceInfo device, {
+    required int address,
+    required bool value,
+  });
 }
 
 abstract interface class RegisterRuntime {

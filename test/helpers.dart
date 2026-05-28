@@ -39,6 +39,10 @@ class PollingConnectionRuntime implements ConnectionRuntime {
   final _ids = ValueNotifier<Set<String>>(const {});
   var holdingReadCount = 0;
   var coilReadCount = 0;
+  int? lastWriteHoldingAddress;
+  int? lastWriteHoldingValue;
+  int? lastWriteCoilAddress;
+  bool? lastWriteCoilValue;
 
   @override
   ValueListenable<Set<String>> get connectedDeviceIds => _ids;
@@ -89,6 +93,26 @@ class PollingConnectionRuntime implements ConnectionRuntime {
     required int startAddress,
     required int count,
   }) async => List.filled(count, false);
+
+  @override
+  Future<void> writeHoldingRegister(
+    DeviceInfo device, {
+    required int address,
+    required int value,
+  }) async {
+    lastWriteHoldingAddress = address;
+    lastWriteHoldingValue = value;
+  }
+
+  @override
+  Future<void> writeCoil(
+    DeviceInfo device, {
+    required int address,
+    required bool value,
+  }) async {
+    lastWriteCoilAddress = address;
+    lastWriteCoilValue = value;
+  }
 }
 
 class ThrowingRegisterConnectionRuntime extends PollingConnectionRuntime {

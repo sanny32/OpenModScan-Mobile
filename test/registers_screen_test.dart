@@ -6,6 +6,7 @@ import 'package:omodscan_mobile/features/devices/device_screen.dart';
 import 'package:omodscan_mobile/features/registers/register_detail_screen.dart';
 import 'package:omodscan_mobile/features/registers/registers_controller.dart';
 import 'package:omodscan_mobile/features/registers/registers_screen.dart';
+import 'package:omodscan_mobile/features/registers/widgets/register_row.dart';
 import 'package:omodscan_mobile/l10n/l10n.dart';
 import 'package:omodscan_mobile/main.dart';
 import 'package:omodscan_mobile/models/app_settings.dart';
@@ -704,6 +705,88 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     controller.dispose();
     returnDeviceId.dispose();
+  });
+
+  testWidgets('Single tap register value opens write dialog and writes', (
+    WidgetTester tester,
+  ) async {
+    final connections = PollingConnectionRuntime();
+    final harness = await _pumpWritableRegistersHarness(tester, connections);
+
+    final valueFinder = find
+        .descendant(
+          of: find.byType(RegisterRow).first,
+          matching: find.text('0'),
+        )
+        .last;
+    await tester.tap(valueFinder);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Write Register'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, '77');
+    await tester.tap(find.widgetWithText(TextButton, 'Write'));
+    await tester.pumpAndSettle();
+
+    expect(connections.lastWriteHoldingAddress, 0);
+    expect(connections.lastWriteHoldingValue, 77);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Coil switch writes immediately by default', (
+    WidgetTester tester,
+  ) async {
+    final connections = PollingConnectionRuntime();
+    final harness = await _pumpStatusHarness(tester, connections);
+
+    await tester.tap(find.widgetWithText(Tab, 'Status'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(Switch).last);
+    await tester.pumpAndSettle();
+
+    expect(connections.lastWriteCoilAddress, 0);
+    expect(connections.lastWriteCoilValue, isTrue);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Coil confirmation writes only after approval', (
+    WidgetTester tester,
+  ) async {
+    await AppSettings.instance.setConfirmBeforeWrite(true);
+    final connections = PollingConnectionRuntime();
+    final harness = await _pumpStatusHarness(tester, connections);
+
+    await tester.tap(find.widgetWithText(Tab, 'Status'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(Switch).last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Write Coil'), findsOneWidget);
+    expect(connections.lastWriteCoilAddress, isNull);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Write'));
+    await tester.pumpAndSettle();
+
+    expect(connections.lastWriteCoilAddress, 0);
+    expect(connections.lastWriteCoilValue, isTrue);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Write disabled setting disables status switch writes', (
+    WidgetTester tester,
+  ) async {
+    await AppSettings.instance.setWriteEnabled(false);
+    final connections = PollingConnectionRuntime();
+    final harness = await _pumpStatusHarness(tester, connections);
+
+    await tester.tap(find.widgetWithText(Tab, 'Status'));
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<Switch>(find.byType(Switch).last).onChanged, isNull);
+
+    await _disposeRegistersHarness(tester, harness);
   });
 
   testWidgets('Status error values use exception switch color', (
@@ -1412,6 +1495,53 @@ Future<_RegistersHarness> _pumpRegistersHarness(
   final controller = RegistersController(
     DeviceRepository.instance,
     PollingConnectionRuntime(),
+    const DemoRegisterRuntime(enabled: false),
+  );
+  final returnDeviceId = ValueNotifier<String?>(null);
+
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: AppTheme.lightTheme,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: RegistersScreen(
+        controller: controller,
+        returnDeviceId: returnDeviceId,
+        onReturnToDevice: () {},
+      ),
+    ),
+  );
+  await tester.pump();
+
+  return (controller: controller, returnDeviceId: returnDeviceId);
+}
+
+Future<_RegistersHarness> _pumpWritableRegistersHarness(
+  WidgetTester tester,
+  PollingConnectionRuntime connections,
+) async {
+  final device = DeviceInfo(
+    id: 'write-register-device',
+    name: 'Write Register PLC',
+    host: '127.0.0.42',
+    port: 502,
+    protocol: ProtocolType.modbusTcp,
+    unitId: 1,
+    registerLists: [
+      RegisterList(
+        id: 'write-register-list',
+        name: 'Write Register List',
+        autoRefresh: false,
+        count: 1,
+      ),
+    ],
+  );
+  await DeviceRepository.instance.replaceAll([device]);
+  await connections.connect(device);
+
+  final controller = RegistersController(
+    DeviceRepository.instance,
+    connections,
     const DemoRegisterRuntime(enabled: false),
   );
   final returnDeviceId = ValueNotifier<String?>(null);

@@ -434,6 +434,17 @@
   "writeValueRange": "Value must be 0 – 65535",
   "@writeValueRange": {},
 
+  "writeCoilTitle": "Write Coil",
+  "@writeCoilTitle": {},
+
+  "writeCoilConfirm": "Write coil {address} to {value}?",
+  "@writeCoilConfirm": {
+    "placeholders": {
+      "address": {"type": "int"},
+      "value": {"type": "String"}
+    }
+  },
+
   "sectionRegisterLists": "Register Lists",
   "@sectionRegisterLists": {},
 
@@ -527,7 +538,13 @@
   "settingsDefaultReadQty": "Default read quantity",
   "@settingsDefaultReadQty": {},
 
-  "settingsConfirmBeforeWrite": "Confirm before write",
+  "settingsWriteEnabled": "Allow writes",
+  "@settingsWriteEnabled": {},
+
+  "settingsConfirmBeforeCoilWrite": "Confirm coil writes",
+  "@settingsConfirmBeforeCoilWrite": {},
+
+  "settingsConfirmBeforeWrite": "Confirm coil writes",
   "@settingsConfirmBeforeWrite": {},
 
   "settingsShowLastValues": "Show last values after read",

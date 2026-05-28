@@ -6,6 +6,7 @@ import '../../../models/app_settings.dart';
 import '../../../models/register_entry.dart';
 import '../../../theme/app_theme.dart';
 import '../../../utils/modbus_format.dart';
+import '../../../widgets/error_feedback.dart';
 import '../../../widgets/type_badge.dart';
 import '../register_detail_screen.dart';
 
@@ -17,7 +18,7 @@ class RegisterRow extends StatelessWidget {
   final VoidCallback? onGroupExpansionToggled;
   final void Function(int address, String typeName, String? comment)?
   onEntryChanged;
-  final void Function(int address, String value)? onValueWritten;
+  final Future<void> Function(int address, String value)? onValueWritten;
 
   const RegisterRow({
     super.key,
@@ -37,26 +38,36 @@ class RegisterRow extends StatelessWidget {
     final appColors = Theme.of(context).extension<AppColors>()!;
     final valueColor = _valueColor(context, entry.valueState);
     final isGroup = groupWordCount > 1 && onGroupExpansionToggled != null;
+    final effectiveCanWrite = canWrite && AppSettings.instance.writeEnabled;
+
+    void openDetail() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => RegisterDetailScreen(
+            entry: entry,
+            canWrite: effectiveCanWrite,
+            onSaved: onEntryChanged != null
+                ? (type, comment) =>
+                      onEntryChanged!(entry.address, type, comment)
+                : null,
+            onValueWritten: onValueWritten != null
+                ? (v) => onValueWritten!(entry.address, v)
+                : null,
+          ),
+        ),
+      );
+    }
+
+    void showWriteDialog() {
+      _showWriteRegisterDialog(context, entry, onValueWritten);
+    }
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         InkWell(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => RegisterDetailScreen(
-                entry: entry,
-                canWrite: canWrite,
-                onSaved: onEntryChanged != null
-                    ? (type, comment) =>
-                          onEntryChanged!(entry.address, type, comment)
-                    : null,
-                onValueWritten: onValueWritten != null
-                    ? (v) => onValueWritten!(entry.address, v)
-                    : null,
-              ),
-            ),
-          ),
+          onTap: openDetail,
           child: Padding(
             padding: EdgeInsets.fromLTRB(isGroup ? 4 : 16, 10, 16, 10),
             child: Row(
@@ -120,9 +131,7 @@ class RegisterRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 InkWell(
-                  onTap: canWrite
-                      ? () => _showWriteRegisterDialog(context, entry)
-                      : null,
+                  onTap: effectiveCanWrite ? showWriteDialog : null,
                   borderRadius: BorderRadius.circular(4),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -211,6 +220,7 @@ class _RawRegisterWordRow extends StatelessWidget {
 Future<void> _showWriteRegisterDialog(
   BuildContext context,
   RegisterEntry entry,
+  Future<void> Function(int address, String value)? onValueWritten,
 ) async {
   final l10n = context.l10n;
   final cs = Theme.of(context).colorScheme;
@@ -218,6 +228,25 @@ Future<void> _showWriteRegisterDialog(
   final appColors = Theme.of(context).extension<AppColors>()!;
   final ctrl = TextEditingController(text: entry.value);
   String? error;
+  var writing = false;
+
+  Future<void> doWrite(BuildContext ctx, StateSetter setInnerState) async {
+    final raw = int.tryParse(ctrl.text);
+    if (raw == null || raw < 0 || raw > 65535) {
+      setInnerState(() => error = l10n.writeValueRange);
+      return;
+    }
+    setInnerState(() => writing = true);
+    try {
+      await onValueWritten?.call(entry.address, ctrl.text);
+      if (ctx.mounted) Navigator.pop(ctx);
+    } catch (writeError) {
+      if (ctx.mounted) {
+        setInnerState(() => writing = false);
+        showErrorSnackBar(context, writeError);
+      }
+    }
+  }
 
   await showDialog<void>(
     context: context,
@@ -278,32 +307,20 @@ Future<void> _showWriteRegisterDialog(
                 if (error != null) setInnerState(() => error = null);
               },
               onSubmitted: (_) {
-                final raw = int.tryParse(ctrl.text);
-                if (raw == null || raw < 0 || raw > 65535) {
-                  setInnerState(() => error = l10n.writeValueRange);
-                  return;
+                if (!writing) {
+                  doWrite(ctx, setInnerState);
                 }
-                // TODO: perform actual Modbus write
-                Navigator.pop(ctx);
               },
             ),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: writing ? null : () => Navigator.pop(ctx),
             child: Text(l10n.cancel),
           ),
           TextButton(
-            onPressed: () {
-              final raw = int.tryParse(ctrl.text);
-              if (raw == null || raw < 0 || raw > 65535) {
-                setInnerState(() => error = l10n.writeValueRange);
-                return;
-              }
-              // TODO: perform actual Modbus write
-              Navigator.pop(ctx);
-            },
+            onPressed: writing ? null : () => doWrite(ctx, setInnerState),
             child: Text(l10n.btnWrite),
           ),
         ],

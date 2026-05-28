@@ -11,6 +11,7 @@ class StatusRow extends StatelessWidget {
   final bool canWrite;
   final ValueChanged<bool>? onChanged;
   final void Function(int address, String? comment)? onEntryChanged;
+  final Future<void> Function(bool value)? onDetailValueWritten;
 
   const StatusRow({
     super.key,
@@ -19,6 +20,7 @@ class StatusRow extends StatelessWidget {
     required this.canWrite,
     required this.onChanged,
     required this.onEntryChanged,
+    this.onDetailValueWritten,
   });
 
   @override
@@ -29,8 +31,8 @@ class StatusRow extends StatelessWidget {
     final exceptionColor = appColors.exceptionValueColor;
     final isException = valueState == RegisterValueState.exception;
 
-    return InkWell(
-      onTap: () => Navigator.push(
+    void openDetail() {
+      Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => StatusDetailScreen(
@@ -43,9 +45,28 @@ class StatusRow extends StatelessWidget {
             onSaved: onEntryChanged == null
                 ? null
                 : (comment) => onEntryChanged!(entry.address, comment),
+            onValueWritten: onDetailValueWritten,
           ),
         ),
+      );
+    }
+
+    final statusSwitch = Transform.scale(
+      scale: 0.82,
+      alignment: Alignment.centerRight,
+      child: Switch(
+        value: entry.value,
+        onChanged: canWrite ? onChanged : null,
+        thumbColor: isException ? WidgetStatePropertyAll(exceptionColor) : null,
+        trackColor: isException
+            ? WidgetStatePropertyAll(exceptionColor.withAlpha(77))
+            : null,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
+    );
+
+    return InkWell(
+      onTap: openDetail,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         child: Row(
@@ -65,24 +86,7 @@ class StatusRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Transform.scale(
-                scale: 0.82,
-                alignment: Alignment.centerRight,
-                child: Switch(
-                  value: entry.value,
-                  onChanged: canWrite ? onChanged : null,
-                  thumbColor: isException
-                      ? WidgetStatePropertyAll(exceptionColor)
-                      : null,
-                  trackColor: isException
-                      ? WidgetStatePropertyAll(exceptionColor.withAlpha(77))
-                      : null,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-            ),
+            Align(alignment: Alignment.centerRight, child: statusSwitch),
             Icon(Icons.chevron_right, color: cs.onSurfaceVariant, size: 20),
           ],
         ),

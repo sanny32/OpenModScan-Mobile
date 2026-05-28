@@ -251,8 +251,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 _divider(),
                 _toggleTile(
+                  icon: Icons.edit_note_outlined,
+                  label: l10n.settingsWriteEnabled,
+                  value: _s.writeEnabled,
+                  onChanged: widget.controller.setWriteEnabled,
+                ),
+                _divider(),
+                _toggleTile(
                   icon: Icons.edit_outlined,
-                  label: l10n.settingsConfirmBeforeWrite,
+                  label: l10n.settingsConfirmBeforeCoilWrite,
                   value: _s.confirmBeforeWrite,
                   onChanged: widget.controller.setConfirmBeforeWrite,
                 ),

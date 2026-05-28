@@ -39,6 +39,11 @@ class SettingsController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setWriteEnabled(bool value) async {
+    await settings.setWriteEnabled(value);
+    notifyListeners();
+  }
+
   Future<void> setConfirmBeforeWrite(bool value) async {
     await settings.setConfirmBeforeWrite(value);
     notifyListeners();

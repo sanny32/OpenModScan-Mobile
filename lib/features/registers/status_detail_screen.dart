@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
+import '../../widgets/error_feedback.dart';
 
 class StatusDetailScreen extends StatefulWidget {
   final int address;
@@ -10,6 +11,7 @@ class StatusDetailScreen extends StatefulWidget {
   final String? timestamp;
   final String? date;
   final ValueChanged<String?>? onSaved;
+  final Future<void> Function(bool value)? onValueWritten;
 
   const StatusDetailScreen({
     super.key,
@@ -20,6 +22,7 @@ class StatusDetailScreen extends StatefulWidget {
     this.timestamp,
     this.date,
     this.onSaved,
+    this.onValueWritten,
   });
 
   @override
@@ -30,6 +33,7 @@ class _StatusDetailScreenState extends State<StatusDetailScreen> {
   late bool _value;
   late final TextEditingController _commentCtrl;
   bool _hasChanges = false;
+  bool _writing = false;
 
   @override
   void initState() {
@@ -50,11 +54,23 @@ class _StatusDetailScreenState extends State<StatusDetailScreen> {
     super.dispose();
   }
 
-  void _setValue(bool value) {
+  Future<void> _setValue(bool value) async {
     if (!widget.canWrite) return;
+    setState(() => _writing = true);
+    try {
+      await widget.onValueWritten?.call(value);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _writing = false);
+        showErrorSnackBar(context, error);
+      }
+      return;
+    }
+    if (!mounted) return;
     setState(() {
       _value = value;
       _hasChanges = true;
+      _writing = false;
     });
   }
 
@@ -209,7 +225,7 @@ class _StatusDetailScreenState extends State<StatusDetailScreen> {
       ),
       floatingActionButton: widget.canWrite
           ? FloatingActionButton.extended(
-              onPressed: () => _setValue(!_value),
+              onPressed: _writing ? null : () => _setValue(!_value),
               backgroundColor: cs.primary,
               foregroundColor: cs.onPrimary,
               elevation: 3,

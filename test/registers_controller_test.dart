@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omodscan_mobile/features/registers/registers_controller.dart';
+import 'package:omodscan_mobile/models/app_settings.dart';
 import 'package:omodscan_mobile/models/device_info.dart';
 import 'package:omodscan_mobile/models/register_list.dart';
 import 'package:omodscan_mobile/navigation/navigation_targets.dart';
@@ -10,8 +11,9 @@ import 'package:omodscan_mobile/services/device_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  setUp(() {
+  setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    await AppSettings.instance.resetToDefaults();
   });
 
   test('updates register config through repository', () async {
@@ -335,6 +337,141 @@ void main() {
 
     controller.dispose();
   });
+
+  test('writes holding register through connected runtime', () async {
+    final repository = DeviceRepository.instance;
+    final device = DeviceInfo(
+      id: 'device-write-holding',
+      name: 'PLC Write Holding',
+      host: '127.0.0.13',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [RegisterList(id: 'list-write-holding', name: 'List 1')],
+    );
+    await repository.replaceAll([device]);
+
+    final connections = _TestConnectionRuntime();
+    await connections.connect(device);
+    final controller = RegistersController(
+      repository,
+      connections,
+      const DemoRegisterRuntime(enabled: false),
+    );
+    await controller.selectTarget(
+      const RegistersRouteArgs(
+        deviceId: 'device-write-holding',
+        registerListId: 'list-write-holding',
+      ),
+    );
+
+    await controller.writeValue(40001, '42');
+
+    expect(connections.lastWriteHoldingAddress, 0);
+    expect(connections.lastWriteHoldingValue, 42);
+    expect(controller.runtimeValues[40001]?.$1, '42');
+    expect(controller.runtimeValues[40001]?.$2, isNull);
+    expect(controller.runtimeValues[40001]?.$3, isNotNull);
+
+    await controller.writeValue(40001, '43');
+    expect(controller.runtimeValues[40001]?.$1, '43');
+    expect(controller.runtimeValues[40001]?.$2, '42');
+
+    controller.dispose();
+  });
+
+  test('writes coil through connected runtime', () async {
+    final repository = DeviceRepository.instance;
+    final device = DeviceInfo(
+      id: 'device-write-coil',
+      name: 'PLC Write Coil',
+      host: '127.0.0.14',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [RegisterList(id: 'list-write-coil', name: 'List 1')],
+    );
+    await repository.replaceAll([device]);
+
+    final connections = _TestConnectionRuntime();
+    await connections.connect(device);
+    final controller = RegistersController(
+      repository,
+      connections,
+      const DemoRegisterRuntime(enabled: false),
+    );
+    await controller.selectTarget(
+      const RegistersRouteArgs(
+        deviceId: 'device-write-coil',
+        registerListId: 'list-write-coil',
+      ),
+    );
+
+    await controller.writeStatusValue(
+      statusType: '0xxxx',
+      address: 7,
+      value: true,
+    );
+
+    expect(connections.lastWriteCoilAddress, 7);
+    expect(connections.lastWriteCoilValue, isTrue);
+    expect(controller.runtimeStatusValues[('0xxxx', 7)]?.$1, isTrue);
+    expect(controller.runtimeStatusValues[('0xxxx', 7)]?.$2, isNull);
+    expect(controller.runtimeStatusValues[('0xxxx', 7)]?.$3, isNotNull);
+
+    await controller.writeStatusValue(
+      statusType: '0xxxx',
+      address: 7,
+      value: false,
+    );
+    expect(controller.runtimeStatusValues[('0xxxx', 7)]?.$1, isFalse);
+    expect(controller.runtimeStatusValues[('0xxxx', 7)]?.$2, isTrue);
+
+    controller.dispose();
+  });
+
+  test('write disabled setting prevents runtime write calls', () async {
+    final repository = DeviceRepository.instance;
+    final device = DeviceInfo(
+      id: 'device-write-disabled',
+      name: 'PLC Write Disabled',
+      host: '127.0.0.15',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [RegisterList(id: 'list-write-disabled', name: 'List 1')],
+    );
+    await repository.replaceAll([device]);
+
+    final connections = _TestConnectionRuntime();
+    await connections.connect(device);
+    final controller = RegistersController(
+      repository,
+      connections,
+      const DemoRegisterRuntime(enabled: false),
+    );
+    await controller.selectTarget(
+      const RegistersRouteArgs(
+        deviceId: 'device-write-disabled',
+        registerListId: 'list-write-disabled',
+      ),
+    );
+
+    await AppSettings.instance.setWriteEnabled(false);
+    await controller.writeValue(40001, '42');
+    await controller.writeStatusValue(
+      statusType: '0xxxx',
+      address: 7,
+      value: true,
+    );
+
+    expect(connections.lastWriteHoldingAddress, isNull);
+    expect(connections.lastWriteCoilAddress, isNull);
+    expect(controller.runtimeValues[40001], isNull);
+    expect(controller.runtimeStatusValues[('0xxxx', 7)], isNull);
+
+    controller.dispose();
+  });
 }
 
 class _TestConnectionRuntime implements ConnectionRuntime {
@@ -351,6 +488,10 @@ class _TestConnectionRuntime implements ConnectionRuntime {
   int? lastCoilCount;
   int? lastDiscreteInputStartAddress;
   int? lastDiscreteInputCount;
+  int? lastWriteHoldingAddress;
+  int? lastWriteHoldingValue;
+  int? lastWriteCoilAddress;
+  bool? lastWriteCoilValue;
 
   @override
   ValueListenable<Set<String>> get connectedDeviceIds => _ids;
@@ -410,5 +551,25 @@ class _TestConnectionRuntime implements ConnectionRuntime {
     lastDiscreteInputStartAddress = startAddress;
     lastDiscreteInputCount = count;
     return discreteInputValues.take(count).toList();
+  }
+
+  @override
+  Future<void> writeHoldingRegister(
+    DeviceInfo device, {
+    required int address,
+    required int value,
+  }) async {
+    lastWriteHoldingAddress = address;
+    lastWriteHoldingValue = value;
+  }
+
+  @override
+  Future<void> writeCoil(
+    DeviceInfo device, {
+    required int address,
+    required bool value,
+  }) async {
+    lastWriteCoilAddress = address;
+    lastWriteCoilValue = value;
   }
 }
