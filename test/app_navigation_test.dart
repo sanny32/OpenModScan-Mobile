@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omodscan_mobile/features/devices/device_screen.dart';
+import 'package:omodscan_mobile/features/devices/devices_controller.dart';
+import 'package:omodscan_mobile/l10n/l10n.dart';
 import 'package:omodscan_mobile/main.dart';
 import 'package:omodscan_mobile/models/app_settings.dart';
+import 'package:omodscan_mobile/models/device_info.dart';
+import 'package:omodscan_mobile/runtime/runtime_ports.dart';
 import 'package:omodscan_mobile/runtime/fakes/demo_fixtures.dart';
+import 'package:omodscan_mobile/services/discovered_device_list.dart';
 import 'package:omodscan_mobile/services/device_repository.dart';
+import 'package:omodscan_mobile/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers.dart';
@@ -55,6 +61,58 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Device deleted'), findsNothing);
+  });
+
+  testWidgets('Device screen app bar uses device name without card duplicate', (
+    WidgetTester tester,
+  ) async {
+    const longName =
+        'Boiler Room Main Controller With A Very Long Descriptive Name';
+    await DeviceRepository.instance.replaceAll([
+      DeviceInfo(
+        id: 'long-name-device',
+        name: longName,
+        host: '192.168.100.123',
+        port: 502,
+        protocol: ProtocolType.modbusTcp,
+        unitId: 6,
+      ),
+    ]);
+    final controller = DevicesController(
+      DeviceRepository.instance,
+      PollingConnectionRuntime(),
+      _IdleScanner(),
+      AppSettings.instance,
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: DeviceScreen(
+          deviceId: 'long-name-device',
+          controller: controller,
+          onOpenRegisters: (_) {},
+          onOpenTraffic: (_) {},
+        ),
+      ),
+    );
+
+    expect(find.byType(DeviceScreen), findsOneWidget);
+    expect(find.text(longName), findsOneWidget);
+    expect(find.text('192.168.100.123:502'), findsOneWidget);
+    expect(find.text('Modbus TCP'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is RichText &&
+            widget.text.toPlainText().contains('OpenModScan'),
+      ),
+      findsNothing,
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('New device name is prefilled and required', (
@@ -154,4 +212,39 @@ void main() {
 
     expect(find.text('Name already exists'), findsNothing);
   });
+}
+
+class _IdleScanner extends ChangeNotifier implements DeviceScannerPort {
+  @override
+  final discoveredDevices = DiscoveredDeviceList();
+
+  @override
+  ScannerStateView get state => ScannerStateView.idle;
+
+  @override
+  int get scannedCount => 0;
+
+  @override
+  int get totalCount => 0;
+
+  @override
+  double get progress => 0;
+
+  @override
+  String? get scanCidr => null;
+
+  @override
+  DateTime? get scanStartedAt => null;
+
+  @override
+  ProtocolType? get scanProtocol => null;
+
+  @override
+  Future<void> startScan(DeviceScanRequest request) async {}
+
+  @override
+  void stopScan() {}
+
+  @override
+  void clearResults() {}
 }

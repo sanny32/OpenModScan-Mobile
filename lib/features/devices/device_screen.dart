@@ -140,19 +140,12 @@ class _DeviceScreenState extends State<DeviceScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: l10n.appBarName,
-                style: tt.titleLarge!.copyWith(color: cs.onSurface),
-              ),
-              TextSpan(
-                text: l10n.appBarNameSuffix,
-                style: tt.titleLarge!.copyWith(color: appColors.brandGreen),
-              ),
-            ],
-          ),
+        title: Text(
+          _device.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          softWrap: false,
+          style: tt.titleLarge!.copyWith(color: cs.onSurface),
         ),
         actions: [
           IconButton(
@@ -376,14 +369,18 @@ class _PlcCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(device.name, style: tt.titleMedium),
-                  const SizedBox(height: 2),
                   Text(
                     device.address,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
                     style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
                   ),
                   Text(
                     device.protocolName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
                     style: tt.bodySmall!.copyWith(color: cs.primary),
                   ),
                 ],
