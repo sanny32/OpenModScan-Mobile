@@ -9,6 +9,7 @@ import '../../models/register_address_type.dart';
 import '../../models/register_entry.dart';
 import '../../models/register_list.dart';
 import '../../models/status_entry.dart';
+import '../../services/modbus_client.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/connection_info_bar.dart';
 import '../../widgets/connection_status_chip.dart';
@@ -55,8 +56,12 @@ class _RegistersScreenState extends State<RegistersScreen>
   String _listSignature = '';
   int _activeList = 0;
   var _activeTab = 0;
+  var _deviceValueState = RegisterValueState.received;
+  String? _deviceValueStatusLabel;
   var _registerValueState = RegisterValueState.received;
   String? _registerValueStatusLabel;
+  var _statusValueState = RegisterValueState.received;
+  String? _statusValueStatusLabel;
 
   DeviceInfo? get _selectedDevice => widget.controller.selectedDevice;
   bool get _screenActive => widget.screenActive?.value ?? true;
@@ -142,8 +147,12 @@ class _RegistersScreenState extends State<RegistersScreen>
     if (!mounted) return;
     final signature = _currentListSignature;
     if (signature != _listSignature) {
+      _deviceValueState = RegisterValueState.received;
+      _deviceValueStatusLabel = null;
       _registerValueState = RegisterValueState.received;
       _registerValueStatusLabel = null;
+      _statusValueState = RegisterValueState.received;
+      _statusValueStatusLabel = null;
       for (final list in _lists) {
         list.dispose();
       }
@@ -162,11 +171,15 @@ class _RegistersScreenState extends State<RegistersScreen>
     }
     if (_selectedDevice != null &&
         !widget.controller.isConnected(_selectedDevice!)) {
-      _registerValueState = RegisterValueState.unavailable;
-      _registerValueStatusLabel = null;
-    } else if (_registerValueState == RegisterValueState.unavailable) {
+      _deviceValueState = RegisterValueState.unavailable;
+      _deviceValueStatusLabel = null;
       _registerValueState = RegisterValueState.received;
       _registerValueStatusLabel = null;
+      _statusValueState = RegisterValueState.received;
+      _statusValueStatusLabel = null;
+    } else if (_deviceValueState == RegisterValueState.unavailable) {
+      _deviceValueState = RegisterValueState.received;
+      _deviceValueStatusLabel = null;
     }
     setState(() {});
   }
@@ -304,9 +317,19 @@ class _RegistersScreenState extends State<RegistersScreen>
         _selectedDevice != null &&
         widget.controller.isConnected(_selectedDevice!);
     final appColors = Theme.of(context).extension<AppColors>()!;
-    final showRegisterException =
+    final effectiveRegisterValueState = _effectiveValueState(
+      _registerValueState,
+    );
+    final effectiveStatusValueState = _effectiveValueState(_statusValueState);
+    final activeValueState = _activeTab == 1
+        ? effectiveStatusValueState
+        : effectiveRegisterValueState;
+    final activeValueStatusLabel = _activeTab == 1
+        ? _effectiveValueStatusLabel(_statusValueStatusLabel)
+        : _effectiveValueStatusLabel(_registerValueStatusLabel);
+    final showValueException =
         selectedDeviceConnected &&
-        _registerValueState == RegisterValueState.exception;
+        activeValueState == RegisterValueState.exception;
 
     return Scaffold(
       appBar: AppBar(
@@ -330,12 +353,10 @@ class _RegistersScreenState extends State<RegistersScreen>
             const SizedBox(height: 2),
             ConnectionStatusChip(
               connected: selectedDeviceConnected,
-              label: showRegisterException
-                  ? _registerValueStatusLabel ?? 'Modbus exception'
+              label: showValueException
+                  ? activeValueStatusLabel ?? 'Modbus exception'
                   : null,
-              color: showRegisterException
-                  ? appColors.exceptionValueColor
-                  : null,
+              color: showValueException ? appColors.exceptionValueColor : null,
             ),
           ],
         ),
@@ -426,17 +447,8 @@ class _RegistersScreenState extends State<RegistersScreen>
                   referenceRegisters: widget.controller.referenceRegisters,
                   isConnected: selectedDeviceConnected,
                   canRead: selectedDeviceConnected,
-                  valueState: _registerValueState,
-                  onValueStateChanged: (state, label) {
-                    if (_registerValueState == state &&
-                        _registerValueStatusLabel == label) {
-                      return;
-                    }
-                    setState(() {
-                      _registerValueState = state;
-                      _registerValueStatusLabel = label;
-                    });
-                  },
+                  valueState: effectiveRegisterValueState,
+                  onValueStateChanged: _onRegisterValueStateChanged,
                   onRead: widget.controller.readRegisters,
                   onEntryChanged: _onEntryChanged,
                   onValueWritten: _onValueWritten,
@@ -460,6 +472,8 @@ class _RegistersScreenState extends State<RegistersScreen>
                   lastReadAt: widget.controller.lastStatusReadAt,
                   referenceStatuses: widget.controller.referenceStatuses,
                   canRead: selectedDeviceConnected,
+                  valueState: effectiveStatusValueState,
+                  onValueStateChanged: _onStatusValueStateChanged,
                   onRead: widget.controller.readStatuses,
                   onEntryChanged: (address, comment) => widget.controller
                       .updateStatusEntry(active.coilType, address, comment),
@@ -493,5 +507,65 @@ class _RegistersScreenState extends State<RegistersScreen>
     if (_activeTab != index) {
       setState(() => _activeTab = index);
     }
+  }
+
+  RegisterValueState _effectiveValueState(RegisterValueState localState) =>
+      _deviceValueState == RegisterValueState.received
+      ? localState
+      : _deviceValueState;
+
+  String? _effectiveValueStatusLabel(String? localLabel) =>
+      _deviceValueState == RegisterValueState.exception
+      ? _deviceValueStatusLabel
+      : localLabel;
+
+  void _onRegisterValueStateChanged(
+    RegisterValueState state,
+    String? label, {
+    required bool shared,
+  }) {
+    _setValueState(
+      state: state,
+      label: label,
+      shared: shared,
+      updateLocal: () {
+        _registerValueState = state;
+        _registerValueStatusLabel = label;
+      },
+    );
+  }
+
+  void _onStatusValueStateChanged(
+    RegisterValueState state,
+    String? label, {
+    required bool shared,
+  }) {
+    _setValueState(
+      state: state,
+      label: label,
+      shared: shared,
+      updateLocal: () {
+        _statusValueState = state;
+        _statusValueStatusLabel = label;
+      },
+    );
+  }
+
+  void _setValueState({
+    required RegisterValueState state,
+    required String? label,
+    required bool shared,
+    required VoidCallback updateLocal,
+  }) {
+    setState(() {
+      if (shared) {
+        _deviceValueState = state;
+        _deviceValueStatusLabel = label;
+      } else {
+        _deviceValueState = RegisterValueState.received;
+        _deviceValueStatusLabel = null;
+        updateLocal();
+      }
+    });
   }
 }

@@ -108,3 +108,55 @@ class ThrowingRegisterConnectionRuntime extends PollingConnectionRuntime {
     throw error;
   }
 }
+
+class ThrowingStatusConnectionRuntime extends PollingConnectionRuntime {
+  final Object error;
+
+  ThrowingStatusConnectionRuntime({Object? error})
+    : error =
+          error ??
+          ModbusClientException.modbus(ModbusExceptionCode.illegalDataAddress);
+
+  @override
+  Future<List<bool>> readCoils(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  }) async {
+    coilReadCount++;
+    throw error;
+  }
+
+  @override
+  Future<List<bool>> readDiscreteInputs(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  }) async {
+    coilReadCount++;
+    throw error;
+  }
+}
+
+class FlakyStatusConnectionRuntime extends PollingConnectionRuntime {
+  var failReads = true;
+  final Object error;
+
+  FlakyStatusConnectionRuntime({Object? error})
+    : error =
+          error ??
+          ModbusClientException.modbus(ModbusExceptionCode.illegalDataAddress);
+
+  @override
+  Future<List<bool>> readCoils(
+    DeviceInfo device, {
+    required int startAddress,
+    required int count,
+  }) async {
+    if (failReads) {
+      coilReadCount++;
+      throw error;
+    }
+    return super.readCoils(device, startAddress: startAddress, count: count);
+  }
+}

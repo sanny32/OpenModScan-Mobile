@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omodscan_mobile/features/devices/device_screen.dart';
@@ -635,6 +637,30 @@ void main() {
     returnDeviceId.dispose();
   });
 
+  testWidgets('Non-Modbus register errors apply to status values', (
+    WidgetTester tester,
+  ) async {
+    final connections = ThrowingRegisterConnectionRuntime(
+      error: TimeoutException('Request timed out'),
+    );
+    final harness = await _pumpStatusHarness(tester, connections);
+
+    await tester.tap(find.text('Read').hitTestable());
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(Tab, 'Status'));
+    await tester.pumpAndSettle();
+
+    final statusSwitch = tester.widget<Switch>(find.byType(Switch).last);
+    expect(statusSwitch.onChanged, isNull);
+    expect(
+      statusSwitch.thumbColor?.resolve({}),
+      AppColors.light.exceptionValueColor,
+    );
+    expect(find.text('Request timed out'), findsWidgets);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
   testWidgets('Status tab shows SegmentedButton with 0xxxx and 1xxxx', (
     WidgetTester tester,
   ) async {
@@ -678,6 +704,158 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     controller.dispose();
     returnDeviceId.dispose();
+  });
+
+  testWidgets('Status error values use exception switch color', (
+    WidgetTester tester,
+  ) async {
+    final connections = ThrowingStatusConnectionRuntime();
+    final harness = await _pumpStatusHarness(tester, connections);
+
+    await tester.tap(find.widgetWithText(Tab, 'Status'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Read').hitTestable());
+    await tester.pumpAndSettle();
+
+    final statusSwitch = tester.widget<Switch>(find.byType(Switch).last);
+    expect(statusSwitch.onChanged, isNull);
+    expect(
+      statusSwitch.thumbColor?.resolve({}),
+      AppColors.light.exceptionValueColor,
+    );
+    expect(
+      statusSwitch.trackColor?.resolve({}),
+      AppColors.light.exceptionValueColor.withAlpha(77),
+    );
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Status error switch color survives tab switches', (
+    WidgetTester tester,
+  ) async {
+    final connections = ThrowingStatusConnectionRuntime();
+    final harness = await _pumpStatusHarness(tester, connections);
+
+    await tester.tap(find.widgetWithText(Tab, 'Status'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Read').hitTestable());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(Tab, 'Registers'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(Tab, 'Status'));
+    await tester.pumpAndSettle();
+
+    final statusSwitch = tester.widget<Switch>(find.byType(Switch).last);
+    expect(
+      statusSwitch.thumbColor?.resolve({}),
+      AppColors.light.exceptionValueColor,
+    );
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Status error disables writable switches', (
+    WidgetTester tester,
+  ) async {
+    final connections = ThrowingStatusConnectionRuntime();
+    final harness = await _pumpStatusHarness(tester, connections);
+
+    await tester.tap(find.widgetWithText(Tab, 'Status'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Read').hitTestable());
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<Switch>(find.byType(Switch).last).onChanged, isNull);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Successful status read clears error switch state', (
+    WidgetTester tester,
+  ) async {
+    final connections = FlakyStatusConnectionRuntime();
+    final harness = await _pumpStatusHarness(tester, connections);
+
+    await tester.tap(find.widgetWithText(Tab, 'Status'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Read').hitTestable());
+    await tester.pumpAndSettle();
+
+    var statusSwitch = tester.widget<Switch>(find.byType(Switch).last);
+    expect(statusSwitch.onChanged, isNull);
+    expect(
+      statusSwitch.thumbColor?.resolve({}),
+      AppColors.light.exceptionValueColor,
+    );
+
+    connections.failReads = false;
+    await tester.tap(find.text('Read').hitTestable());
+    await tester.pumpAndSettle();
+
+    statusSwitch = tester.widget<Switch>(find.byType(Switch).last);
+    expect(statusSwitch.onChanged, isNotNull);
+    expect(statusSwitch.thumbColor, isNull);
+    expect(statusSwitch.trackColor, isNull);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Non-Modbus status errors apply to register values', (
+    WidgetTester tester,
+  ) async {
+    final connections = ThrowingStatusConnectionRuntime(
+      error: TimeoutException('Request timed out'),
+    );
+    final harness = await _pumpStatusHarness(tester, connections);
+
+    await tester.tap(find.widgetWithText(Tab, 'Status'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Read').hitTestable());
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(Tab, 'Registers'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Text &&
+            widget.data == '0' &&
+            widget.style?.color == AppColors.light.exceptionValueColor,
+      ),
+      findsWidgets,
+    );
+    expect(find.text('Request timed out'), findsWidgets);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Status Modbus exception does not affect register values', (
+    WidgetTester tester,
+  ) async {
+    final connections = ThrowingStatusConnectionRuntime();
+    final harness = await _pumpStatusHarness(tester, connections);
+
+    await tester.tap(find.widgetWithText(Tab, 'Status'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Read').hitTestable());
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(Tab, 'Registers'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Connected'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Text &&
+            widget.data == '0' &&
+            widget.style?.color == AppColors.light.exceptionValueColor,
+      ),
+      findsNothing,
+    );
+
+    await _disposeRegistersHarness(tester, harness);
   });
 
   testWidgets('Shared list dropdown switches between tabs and lists', (
@@ -1234,6 +1412,54 @@ Future<_RegistersHarness> _pumpRegistersHarness(
   final controller = RegistersController(
     DeviceRepository.instance,
     PollingConnectionRuntime(),
+    const DemoRegisterRuntime(enabled: false),
+  );
+  final returnDeviceId = ValueNotifier<String?>(null);
+
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: AppTheme.lightTheme,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: RegistersScreen(
+        controller: controller,
+        returnDeviceId: returnDeviceId,
+        onReturnToDevice: () {},
+      ),
+    ),
+  );
+  await tester.pump();
+
+  return (controller: controller, returnDeviceId: returnDeviceId);
+}
+
+Future<_RegistersHarness> _pumpStatusHarness(
+  WidgetTester tester,
+  PollingConnectionRuntime connections,
+) async {
+  final device = DeviceInfo(
+    id: 'status-error-device',
+    name: 'Status Error PLC',
+    host: '127.0.0.41',
+    port: 502,
+    protocol: ProtocolType.modbusTcp,
+    unitId: 1,
+    registerLists: [
+      RegisterList(
+        id: 'status-error-list',
+        name: 'Status Error List',
+        autoRefresh: false,
+        coilAutoRefresh: false,
+        coilCount: 1,
+      ),
+    ],
+  );
+  await DeviceRepository.instance.replaceAll([device]);
+  await connections.connect(device);
+
+  final controller = RegistersController(
+    DeviceRepository.instance,
+    connections,
     const DemoRegisterRuntime(enabled: false),
   );
   final returnDeviceId = ValueNotifier<String?>(null);

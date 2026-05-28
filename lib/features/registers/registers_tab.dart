@@ -20,7 +20,11 @@ class _RegistersTab extends StatefulWidget {
   final bool isConnected;
   final bool canRead;
   final RegisterValueState valueState;
-  final void Function(RegisterValueState state, String? label)
+  final void Function(
+    RegisterValueState state,
+    String? label, {
+    required bool shared,
+  })
   onValueStateChanged;
   final Future<void> Function({
     required String regType,
@@ -158,7 +162,16 @@ class _RegistersTabState extends State<_RegistersTab> {
         count: count,
       );
       if (!mounted) return;
-      widget.onValueStateChanged(RegisterValueState.received, null);
+      widget.onValueStateChanged(
+        RegisterValueState.received,
+        null,
+        shared: true,
+      );
+      widget.onValueStateChanged(
+        RegisterValueState.received,
+        null,
+        shared: false,
+      );
     } catch (error) {
       if (mounted) {
         final valueState = _valueStateForReadError(error);
@@ -167,6 +180,7 @@ class _RegistersTabState extends State<_RegistersTab> {
           valueState == RegisterValueState.exception
               ? _readErrorLabel(context, error)
               : null,
+          shared: !_isModbusExceptionError(error),
         );
       }
       if (!mounted || !showErrors) return;
@@ -401,6 +415,10 @@ RegisterValueState _valueStateForReadError(Object error) {
     return RegisterValueState.unavailable;
   }
   return RegisterValueState.exception;
+}
+
+bool _isModbusExceptionError(Object error) {
+  return error is ModbusClientException && error.exceptionCode != null;
 }
 
 String _readErrorLabel(BuildContext context, Object error) {

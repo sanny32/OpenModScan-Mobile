@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../../models/register_entry.dart';
 import '../../../models/status_entry.dart';
+import '../../../theme/app_theme.dart';
 import '../status_detail_screen.dart';
 
 class StatusRow extends StatelessWidget {
   final StatusEntry entry;
+  final RegisterValueState valueState;
   final bool canWrite;
   final ValueChanged<bool>? onChanged;
   final void Function(int address, String? comment)? onEntryChanged;
@@ -12,6 +15,7 @@ class StatusRow extends StatelessWidget {
   const StatusRow({
     super.key,
     required this.entry,
+    required this.valueState,
     required this.canWrite,
     required this.onChanged,
     required this.onEntryChanged,
@@ -21,6 +25,9 @@ class StatusRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final appColors = Theme.of(context).extension<AppColors>()!;
+    final exceptionColor = appColors.exceptionValueColor;
+    final isException = valueState == RegisterValueState.exception;
 
     return InkWell(
       onTap: () => Navigator.push(
@@ -66,6 +73,12 @@ class StatusRow extends StatelessWidget {
                 child: Switch(
                   value: entry.value,
                   onChanged: canWrite ? onChanged : null,
+                  thumbColor: isException
+                      ? WidgetStatePropertyAll(exceptionColor)
+                      : null,
+                  trackColor: isException
+                      ? WidgetStatePropertyAll(exceptionColor.withAlpha(77))
+                      : null,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),

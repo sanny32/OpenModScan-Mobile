@@ -18,6 +18,13 @@ class _StatusTab extends StatefulWidget {
   final List<StatusEntry> Function(int startAddress, int count)
   referenceStatuses;
   final bool canRead;
+  final RegisterValueState valueState;
+  final void Function(
+    RegisterValueState state,
+    String? label, {
+    required bool shared,
+  })
+  onValueStateChanged;
   final Future<void> Function({
     required String statusType,
     required int startAddress,
@@ -43,6 +50,8 @@ class _StatusTab extends StatefulWidget {
     required this.lastReadAt,
     required this.referenceStatuses,
     required this.canRead,
+    required this.valueState,
+    required this.onValueStateChanged,
     required this.onRead,
     required this.onEntryChanged,
   });
@@ -151,7 +160,27 @@ class _StatusTabState extends State<_StatusTab> {
         count: count,
       );
       if (!mounted) return;
+      widget.onValueStateChanged(
+        RegisterValueState.received,
+        null,
+        shared: true,
+      );
+      widget.onValueStateChanged(
+        RegisterValueState.received,
+        null,
+        shared: false,
+      );
     } catch (error) {
+      if (mounted) {
+        final valueState = _valueStateForReadError(error);
+        widget.onValueStateChanged(
+          valueState,
+          valueState == RegisterValueState.exception
+              ? _readErrorLabel(context, error)
+              : null,
+          shared: !_isModbusExceptionError(error),
+        );
+      }
       if (!mounted || !showErrors) return;
       showErrorSnackBar(context, error);
     } finally {
@@ -255,9 +284,11 @@ class _StatusTabState extends State<_StatusTab> {
             separatorBuilder: (_, _) => Divider(height: 1, color: dividerColor),
             itemBuilder: (context, i) => StatusRow(
               entry: visibleStatuses[i],
+              valueState: widget.valueState,
               canWrite: _canWrite,
               onEntryChanged: widget.onEntryChanged,
-              onChanged: _canWrite
+              onChanged:
+                  _canWrite && widget.valueState != RegisterValueState.exception
                   ? (value) => setState(() {
                       _manualValues[visibleStatuses[i].address] = value;
                     })
