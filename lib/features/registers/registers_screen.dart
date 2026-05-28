@@ -426,6 +426,7 @@ class _RegistersScreenState extends State<RegistersScreen>
                   referenceRegisters: widget.controller.referenceRegisters,
                   isConnected: selectedDeviceConnected,
                   canRead: selectedDeviceConnected,
+                  valueState: _registerValueState,
                   onValueStateChanged: (state, label) {
                     if (_registerValueState == state &&
                         _registerValueStatusLabel == label) {

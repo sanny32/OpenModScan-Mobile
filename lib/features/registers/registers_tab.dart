@@ -19,6 +19,7 @@ class _RegistersTab extends StatefulWidget {
   referenceRegisters;
   final bool isConnected;
   final bool canRead;
+  final RegisterValueState valueState;
   final void Function(RegisterValueState state, String? label)
   onValueStateChanged;
   final Future<void> Function({
@@ -49,6 +50,7 @@ class _RegistersTab extends StatefulWidget {
     required this.referenceRegisters,
     required this.isConnected,
     required this.canRead,
+    required this.valueState,
     required this.onValueStateChanged,
     required this.onRead,
     required this.onEntryChanged,
@@ -62,7 +64,6 @@ class _RegistersTab extends StatefulWidget {
 class _RegistersTabState extends State<_RegistersTab> {
   var _reading = false;
   var _manualReadInProgress = false;
-  var _readValueState = RegisterValueState.received;
   final _expandedRegisterGroups = <int>{};
   Timer? _autoRefreshTimer;
 
@@ -96,9 +97,6 @@ class _RegistersTabState extends State<_RegistersTab> {
         old.isConnected != widget.isConnected ||
         old.canRead != widget.canRead ||
         old.regType != widget.regType) {
-      if (!widget.isConnected) {
-        _readValueState = RegisterValueState.unavailable;
-      }
       _syncAutoRefresh(
         readImmediately:
             widget.autoRefresh &&
@@ -160,14 +158,13 @@ class _RegistersTabState extends State<_RegistersTab> {
         count: count,
       );
       if (!mounted) return;
-      setState(() => _readValueState = RegisterValueState.received);
-      widget.onValueStateChanged(_readValueState, null);
+      widget.onValueStateChanged(RegisterValueState.received, null);
     } catch (error) {
       if (mounted) {
-        setState(() => _readValueState = _valueStateForReadError(error));
+        final valueState = _valueStateForReadError(error);
         widget.onValueStateChanged(
-          _readValueState,
-          _readValueState == RegisterValueState.exception
+          valueState,
+          valueState == RegisterValueState.exception
               ? _readErrorLabel(context, error)
               : null,
         );
@@ -220,11 +217,11 @@ class _RegistersTabState extends State<_RegistersTab> {
       final rawStr = runtime?.$1 ?? mock?.value ?? '0';
       final valueState = !widget.isConnected
           ? RegisterValueState.unavailable
-          : _readValueState == RegisterValueState.exception
+          : widget.valueState == RegisterValueState.exception
           ? RegisterValueState.exception
           : runtime == null && mock == null
           ? RegisterValueState.unavailable
-          : _readValueState;
+          : widget.valueState;
       return RegisterEntry(
         address: addr,
         value: rawStr,
