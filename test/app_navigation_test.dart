@@ -110,7 +110,7 @@ void main() {
         (widget) =>
             widget is Icon &&
             widget.icon == Icons.wifi &&
-            widget.color == AppColors.light.disconnectedColor &&
+            widget.color == AppTheme.lightTheme.colorScheme.onSurfaceVariant &&
             widget.semanticLabel == 'Disconnected',
       ),
       findsOneWidget,

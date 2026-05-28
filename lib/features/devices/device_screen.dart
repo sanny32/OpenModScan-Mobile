@@ -393,7 +393,7 @@ class _PlcCard extends StatelessWidget {
                   semanticLabel: statusLabel,
                   color: connected
                       ? appColors.connectedColor
-                      : appColors.disconnectedColor,
+                      : cs.onSurfaceVariant,
                   size: 22,
                 ),
                 const SizedBox(height: 4),
