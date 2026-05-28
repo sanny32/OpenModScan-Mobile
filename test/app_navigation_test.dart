@@ -46,6 +46,23 @@ void main() {
     expect(find.byType(DeviceScreen), findsOneWidget);
   });
 
+  testWidgets('Tapping active Devices tab returns from device screen', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const OModScanApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('PLC #1').first);
+    await tester.pumpAndSettle();
+    expect(find.byType(DeviceScreen), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.devices));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DeviceScreen), findsNothing);
+    expect(find.text('PLC #1'), findsOneWidget);
+  });
+
   testWidgets('Deleted device snackbar disappears after timeout', (
     WidgetTester tester,
   ) async {

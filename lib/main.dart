@@ -183,6 +183,10 @@ class _AppShellState extends State<AppShell> {
 
   void _selectTab(int index) {
     _registersReturnDeviceId.value = null;
+    if (index == _index) {
+      _navigatorKeys[index].currentState?.popUntil((route) => route.isFirst);
+      return;
+    }
     _setTabIndex(index);
   }
 
