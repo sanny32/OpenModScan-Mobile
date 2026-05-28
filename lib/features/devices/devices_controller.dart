@@ -145,6 +145,9 @@ class DevicesController extends ChangeNotifier {
       _repository.removeRegisterList(deviceId, listId);
 
   Future<void> startScan() {
+    if (_settings.scanClearOnStart) {
+      _scanner.clearResults();
+    }
     return _scanner.startScan(
       DeviceScanRequest(
         protocol: _settings.scanProtocol,

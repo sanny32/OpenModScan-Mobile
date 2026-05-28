@@ -132,6 +132,7 @@
   "settingsScanRequestDiscreteInputs": "Read Discrete Inputs",
   "settingsScanRequestHoldingRegisters": "Read Holding Registers",
   "settingsScanRequestInputRegisters": "Read Input Registers",
+  "settingsScanClearOnStart": "Очищать результаты при новом сканировании",
   "settingsRangeStart": "Начало",
   "settingsRangeEnd": "Конец",
   "settingsSectionReadWrite": "Регистры",

@@ -196,6 +196,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onSubmitted: widget.controller.setScanRequestAddress,
                   ),
                 ),
+                _divider(),
+                _toggleTile(
+                  icon: Icons.cleaning_services_outlined,
+                  label: l10n.settingsScanClearOnStart,
+                  value: _s.scanClearOnStart,
+                  onChanged: widget.controller.setScanClearOnStart,
+                ),
               ],
             ),
             _section(

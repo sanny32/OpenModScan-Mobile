@@ -450,6 +450,9 @@
   "settingsScanRequestInputRegisters": "Read Input Registers",
   "@settingsScanRequestInputRegisters": {},
 
+  "settingsScanClearOnStart": "Clear results on new scan",
+  "@settingsScanClearOnStart": {},
+
   "settingsRangeStart": "Start",
   "@settingsRangeStart": {},
 

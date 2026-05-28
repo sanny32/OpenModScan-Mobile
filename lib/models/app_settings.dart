@@ -34,6 +34,7 @@ class AppSettings {
   static const _scanRequestTypeKey = 'scanRequestType';
   static const _scanRequestAddressKey = 'scanRequestAddress';
   static const _savedDevicesSortModeKey = 'savedDevicesSortMode';
+  static const _scanClearOnStartKey = 'scanClearOnStart';
   static const registerOrders = ['MSRF', 'LSRF'];
   static const byteOrders = ['Direct', 'Swapped'];
   static const addressBases = ['0-based', '1-based'];
@@ -64,6 +65,7 @@ class AppSettings {
       ModbusScanRequestType.holdingRegisters;
   int scanRequestAddress = 0;
   DeviceSortMode savedDevicesSortMode = DeviceSortMode.lastConnected;
+  bool scanClearOnStart = true;
 
   final showLastValuesNotifier = ValueNotifier<bool>(true);
   final showTypeBadgesNotifier = ValueNotifier<bool>(false);
@@ -121,6 +123,7 @@ class AppSettings {
     savedDevicesSortMode = _deviceSortModeFromValue(
       _getString(prefs, _savedDevicesSortModeKey),
     );
+    scanClearOnStart = prefs.getBool(_scanClearOnStartKey) ?? true;
     themeModeNotifier.value = _themeModeFromValue(
       _getString(prefs, _themeModeKey),
     );
@@ -226,6 +229,11 @@ class AppSettings {
     await _saveEditableValues();
   }
 
+  Future<void> setScanClearOnStart(bool value) async {
+    scanClearOnStart = value;
+    await _saveEditableValues();
+  }
+
   Future<void> resetToDefaults() async {
     connectionType = 'Modbus TCP';
     timeout = 1000;
@@ -251,6 +259,7 @@ class AppSettings {
     scanRequestType = ModbusScanRequestType.holdingRegisters;
     scanRequestAddress = 0;
     savedDevicesSortMode = DeviceSortMode.lastConnected;
+    scanClearOnStart = true;
     await _saveEditableValues();
     await _setThemeMode(ThemeMode.system);
     await _setLocale(null);
@@ -282,6 +291,7 @@ class AppSettings {
     await prefs.setString(_scanRequestTypeKey, scanRequestType.name);
     await prefs.setInt(_scanRequestAddressKey, scanRequestAddress);
     await prefs.setString(_savedDevicesSortModeKey, savedDevicesSortMode.name);
+    await prefs.setBool(_scanClearOnStartKey, scanClearOnStart);
   }
 
   Future<void> _setThemeMode(ThemeMode value) async {

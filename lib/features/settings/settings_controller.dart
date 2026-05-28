@@ -94,6 +94,11 @@ class SettingsController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setScanClearOnStart(bool value) async {
+    await settings.setScanClearOnStart(value);
+    notifyListeners();
+  }
+
   Future<void> resetToDefaults() async {
     await settings.resetToDefaults();
     notifyListeners();
