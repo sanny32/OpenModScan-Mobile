@@ -174,7 +174,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
     final discovered = widget.controller.discoveredDevices;
-    final visibleSavedDevices = widget.controller.visibleHomeDevices;
+    final visibleSavedDevices = widget.controller.visibleHomeDevices();
     final hiddenSavedDeviceCount =
         widget.controller.devices.length - visibleSavedDevices.length;
     final canClearDiscovered =
@@ -329,12 +329,56 @@ class _DevicesScreenState extends State<DevicesScreen> {
                           );
                         },
                       )
-                    : ListView(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        children: [
-                          ...savedChildren,
-                          if (hasDiscoveredDevices) ...discoveredChildren,
-                        ],
+                    : LayoutBuilder(
+                        builder: (context, constraints) {
+                          // DevicesSectionHeader: 36pt
+                          // DeviceCard (with Card margin): 80pt
+                          // _SavedDevicesFooter (with Card margin): 60pt
+                          const headerH = 36.0;
+                          const cardH = 80.0;
+                          const footerH = 60.0;
+                          final total = widget.controller.devices.length;
+                          final filtered =
+                              widget.controller.filteredDevices.length;
+                          int savedLimit;
+                          if (filtered == 0) {
+                            savedLimit = 0;
+                          } else {
+                            final fitsAll = ((constraints.maxHeight - headerH) /
+                                    cardH)
+                                .floor();
+                            if (fitsAll >= filtered) {
+                              savedLimit = filtered;
+                            } else {
+                              savedLimit = ((constraints.maxHeight -
+                                          headerH -
+                                          footerH) /
+                                      cardH)
+                                  .floor()
+                                  .clamp(1, filtered);
+                            }
+                          }
+                          final nsVisible = widget.controller.visibleHomeDevices(
+                            savedLimit,
+                          );
+                          final nsHidden = total - nsVisible.length;
+                          return ListView(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            children: [
+                              DevicesSectionHeader(
+                                title: l10n.devicesSavedConnections,
+                              ),
+                              ...nsVisible.map(buildDismissible),
+                              if (nsHidden > 0)
+                                _SavedDevicesFooter(
+                                  hiddenCount: nsHidden,
+                                  totalCount: total,
+                                  onShowAll: _openSavedDevices,
+                                ),
+                              if (hasDiscoveredDevices) ...discoveredChildren,
+                            ],
+                          );
+                        },
                       ),
               ),
               _ScanNetworkDock(

@@ -31,11 +31,23 @@ class DevicesController extends ChangeNotifier {
   List<DeviceInfo> get savedDevicesSortedNewestFirst =>
       _sortByCreatedNewestFirst(devices);
 
-  List<DeviceInfo> get visibleHomeDevices {
+  List<DeviceInfo> visibleHomeDevices([int limit = 3]) {
     final filtered = filteredDevices;
-    final favorites = filtered.where((device) => device.isFavorite).toList();
-    final source = favorites.isNotEmpty ? favorites : filtered;
-    return _sortByCreatedNewestFirst(source).take(3).toList();
+    final favorites = filtered.where((d) => d.isFavorite).toList();
+    final sortedFavs = _sortByCreatedNewestFirst(favorites);
+    if (favorites.isEmpty) {
+      return _sortByCreatedNewestFirst(filtered).take(limit).toList();
+    }
+    if (sortedFavs.length >= limit) {
+      return sortedFavs.take(limit).toList();
+    }
+    final sortedNonFavs = _sortByCreatedNewestFirst(
+      filtered.where((d) => !d.isFavorite).toList(),
+    );
+    return [
+      ...sortedFavs,
+      ...sortedNonFavs.take(limit - sortedFavs.length),
+    ];
   }
 
   List<DeviceInfo> get filteredDevices =>

@@ -241,19 +241,9 @@ void main() {
     expect(savedTop, lessThan(scanCenter.dy));
     expect(find.text('Device #5'), findsOneWidget);
     expect(find.text('Device #3'), findsOneWidget);
-    expect(find.text('Device #2'), findsNothing);
-    expect(find.text('+ 2 more'), findsOneWidget);
-    expect(find.text('Show all (5)'), findsOneWidget);
-    expect(scanCenter.dy, lessThan(navTop));
-
-    await tester.tap(find.text('Show all (5)'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Saved connections'), findsWidgets);
-    expect(find.text('Device #5'), findsOneWidget);
+    expect(find.text('Device #2'), findsOneWidget);
     expect(find.text('Device #1'), findsOneWidget);
-    expect(find.text('Last connected'), findsOneWidget);
-    expect(find.text('Created'), findsOneWidget);
+    expect(scanCenter.dy, lessThan(navTop));
   });
 
   testWidgets('favorites are preferred on devices preview', (tester) async {
@@ -293,7 +283,11 @@ void main() {
     );
 
     expect(find.text('Favorite Old'), findsOneWidget);
-    expect(find.text('Newest'), findsNothing);
+    expect(find.text('Newest'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Favorite Old')).dy,
+      lessThan(tester.getTopLeft(find.text('Newest')).dy),
+    );
   });
 
   testWidgets('device card uses selected marker color for memory icon', (
@@ -369,6 +363,11 @@ void main() {
   testWidgets('saved devices screen searches and persists sort mode', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(393, 400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await DeviceRepository.instance.replaceAll([
       DeviceInfo(
         name: 'Created New',
@@ -715,6 +714,7 @@ void main() {
         ),
       ],
     );
+    AppSettings.instance.scanClearOnStart = false;
     final controller = DevicesController(
       DeviceRepository.instance,
       PollingConnectionRuntime(),
@@ -827,6 +827,7 @@ void main() {
         ),
       ],
     );
+    AppSettings.instance.scanClearOnStart = false;
     final controller = DevicesController(
       DeviceRepository.instance,
       PollingConnectionRuntime(),
