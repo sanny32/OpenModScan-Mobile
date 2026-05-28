@@ -350,6 +350,30 @@
   "labelName": "Name",
   "@labelName": {},
 
+  "deviceMarkerColor": "Marker color",
+  "@deviceMarkerColor": {},
+
+  "deviceMarkerColorBlue": "Blue",
+  "@deviceMarkerColorBlue": {},
+
+  "deviceMarkerColorGreen": "Green",
+  "@deviceMarkerColorGreen": {},
+
+  "deviceMarkerColorAmber": "Amber",
+  "@deviceMarkerColorAmber": {},
+
+  "deviceMarkerColorRed": "Red",
+  "@deviceMarkerColorRed": {},
+
+  "deviceMarkerColorPurple": "Purple",
+  "@deviceMarkerColorPurple": {},
+
+  "deviceMarkerColorTeal": "Teal",
+  "@deviceMarkerColorTeal": {},
+
+  "deviceMarkerColorGray": "Gray",
+  "@deviceMarkerColorGray": {},
+
   "nameRequired": "Name is required",
   "@nameRequired": {},
 

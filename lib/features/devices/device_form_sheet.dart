@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../l10n/l10n.dart';
 import '../../models/device_info.dart';
+import 'device_marker_color_palette.dart';
 
 class DeviceFormResult {
   final DeviceInfo device;
@@ -30,6 +31,7 @@ class DeviceFormSheet extends StatefulWidget {
 
 class _DeviceFormSheetState extends State<DeviceFormSheet> {
   late int _connType;
+  late DeviceMarkerColor _markerColor;
   late final TextEditingController _nameCtrl;
   late final TextEditingController _hostCtrl;
   late final TextEditingController _portCtrl;
@@ -46,6 +48,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
     super.initState();
     final d = widget.initial;
     _connType = d?.protocol == ProtocolType.modbusRtuIp ? 1 : 0;
+    _markerColor = d?.markerColor ?? DeviceMarkerColor.blue;
     _nameCtrl = TextEditingController(text: d?.name ?? '');
     _hostCtrl = TextEditingController(text: d?.host ?? '');
     _portCtrl = TextEditingController(text: (d?.port ?? 502).toString());
@@ -101,6 +104,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
       timeout: int.tryParse(_timeoutCtrl.text) ?? base.timeout,
       reconnectDelay: int.tryParse(_reconnectCtrl.text) ?? base.reconnectDelay,
       notes: _notesCtrl.text,
+      markerColor: _markerColor,
     );
     Navigator.pop(
       context,
@@ -196,6 +200,15 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                     onChanged: (_) {
                       if (_nameError != null) setState(() => _nameError = null);
                     },
+                  ),
+                  const SizedBox(height: 16),
+                  _label(context, l10n.deviceMarkerColor),
+                  const SizedBox(height: 8),
+                  _MarkerColorPicker(
+                    selected: _markerColor,
+                    onSelected: (value) => setState(() {
+                      _markerColor = value;
+                    }),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -328,6 +341,93 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
       ),
     ),
   );
+}
+
+class _MarkerColorPicker extends StatelessWidget {
+  final DeviceMarkerColor selected;
+  final ValueChanged<DeviceMarkerColor> onSelected;
+
+  const _MarkerColorPicker({required this.selected, required this.onSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        for (final markerColor in DeviceMarkerColor.values)
+          _MarkerColorSwatch(
+            markerColor: markerColor,
+            color: markerColor.resolve(cs),
+            label: markerColor.label(l10n),
+            selected: markerColor == selected,
+            onTap: () => onSelected(markerColor),
+          ),
+      ],
+    );
+  }
+}
+
+class _MarkerColorSwatch extends StatelessWidget {
+  final DeviceMarkerColor markerColor;
+  final Color color;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _MarkerColorSwatch({
+    required this.markerColor,
+    required this.color,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final checkColor =
+        ThemeData.estimateBrightnessForColor(color) == Brightness.dark
+        ? Colors.white
+        : Colors.black;
+    return Semantics(
+      label: label,
+      selected: selected,
+      button: true,
+      child: Tooltip(
+        message: label,
+        child: InkResponse(
+          key: ValueKey('device-marker-color-${markerColor.name}'),
+          onTap: onTap,
+          radius: 24,
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: selected
+                    ? Theme.of(context).colorScheme.onSurface
+                    : Theme.of(context).dividerColor,
+                width: selected ? 3 : 1,
+              ),
+            ),
+            child: Center(
+              child: Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                child: selected
+                    ? Icon(Icons.check, size: 18, color: checkColor)
+                    : null,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _TypeCard extends StatelessWidget {

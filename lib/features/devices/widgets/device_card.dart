@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/l10n.dart';
 import '../../../models/device_info.dart';
 import '../../../theme/app_theme.dart';
+import '../device_marker_color_palette.dart';
 
 class DeviceCard extends StatelessWidget {
   final DeviceInfo device;
@@ -26,6 +27,7 @@ class DeviceCard extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>();
     final l10n = context.l10n;
+    final markerColor = device.markerColor.resolve(cs);
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: InkWell(
@@ -46,7 +48,7 @@ class DeviceCard extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
               ),
-              Icon(Icons.memory, color: cs.primary, size: 28),
+              Icon(Icons.memory, color: markerColor, size: 28),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

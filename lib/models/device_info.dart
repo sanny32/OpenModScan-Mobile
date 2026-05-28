@@ -4,6 +4,8 @@ enum ProtocolType { modbusTcp, modbusRtuIp }
 
 enum DeviceSortMode { lastConnected, created }
 
+enum DeviceMarkerColor { blue, green, amber, red, purple, teal, gray }
+
 extension ProtocolTypeX on ProtocolType {
   bool get supportsConnection => switch (this) {
     ProtocolType.modbusTcp => true,
@@ -32,6 +34,7 @@ class DeviceInfo {
   final DateTime createdAt;
   final DateTime? lastConnectedAt;
   final bool isFavorite;
+  final DeviceMarkerColor markerColor;
   final List<RegisterList> registerLists;
 
   DeviceInfo({
@@ -47,6 +50,7 @@ class DeviceInfo {
     DateTime? createdAt,
     this.lastConnectedAt,
     this.isFavorite = false,
+    this.markerColor = DeviceMarkerColor.blue,
     List<RegisterList>? registerLists,
   }) : id = id ?? _nextId(),
        createdAt = createdAt ?? DateTime.now(),
@@ -69,6 +73,7 @@ class DeviceInfo {
     DateTime? lastConnectedAt,
     bool clearLastConnectedAt = false,
     bool? isFavorite,
+    DeviceMarkerColor? markerColor,
     List<RegisterList>? registerLists,
   }) {
     return DeviceInfo(
@@ -86,6 +91,7 @@ class DeviceInfo {
           ? null
           : lastConnectedAt ?? this.lastConnectedAt,
       isFavorite: isFavorite ?? this.isFavorite,
+      markerColor: markerColor ?? this.markerColor,
       registerLists: registerLists ?? List.of(this.registerLists),
     );
   }
@@ -110,6 +116,7 @@ class DeviceInfo {
     'createdAt': createdAt.toIso8601String(),
     'lastConnectedAt': lastConnectedAt?.toIso8601String(),
     'isFavorite': isFavorite,
+    'markerColor': markerColor.name,
     'registerLists': registerLists.map((l) => l.toJson()).toList(),
   };
 
@@ -132,9 +139,18 @@ class DeviceInfo {
     createdAt: _dateTimeFromJson(json['createdAt']) ?? fallbackCreatedAt,
     lastConnectedAt: _dateTimeFromJson(json['lastConnectedAt']),
     isFavorite: (json['isFavorite'] as bool?) ?? false,
+    markerColor: _markerColorFromJson(json['markerColor']),
     registerLists: (json['registerLists'] as List<dynamic>? ?? [])
         .map((e) => RegisterList.fromJson(e as Map<String, dynamic>))
         .toList(),
+  );
+}
+
+DeviceMarkerColor _markerColorFromJson(Object? value) {
+  if (value is! String) return DeviceMarkerColor.blue;
+  return DeviceMarkerColor.values.firstWhere(
+    (color) => color.name == value,
+    orElse: () => DeviceMarkerColor.blue,
   );
 }
 

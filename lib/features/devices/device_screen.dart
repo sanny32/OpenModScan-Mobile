@@ -8,6 +8,7 @@ import '../../navigation/navigation_targets.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/error_feedback.dart';
 import '../registers/register_list_dialogs.dart';
+import 'device_marker_color_palette.dart';
 import 'devices_controller.dart';
 import 'device_form_sheet.dart';
 
@@ -349,6 +350,7 @@ class _PlcCard extends StatelessWidget {
     final statusLabel = connected
         ? l10n.statusConnected
         : l10n.statusDisconnected;
+    final markerColor = device.markerColor.resolve(cs);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -358,10 +360,10 @@ class _PlcCard extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: cs.primary.withAlpha(26),
+                color: markerColor.withAlpha(26),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.memory, color: cs.primary, size: 30),
+              child: Icon(Icons.memory, color: markerColor, size: 30),
             ),
             const SizedBox(width: 14),
             Expanded(

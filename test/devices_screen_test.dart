@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:omodscan_mobile/features/devices/device_form_sheet.dart';
 import 'package:omodscan_mobile/features/devices/devices_controller.dart';
 import 'package:omodscan_mobile/features/devices/devices_screen.dart';
+import 'package:omodscan_mobile/features/devices/widgets/device_card.dart';
 import 'package:omodscan_mobile/l10n/l10n.dart';
 import 'package:omodscan_mobile/models/app_settings.dart';
 import 'package:omodscan_mobile/models/discovered_device.dart';
@@ -292,6 +294,76 @@ void main() {
 
     expect(find.text('Favorite Old'), findsOneWidget);
     expect(find.text('Newest'), findsNothing);
+  });
+
+  testWidgets('device card uses selected marker color for memory icon', (
+    tester,
+  ) async {
+    final device = DeviceInfo(
+      name: 'PLC Purple',
+      host: '192.168.0.50',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      markerColor: DeviceMarkerColor.purple,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: DeviceCard(device: device, connected: false, onTap: () {}),
+        ),
+      ),
+    );
+
+    final memoryIcon = tester.widget<Icon>(find.byIcon(Icons.memory));
+    expect(memoryIcon.color, const Color(0xFF7B1FA2));
+  });
+
+  testWidgets('device form returns selected marker color', (tester) async {
+    DeviceFormResult? result;
+    final initial = DeviceInfo(
+      id: 'device-color-form',
+      name: 'PLC Blue',
+      host: '192.168.0.60',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () {
+                showModalBottomSheet<DeviceFormResult>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) =>
+                      DeviceFormSheet(initial: initial, addMode: true),
+                ).then((value) => result = value);
+              },
+              child: const Text('Open form'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open form'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('device-marker-color-teal')));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(TextButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(result?.device.markerColor, DeviceMarkerColor.teal);
   });
 
   testWidgets('saved devices screen searches and persists sort mode', (
@@ -666,7 +738,10 @@ void main() {
     expect(find.text('Scan completed'), findsOneWidget);
 
     // Not all 10 devices fit — later entries are hidden.
-    expect(find.text('192.168.0.101:502'), findsWidgets); // first device visible
+    expect(
+      find.text('192.168.0.101:502'),
+      findsWidgets,
+    ); // first device visible
     expect(find.text('192.168.0.110:502'), findsNothing); // last device hidden
 
     // Action button is rendered within the visible screen area.
