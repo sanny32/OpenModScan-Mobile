@@ -181,6 +181,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
               side: BorderSide(color: _connected ? cs.error : cs.primary),
               foregroundColor: _connected ? cs.error : cs.primary,
               minimumSize: const Size(double.infinity, 48),
+              textStyle: Theme.of(context).textTheme.titleSmall,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
