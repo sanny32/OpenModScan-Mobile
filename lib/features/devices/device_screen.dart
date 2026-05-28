@@ -6,7 +6,6 @@ import '../../models/register_address_type.dart';
 import '../../models/register_list.dart';
 import '../../navigation/navigation_targets.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/connection_status_chip.dart';
 import '../registers/register_list_dialogs.dart';
 import 'devices_controller.dart';
 import 'device_form_sheet.dart';
@@ -164,8 +163,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          ConnectionStatusChip(connected: _connected),
-          const SizedBox(height: 12),
           _PlcCard(device: _device, connected: _connected),
           const SizedBox(height: 12),
           OutlinedButton(
@@ -350,6 +347,9 @@ class _PlcCard extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>()!;
     final l10n = context.l10n;
+    final statusLabel = connected
+        ? l10n.statusConnected
+        : l10n.statusDisconnected;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -391,9 +391,10 @@ class _PlcCard extends StatelessWidget {
               children: [
                 Icon(
                   Icons.wifi,
+                  semanticLabel: statusLabel,
                   color: connected
                       ? appColors.connectedColor
-                      : cs.onSurfaceVariant,
+                      : appColors.disconnectedColor,
                   size: 22,
                 ),
                 const SizedBox(height: 4),

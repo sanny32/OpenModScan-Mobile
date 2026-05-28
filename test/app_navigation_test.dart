@@ -104,6 +104,17 @@ void main() {
     expect(find.text(longName), findsOneWidget);
     expect(find.text('192.168.100.123:502'), findsOneWidget);
     expect(find.text('Modbus TCP'), findsOneWidget);
+    expect(find.text('Disconnected'), findsNothing);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Icon &&
+            widget.icon == Icons.wifi &&
+            widget.color == AppColors.light.disconnectedColor &&
+            widget.semanticLabel == 'Disconnected',
+      ),
+      findsOneWidget,
+    );
     expect(
       find.byWidgetPredicate(
         (widget) =>
