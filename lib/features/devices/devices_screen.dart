@@ -205,7 +205,6 @@ class _DevicesScreenState extends State<DevicesScreen> {
         device: d,
         connected: widget.controller.isConnected(d),
         favorite: d.isFavorite,
-        onToggleFavorite: () => widget.controller.toggleFavorite(d),
         onTap: () => widget.onOpenDevice(d.id),
       ),
     );

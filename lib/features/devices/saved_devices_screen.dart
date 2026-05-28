@@ -158,9 +158,6 @@ class _SavedDevicesScreenState extends State<SavedDevicesScreen> {
                       device: device,
                       connected: widget.controller.isConnected(device),
                       favorite: device.isFavorite,
-                      onToggleFavorite: () {
-                        widget.controller.toggleFavorite(device);
-                      },
                       onTap: () => widget.onOpenDevice(device.id),
                     ),
                   );
