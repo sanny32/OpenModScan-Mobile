@@ -153,9 +153,7 @@ class _StatusTabState extends State<_StatusTab> {
       if (!mounted) return;
     } catch (error) {
       if (!mounted || !showErrors) return;
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text('$error')));
+      showErrorSnackBar(context, error);
     } finally {
       _reading = false;
       if (mounted && showProgress) {

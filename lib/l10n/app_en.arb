@@ -300,6 +300,38 @@
   "connect": "Connect",
   "@connect": {},
 
+  "errorConnectionTitle": "Connection failed",
+  "@errorConnectionTitle": {},
+
+  "errorConnectionBody": "Could not reach {address}. Check the IP address, port, and network availability.",
+  "@errorConnectionBody": {
+    "placeholders": {
+      "address": {"type": "String"}
+    }
+  },
+
+  "errorConnectionBodyUnknown": "Could not reach the device. Check the IP address, port, and network availability.",
+  "@errorConnectionBodyUnknown": {},
+
+  "errorModbusTitle": "Device returned an error",
+  "@errorModbusTitle": {},
+
+  "errorModbusBody": "Modbus exception: {message}.",
+  "@errorModbusBody": {
+    "placeholders": {
+      "message": {"type": "String"}
+    }
+  },
+
+  "errorNotConnectedTitle": "Device is not connected",
+  "@errorNotConnectedTitle": {},
+
+  "errorNotConnectedBody": "Connect to the device and try again.",
+  "@errorNotConnectedBody": {},
+
+  "errorGenericTitle": "Something went wrong",
+  "@errorGenericTitle": {},
+
   "connectionType": "Connection type",
   "@connectionType": {},
 

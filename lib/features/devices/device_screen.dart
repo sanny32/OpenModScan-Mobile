@@ -6,6 +6,7 @@ import '../../models/register_address_type.dart';
 import '../../models/register_list.dart';
 import '../../navigation/navigation_targets.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/error_feedback.dart';
 import '../registers/register_list_dialogs.dart';
 import 'devices_controller.dart';
 import 'device_form_sheet.dart';
@@ -75,9 +76,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
       await widget.controller.toggleConnection(_device);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text('$error')));
+      showErrorSnackBar(context, error);
     } finally {
       if (mounted) {
         setState(() => _connectionBusy = false);

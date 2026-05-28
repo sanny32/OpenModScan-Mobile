@@ -6,6 +6,7 @@ import '../../l10n/l10n.dart';
 import '../../models/device_info.dart';
 import '../../models/discovered_device.dart';
 import '../../runtime/runtime_ports.dart';
+import '../../widgets/error_feedback.dart';
 import 'device_form_sheet.dart';
 import 'discovered_devices_screen.dart';
 import 'devices_controller.dart';
@@ -91,9 +92,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
         await widget.controller.toggleConnection(result.device);
       } catch (error) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(SnackBar(content: Text('$error')));
+        showErrorSnackBar(context, error);
       }
     }
   }
@@ -110,9 +109,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
       widget.onOpenDevice(device.id);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text('$error')));
+      showErrorSnackBar(context, error);
     }
   }
 

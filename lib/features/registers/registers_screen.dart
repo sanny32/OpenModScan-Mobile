@@ -12,6 +12,7 @@ import '../../models/status_entry.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/connection_info_bar.dart';
 import '../../widgets/connection_status_chip.dart';
+import '../../widgets/error_feedback.dart';
 import '../../utils/modbus_format.dart';
 import '../../widgets/type_badge.dart';
 import 'register_list_dialogs.dart';

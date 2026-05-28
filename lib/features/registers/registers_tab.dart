@@ -173,9 +173,7 @@ class _RegistersTabState extends State<_RegistersTab> {
         );
       }
       if (!mounted || !showErrors) return;
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text('$error')));
+      showErrorSnackBar(context, error);
     } finally {
       _reading = false;
       if (mounted) {
