@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../l10n/l10n.dart';
+import '../../models/app_settings.dart';
 import '../../models/register_list.dart';
+import 'widgets/max_count_formatter.dart';
 
 Future<RegisterList?> showRegisterListDialog(
   BuildContext context, {
@@ -39,8 +41,9 @@ class _RegisterListDialogState extends State<_RegisterListDialog> {
   @override
   void initState() {
     super.initState();
+    final minStart = AppSettings.instance.addressBaseStart;
     _nameCtrl = TextEditingController(text: widget.defaultName);
-    _startCtrl = TextEditingController(text: '1');
+    _startCtrl = TextEditingController(text: minStart.toString());
     _countCtrl = TextEditingController(text: '20');
   }
 
@@ -64,10 +67,21 @@ class _RegisterListDialogState extends State<_RegisterListDialog> {
       RegisterList(
         name: name,
         regType: _regType,
-        startAddress: int.tryParse(_startCtrl.text) ?? 1,
-        count: int.tryParse(_countCtrl.text) ?? 20,
+        startAddress: _startAddress(),
+        count: _count(),
       ),
     );
+  }
+
+  int _startAddress() {
+    final minStart = AppSettings.instance.addressBaseStart;
+    final value = int.tryParse(_startCtrl.text) ?? minStart;
+    return value < minStart ? minStart : value;
+  }
+
+  int _count() {
+    final value = int.tryParse(_countCtrl.text) ?? 20;
+    return value < 1 ? 20 : value;
   }
 
   @override
@@ -119,7 +133,13 @@ class _RegisterListDialogState extends State<_RegisterListDialog> {
                   child: TextField(
                     controller: _startCtrl,
                     keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      MaxCountFormatter(
+                        max: null,
+                        min: AppSettings.instance.addressBaseStart,
+                      ),
+                    ],
                     decoration: InputDecoration(labelText: l10n.labelStart),
                   ),
                 ),
@@ -128,7 +148,10 @@ class _RegisterListDialogState extends State<_RegisterListDialog> {
                   child: TextField(
                     controller: _countCtrl,
                     keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      const MaxCountFormatter(max: null, min: 1),
+                    ],
                     decoration: InputDecoration(labelText: l10n.labelCount),
                   ),
                 ),

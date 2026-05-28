@@ -143,16 +143,16 @@ const demoRegisters = [
 ];
 
 const demoStatuses = [
-  StatusEntry(address: 0, value: true, comment: 'Motor Start'),
-  StatusEntry(address: 1, value: false, comment: 'Motor Stop'),
-  StatusEntry(address: 2, value: true, comment: 'Pump Enable'),
-  StatusEntry(address: 3, value: false, comment: 'Alarm Reset'),
-  StatusEntry(address: 4, value: true, comment: 'System Ready'),
-  StatusEntry(address: 5, value: true, comment: 'Valve Open'),
-  StatusEntry(address: 6, value: false, comment: 'Valve Close'),
-  StatusEntry(address: 7, value: true, comment: 'Heater Enable'),
-  StatusEntry(address: 8, value: true, comment: 'Fan Enable'),
-  StatusEntry(address: 9, value: false, comment: 'Reserved'),
+  StatusEntry(address: 1, value: true, comment: 'Motor Start'),
+  StatusEntry(address: 2, value: false, comment: 'Motor Stop'),
+  StatusEntry(address: 3, value: true, comment: 'Pump Enable'),
+  StatusEntry(address: 4, value: false, comment: 'Alarm Reset'),
+  StatusEntry(address: 5, value: true, comment: 'System Ready'),
+  StatusEntry(address: 6, value: true, comment: 'Valve Open'),
+  StatusEntry(address: 7, value: false, comment: 'Valve Close'),
+  StatusEntry(address: 8, value: true, comment: 'Heater Enable'),
+  StatusEntry(address: 9, value: true, comment: 'Fan Enable'),
+  StatusEntry(address: 10, value: false, comment: 'Reserved'),
 ];
 
 const demoLogEntries = [

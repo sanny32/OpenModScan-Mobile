@@ -72,15 +72,14 @@ class _StatusTabState extends State<_StatusTab> {
   var _manualReadInProgress = false;
   Timer? _autoRefreshTimer;
 
-  bool get _canWrite => RegisterAddressType.fromCode(
+  RegisterAddressType get _addressType => RegisterAddressType.fromCode(
     widget.statusType,
     fallback: RegisterAddressType.coils,
-  ).canWrite;
+  );
 
-  bool get _supportsStatusRead => RegisterAddressType.fromCode(
-    widget.statusType,
-    fallback: RegisterAddressType.coils,
-  ).supportsStatusRead;
+  bool get _canWrite => _addressType.canWrite;
+
+  bool get _supportsStatusRead => _addressType.supportsStatusRead;
 
   void _onCtrlChanged() => setState(() {});
 
@@ -151,7 +150,10 @@ class _StatusTabState extends State<_StatusTab> {
       return;
     }
 
-    final start = int.tryParse(widget.startAddrCtrl.text) ?? 0;
+    final minStart = AppSettings.instance.addressBaseStart;
+    final parsedStart = int.tryParse(widget.startAddrCtrl.text) ?? minStart;
+    final rawStart = parsedStart < minStart ? minStart : parsedStart;
+    final startAddress = _addressType.displayOffset + rawStart;
     final rawCount = int.tryParse(widget.countCtrl.text);
     final count = rawCount == null || rawCount < 1 ? 20 : rawCount;
 
@@ -162,7 +164,7 @@ class _StatusTabState extends State<_StatusTab> {
     try {
       await widget.onRead(
         statusType: widget.statusType,
-        startAddress: start,
+        startAddress: startAddress,
         count: count,
       );
       if (!mounted) return;
@@ -203,19 +205,27 @@ class _StatusTabState extends State<_StatusTab> {
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
     final dividerColor = Theme.of(context).dividerTheme.color ?? cs.outline;
-    final start = int.tryParse(widget.startAddrCtrl.text) ?? 0;
+    final minStart = AppSettings.instance.addressBaseStart;
+    final parsedStart = int.tryParse(widget.startAddrCtrl.text) ?? minStart;
+    final rawStart = parsedStart < minStart ? minStart : parsedStart;
+    final startAddress = _addressType.displayOffset + rawStart;
     final rawCount = int.tryParse(widget.countCtrl.text);
     final count = rawCount == null || rawCount < 1 ? 20 : rawCount;
-    final end = start + count - 1;
+    final endAddress = startAddress + count - 1;
+    final canWriteStatus =
+        _canWrite &&
+        AppSettings.instance.writeEnabled &&
+        widget.valueState != RegisterValueState.exception;
     final references = {
-      for (final e in widget.referenceStatuses(start, count)) e.address: e,
+      for (final e in widget.referenceStatuses(startAddress, count))
+        e.address: e,
     };
     final configByAddress = {
       for (final e in widget.registerList.statusEntries)
         if (e.statusType == widget.statusType) e.address: e,
     };
     final visibleStatuses = List.generate(count, (i) {
-      final address = start + i;
+      final address = startAddress + i;
       final reference = references[address];
       final runtime = widget.runtimeValues[(widget.statusType, address)];
       final value = runtime?.$1 ?? reference?.value ?? false;
@@ -250,6 +260,7 @@ class _StatusTabState extends State<_StatusTab> {
           startAddrCtrl: widget.startAddrCtrl,
           countCtrl: widget.countCtrl,
           maxCount: 2000,
+          minStartAddress: AppSettings.instance.addressBaseStart,
           autoRefresh: widget.autoRefresh,
           onAutoRefreshChanged: widget.onAutoRefreshChanged,
           refreshIntervalCtrl: widget.refreshIntervalCtrl,
@@ -290,19 +301,16 @@ class _StatusTabState extends State<_StatusTab> {
             itemBuilder: (context, i) => StatusRow(
               entry: visibleStatuses[i],
               valueState: widget.valueState,
-              canWrite:
-                  _canWrite &&
-                  AppSettings.instance.writeEnabled &&
-                  widget.valueState != RegisterValueState.exception,
+              canWrite: canWriteStatus,
               onEntryChanged: widget.onEntryChanged,
-              onChanged:
-                  _canWrite &&
-                      AppSettings.instance.writeEnabled &&
-                      widget.valueState != RegisterValueState.exception
+              onChanged: canWriteStatus
                   ? (value) => _writeStatusValue(visibleStatuses[i], value)
                   : null,
-              onDetailValueWritten: (value) =>
-                  _writeStatusValue(visibleStatuses[i], value),
+              onDetailValueWritten: (value) => _writeStatusValue(
+                visibleStatuses[i],
+                value,
+                rethrowError: true,
+              ),
             ),
           ),
         ),
@@ -313,7 +321,7 @@ class _StatusTabState extends State<_StatusTab> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                _bitRangeLabel(l10n, start, end),
+                _bitRangeLabel(l10n, startAddress, endAddress),
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
               Text(
@@ -331,7 +339,11 @@ class _StatusTabState extends State<_StatusTab> {
     );
   }
 
-  Future<void> _writeStatusValue(StatusEntry entry, bool value) async {
+  Future<void> _writeStatusValue(
+    StatusEntry entry,
+    bool value, {
+    bool rethrowError = false,
+  }) async {
     if (!_canWrite || !AppSettings.instance.writeEnabled) return;
 
     if (AppSettings.instance.confirmBeforeWrite) {
@@ -364,6 +376,7 @@ class _StatusTabState extends State<_StatusTab> {
         value: value,
       );
     } catch (error) {
+      if (rethrowError) rethrow;
       if (mounted) showErrorSnackBar(context, error);
     }
   }

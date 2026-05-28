@@ -139,7 +139,7 @@ void main() {
     );
     final afterRead = DateTime.now();
 
-    expect(connections.lastHoldingStartAddress, 0);
+    expect(connections.lastHoldingStartAddress, 1);
     expect(connections.lastHoldingCount, 2);
     expect(controller.runtimeValues[40001]?.$1, '17');
     expect(controller.runtimeValues[40001]?.$2, isNull);
@@ -196,7 +196,7 @@ void main() {
       count: 2,
     );
 
-    expect(connections.lastInputStartAddress, 0);
+    expect(connections.lastInputStartAddress, 1);
     expect(connections.lastInputCount, 2);
     expect(controller.runtimeValues[30001]?.$1, '31');
     expect(controller.runtimeValues[30002]?.$1, '37');
@@ -231,30 +231,30 @@ void main() {
     final beforeRead = DateTime.now();
     await controller.readStatuses(
       statusType: '0xxxx',
-      startAddress: 7,
+      startAddress: 0,
       count: 2,
     );
     final afterRead = DateTime.now();
 
-    expect(connections.lastCoilStartAddress, 7);
+    expect(connections.lastCoilStartAddress, 0);
     expect(connections.lastCoilCount, 2);
-    final first = controller.runtimeStatusValues[('0xxxx', 7)];
+    final first = controller.runtimeStatusValues[('0xxxx', 0)];
     expect(first?.$1, isTrue);
     expect(first?.$2, isNull);
     expect(first?.$3, isNotNull);
     expect(first!.$3!.isBefore(beforeRead), isFalse);
     expect(first.$3!.isAfter(afterRead), isFalse);
     expect(controller.lastStatusReadAt, first.$3);
-    expect(controller.runtimeStatusValues[('0xxxx', 8)]?.$1, isFalse);
+    expect(controller.runtimeStatusValues[('0xxxx', 1)]?.$1, isFalse);
 
     connections.coilValues = [false, true];
     await controller.readStatuses(
       statusType: '0xxxx',
-      startAddress: 7,
+      startAddress: 0,
       count: 2,
     );
-    expect(controller.runtimeStatusValues[('0xxxx', 7)]?.$1, isFalse);
-    expect(controller.runtimeStatusValues[('0xxxx', 7)]?.$2, isTrue);
+    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.$1, isFalse);
+    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.$2, isTrue);
 
     controller.dispose();
   });
@@ -289,14 +289,14 @@ void main() {
 
     await controller.readStatuses(
       statusType: '1xxxx',
-      startAddress: 12,
+      startAddress: 10012,
       count: 2,
     );
 
     expect(connections.lastDiscreteInputStartAddress, 12);
     expect(connections.lastDiscreteInputCount, 2);
-    expect(controller.runtimeStatusValues[('1xxxx', 12)]?.$1, isFalse);
-    expect(controller.runtimeStatusValues[('1xxxx', 13)]?.$1, isTrue);
+    expect(controller.runtimeStatusValues[('1xxxx', 10012)]?.$1, isFalse);
+    expect(controller.runtimeStatusValues[('1xxxx', 10013)]?.$1, isTrue);
 
     controller.dispose();
   });
@@ -323,7 +323,7 @@ void main() {
       const RegistersRouteArgs(deviceId: 'device-e', registerListId: 'list-e'),
     );
 
-    await controller.updateStatusEntry('1xxxx', 12, 'Line ready');
+    await controller.updateStatusEntry('1xxxx', 10013, 'Line ready');
 
     final entry = repository
         .findById('device-e')!
@@ -332,7 +332,7 @@ void main() {
         .statusEntries
         .single;
     expect(entry.statusType, '1xxxx');
-    expect(entry.address, 12);
+    expect(entry.address, 10013);
     expect(entry.comment, 'Line ready');
 
     controller.dispose();
@@ -367,7 +367,7 @@ void main() {
 
     await controller.writeValue(40001, '42');
 
-    expect(connections.lastWriteHoldingAddress, 0);
+    expect(connections.lastWriteHoldingAddress, 1);
     expect(connections.lastWriteHoldingValue, 42);
     expect(controller.runtimeValues[40001]?.$1, '42');
     expect(controller.runtimeValues[40001]?.$2, isNull);
@@ -409,23 +409,23 @@ void main() {
 
     await controller.writeStatusValue(
       statusType: '0xxxx',
-      address: 7,
+      address: 0,
       value: true,
     );
 
-    expect(connections.lastWriteCoilAddress, 7);
+    expect(connections.lastWriteCoilAddress, 0);
     expect(connections.lastWriteCoilValue, isTrue);
-    expect(controller.runtimeStatusValues[('0xxxx', 7)]?.$1, isTrue);
-    expect(controller.runtimeStatusValues[('0xxxx', 7)]?.$2, isNull);
-    expect(controller.runtimeStatusValues[('0xxxx', 7)]?.$3, isNotNull);
+    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.$1, isTrue);
+    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.$2, isNull);
+    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.$3, isNotNull);
 
     await controller.writeStatusValue(
       statusType: '0xxxx',
-      address: 7,
+      address: 0,
       value: false,
     );
-    expect(controller.runtimeStatusValues[('0xxxx', 7)]?.$1, isFalse);
-    expect(controller.runtimeStatusValues[('0xxxx', 7)]?.$2, isTrue);
+    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.$1, isFalse);
+    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.$2, isTrue);
 
     controller.dispose();
   });
@@ -461,14 +461,14 @@ void main() {
     await controller.writeValue(40001, '42');
     await controller.writeStatusValue(
       statusType: '0xxxx',
-      address: 7,
+      address: 0,
       value: true,
     );
 
     expect(connections.lastWriteHoldingAddress, isNull);
     expect(connections.lastWriteCoilAddress, isNull);
     expect(controller.runtimeValues[40001], isNull);
-    expect(controller.runtimeStatusValues[('0xxxx', 7)], isNull);
+    expect(controller.runtimeStatusValues[('0xxxx', 0)], isNull);
 
     controller.dispose();
   });

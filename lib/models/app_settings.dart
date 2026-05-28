@@ -80,6 +80,10 @@ class AppSettings {
   bool get showTypeBadges => showTypeBadgesNotifier.value;
   set showTypeBadges(bool v) => showTypeBadgesNotifier.value = v;
 
+  bool get usesZeroBasedAddresses => addressBase == addressBases.first;
+
+  int get addressBaseStart => usesZeroBasedAddresses ? 0 : 1;
+
   ThemeMode get themeMode => themeModeNotifier.value;
   String get theme => _themeLabel(themeMode);
   Locale? get locale => localeNotifier.value;

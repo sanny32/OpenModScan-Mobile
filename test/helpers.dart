@@ -162,6 +162,24 @@ class ThrowingStatusConnectionRuntime extends PollingConnectionRuntime {
   }
 }
 
+class ThrowingStatusWriteConnectionRuntime extends PollingConnectionRuntime {
+  final Object error;
+
+  ThrowingStatusWriteConnectionRuntime({Object? error})
+    : error = error ?? StateError('Coil write failed');
+
+  @override
+  Future<void> writeCoil(
+    DeviceInfo device, {
+    required int address,
+    required bool value,
+  }) async {
+    lastWriteCoilAddress = address;
+    lastWriteCoilValue = value;
+    throw error;
+  }
+}
+
 class FlakyStatusConnectionRuntime extends PollingConnectionRuntime {
   var failReads = true;
   final Object error;

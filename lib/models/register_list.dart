@@ -1,3 +1,5 @@
+import 'register_address_type.dart';
+
 class RegisterConfig {
   int address;
   String typeName;
@@ -71,6 +73,7 @@ class StatusConfig {
 const kMinRegisterRefreshIntervalMs = 100;
 const kMaxRegisterRefreshIntervalMs = 60000;
 const kDefaultRegisterRefreshIntervalMs = 1000;
+const kStatusAddressModeDisplay = 'display';
 
 class RegisterList {
   String id;
@@ -97,13 +100,17 @@ class RegisterList {
     int refreshIntervalMs = kDefaultRegisterRefreshIntervalMs,
     this.coilAutoRefresh = true,
     int coilRefreshIntervalMs = kDefaultRegisterRefreshIntervalMs,
-    this.startAddress = 1,
-    this.count = 20,
-    this.coilStartAddress = 0,
-    this.coilCount = 20,
+    int startAddress = 0,
+    int count = 20,
+    int coilStartAddress = 0,
+    int coilCount = 20,
     List<RegisterConfig>? entries,
     List<StatusConfig>? statusEntries,
   }) : id = id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+       startAddress = startAddress < 0 ? 0 : startAddress,
+       count = count < 1 ? 20 : count,
+       coilStartAddress = coilStartAddress < 0 ? 0 : coilStartAddress,
+       coilCount = coilCount < 1 ? 20 : coilCount,
        refreshIntervalMs = _clampRegisterRefreshIntervalMs(refreshIntervalMs),
        coilRefreshIntervalMs = _clampRegisterRefreshIntervalMs(
          coilRefreshIntervalMs,
@@ -156,33 +163,54 @@ class RegisterList {
     'count': count,
     'coilStartAddress': coilStartAddress,
     'coilCount': coilCount,
+    'statusAddressMode': kStatusAddressModeDisplay,
     'entries': entries.map((e) => e.toJson()).toList(),
     'statusEntries': statusEntries.map((e) => e.toJson()).toList(),
   };
 
-  factory RegisterList.fromJson(Map<String, dynamic> json) => RegisterList(
-    id: json['id'] as String?,
-    name: json['name'] as String? ?? 'List 1',
-    regType: json['regType'] as String? ?? '4xxxx',
-    coilType: json['coilType'] as String? ?? '0xxxx',
-    autoRefresh: json['autoRefresh'] as bool? ?? true,
-    refreshIntervalMs:
-        json['refreshIntervalMs'] as int? ?? kDefaultRegisterRefreshIntervalMs,
-    coilAutoRefresh: json['coilAutoRefresh'] as bool? ?? true,
-    coilRefreshIntervalMs:
-        json['coilRefreshIntervalMs'] as int? ??
-        kDefaultRegisterRefreshIntervalMs,
-    startAddress: json['startAddress'] as int? ?? 1,
-    count: json['count'] as int? ?? 20,
-    coilStartAddress: json['coilStartAddress'] as int? ?? 0,
-    coilCount: json['coilCount'] as int? ?? 20,
-    entries: (json['entries'] as List<dynamic>? ?? [])
-        .map((e) => RegisterConfig.fromJson(e as Map<String, dynamic>))
-        .toList(),
-    statusEntries: (json['statusEntries'] as List<dynamic>? ?? [])
+  factory RegisterList.fromJson(Map<String, dynamic> json) {
+    final hasDisplayStatusAddresses =
+        json['statusAddressMode'] == kStatusAddressModeDisplay;
+    final rawCoilStartAddress = json['coilStartAddress'] as int?;
+    final statusEntries = (json['statusEntries'] as List<dynamic>? ?? [])
         .map((e) => StatusConfig.fromJson(e as Map<String, dynamic>))
-        .toList(),
-  );
+        .map(
+          (entry) => hasDisplayStatusAddresses
+              ? entry
+              : entry.copyWith(
+                  address: _legacyStatusAddressToDisplay(
+                    entry.statusType,
+                    entry.address,
+                  ),
+                ),
+        )
+        .toList();
+
+    return RegisterList(
+      id: json['id'] as String?,
+      name: json['name'] as String? ?? 'List 1',
+      regType: json['regType'] as String? ?? '4xxxx',
+      coilType: json['coilType'] as String? ?? '0xxxx',
+      autoRefresh: json['autoRefresh'] as bool? ?? true,
+      refreshIntervalMs:
+          json['refreshIntervalMs'] as int? ??
+          kDefaultRegisterRefreshIntervalMs,
+      coilAutoRefresh: json['coilAutoRefresh'] as bool? ?? true,
+      coilRefreshIntervalMs:
+          json['coilRefreshIntervalMs'] as int? ??
+          kDefaultRegisterRefreshIntervalMs,
+      startAddress: json['startAddress'] as int? ?? 0,
+      count: json['count'] as int? ?? 20,
+      coilStartAddress: hasDisplayStatusAddresses
+          ? rawCoilStartAddress ?? 0
+          : (rawCoilStartAddress ?? 0) + 1,
+      coilCount: json['coilCount'] as int? ?? 20,
+      entries: (json['entries'] as List<dynamic>? ?? [])
+          .map((e) => RegisterConfig.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      statusEntries: statusEntries,
+    );
+  }
 }
 
 int _clampRegisterRefreshIntervalMs(int value) {
@@ -193,4 +221,12 @@ int _clampRegisterRefreshIntervalMs(int value) {
     return kMaxRegisterRefreshIntervalMs;
   }
   return value;
+}
+
+int _legacyStatusAddressToDisplay(String statusType, int rawAddress) {
+  final addressType = RegisterAddressType.fromCode(
+    statusType,
+    fallback: RegisterAddressType.coils,
+  );
+  return addressType.displayOffset + rawAddress + 1;
 }

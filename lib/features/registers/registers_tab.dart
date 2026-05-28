@@ -147,7 +147,9 @@ class _RegistersTabState extends State<_RegistersTab> {
     }
 
     final offset = _regTypeOffset(widget.regType);
-    final rawStart = int.tryParse(widget.startAddrCtrl.text) ?? 1;
+    final minStart = AppSettings.instance.addressBaseStart;
+    final parsedStart = int.tryParse(widget.startAddrCtrl.text) ?? minStart;
+    final rawStart = parsedStart < minStart ? minStart : parsedStart;
     final rawCount = int.tryParse(widget.countCtrl.text);
     final count = (rawCount == null || rawCount < 1) ? 20 : rawCount;
 
@@ -202,7 +204,9 @@ class _RegistersTabState extends State<_RegistersTab> {
     final l10n = context.l10n;
     final dividerColor = Theme.of(context).dividerTheme.color ?? cs.outline;
     final offset = _regTypeOffset(widget.regType);
-    final rawStart = int.tryParse(widget.startAddrCtrl.text) ?? 1;
+    final minStart = AppSettings.instance.addressBaseStart;
+    final parsedStart = int.tryParse(widget.startAddrCtrl.text) ?? minStart;
+    final rawStart = parsedStart < minStart ? minStart : parsedStart;
     final startAddr = offset + rawStart;
     final rawCount = int.tryParse(widget.countCtrl.text);
     final count = (rawCount == null || rawCount < 1) ? 20 : rawCount;
@@ -305,6 +309,7 @@ class _RegistersTabState extends State<_RegistersTab> {
           startAddrCtrl: widget.startAddrCtrl,
           countCtrl: widget.countCtrl,
           maxCount: 125,
+          minStartAddress: AppSettings.instance.addressBaseStart,
           autoRefresh: widget.autoRefresh,
           onAutoRefreshChanged: widget.onAutoRefreshChanged,
           refreshIntervalCtrl: widget.refreshIntervalCtrl,

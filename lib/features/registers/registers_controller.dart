@@ -201,6 +201,7 @@ class RegistersController extends ChangeNotifier {
     }
     final modbusAddress = RegisterAddressType.holdingRegisters.toModbusAddress(
       address,
+      addressBase: AppSettings.instance.addressBaseStart,
     );
     final runtimeValue = _runtimeValues[address];
     final previous = runtimeValue?.$1;
@@ -226,14 +227,22 @@ class RegistersController extends ChangeNotifier {
     }
 
     final addressType = RegisterAddressType.tryParse(statusType);
-    if (addressType != RegisterAddressType.coils) {
+    if (addressType == null || addressType != RegisterAddressType.coils) {
       throw UnsupportedError('Writing $statusType is not implemented.');
     }
+    final modbusAddress = addressType.toModbusAddress(
+      address,
+      addressBase: AppSettings.instance.addressBaseStart,
+    );
 
     final key = (statusType, address);
     final runtimeValue = _runtimeStatusValues[key];
     final previous = runtimeValue?.$1;
-    await _connectionRuntime.writeCoil(device, address: address, value: value);
+    await _connectionRuntime.writeCoil(
+      device,
+      address: modbusAddress,
+      value: value,
+    );
     _runtimeStatusValues[key] = (value, previous, DateTime.now());
     notifyListeners();
   }
@@ -255,7 +264,10 @@ class RegistersController extends ChangeNotifier {
     if (addressType == null || !addressType.supportsRegisterRead) {
       throw UnsupportedError('Reading $regType is not implemented.');
     }
-    final modbusStartAddress = addressType.toModbusAddress(startAddress);
+    final modbusStartAddress = addressType.toModbusAddress(
+      startAddress,
+      addressBase: AppSettings.instance.addressBaseStart,
+    );
     final values = switch (addressType) {
       RegisterAddressType.holdingRegisters =>
         await _connectionRuntime.readHoldingRegisters(
@@ -298,16 +310,20 @@ class RegistersController extends ChangeNotifier {
     if (addressType == null || !addressType.supportsStatusRead) {
       throw UnsupportedError('Reading $statusType is not implemented.');
     }
+    final modbusStartAddress = addressType.toModbusAddress(
+      startAddress,
+      addressBase: AppSettings.instance.addressBaseStart,
+    );
     final values = switch (addressType) {
       RegisterAddressType.coils => await _connectionRuntime.readCoils(
         device,
-        startAddress: startAddress,
+        startAddress: modbusStartAddress,
         count: count,
       ),
       RegisterAddressType.discreteInputs =>
         await _connectionRuntime.readDiscreteInputs(
           device,
-          startAddress: startAddress,
+          startAddress: modbusStartAddress,
           count: count,
         ),
       _ => throw UnsupportedError('Reading $statusType is not implemented.'),

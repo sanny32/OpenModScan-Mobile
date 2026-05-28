@@ -7,6 +7,7 @@ import 'package:omodscan_mobile/features/registers/register_detail_screen.dart';
 import 'package:omodscan_mobile/features/registers/registers_controller.dart';
 import 'package:omodscan_mobile/features/registers/registers_screen.dart';
 import 'package:omodscan_mobile/features/registers/widgets/register_row.dart';
+import 'package:omodscan_mobile/features/registers/widgets/status_row.dart';
 import 'package:omodscan_mobile/l10n/l10n.dart';
 import 'package:omodscan_mobile/main.dart';
 import 'package:omodscan_mobile/models/app_settings.dart';
@@ -387,7 +388,7 @@ void main() {
       );
       await tester.pump();
 
-      await tester.tap(find.text('40001'));
+      await tester.tap(find.text('40000'));
       await tester.pumpAndSettle();
       expect(find.byType(RegisterDetailScreen), findsOneWidget);
 
@@ -707,6 +708,47 @@ void main() {
     returnDeviceId.dispose();
   });
 
+  testWidgets('Status tab shows one-based display coil address', (
+    WidgetTester tester,
+  ) async {
+    await AppSettings.instance.setAddressBase('1-based');
+    final connections = PollingConnectionRuntime();
+    final harness = await _pumpStatusHarness(tester, connections);
+
+    await tester.tap(find.widgetWithText(Tab, 'Status'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(of: find.byType(StatusRow), matching: find.text('00001')),
+      findsOneWidget,
+    );
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Status tab allows zero-based display coil address', (
+    WidgetTester tester,
+  ) async {
+    final connections = PollingConnectionRuntime();
+    final harness = await _pumpStatusHarness(tester, connections);
+
+    await tester.tap(find.widgetWithText(Tab, 'Status'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is TextField && widget.controller?.text == '0',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: find.byType(StatusRow), matching: find.text('00000')),
+      findsOneWidget,
+    );
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
   testWidgets('Single tap register value opens write dialog and writes', (
     WidgetTester tester,
   ) async {
@@ -746,6 +788,51 @@ void main() {
 
     expect(connections.lastWriteCoilAddress, 0);
     expect(connections.lastWriteCoilValue, isTrue);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets(
+    'Failed coil switch write shows error without unhandled exception',
+    (WidgetTester tester) async {
+      final connections = ThrowingStatusWriteConnectionRuntime();
+      final harness = await _pumpStatusHarness(tester, connections);
+
+      await tester.tap(find.widgetWithText(Tab, 'Status'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(Switch).last);
+      await tester.pumpAndSettle();
+
+      expect(connections.lastWriteCoilAddress, 0);
+      expect(find.textContaining('Coil write failed'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await _disposeRegistersHarness(tester, harness);
+    },
+  );
+
+  testWidgets('Failed detail coil write keeps previous value', (
+    WidgetTester tester,
+  ) async {
+    final connections = ThrowingStatusWriteConnectionRuntime();
+    final harness = await _pumpStatusHarness(tester, connections);
+
+    await tester.tap(find.widgetWithText(Tab, 'Status'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(of: find.byType(StatusRow), matching: find.text('00000')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('OFF'), findsOneWidget);
+
+    await tester.tap(find.text('Set ON'));
+    await tester.pumpAndSettle();
+
+    expect(connections.lastWriteCoilAddress, 0);
+    expect(find.text('OFF'), findsOneWidget);
+    expect(find.text('ON'), findsNothing);
+    expect(find.textContaining('Coil write failed'), findsOneWidget);
 
     await _disposeRegistersHarness(tester, harness);
   });
@@ -1114,6 +1201,31 @@ void main() {
     },
   );
 
+  testWidgets('Registers tab keeps start field unpadded in zero-based mode', (
+    WidgetTester tester,
+  ) async {
+    final harness = await _pumpRegistersHarness(
+      tester,
+      RegisterList(
+        id: 'zero-start-list',
+        name: 'Zero Start List',
+        startAddress: 0,
+        count: 1,
+        autoRefresh: false,
+      ),
+    );
+
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is TextField && widget.controller?.text == '0',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('40000'), findsOneWidget);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
   testWidgets('Register list groups UInt32 tail register by default', (
     WidgetTester tester,
   ) async {
@@ -1335,13 +1447,13 @@ void main() {
         RegisterList(
           id: 'status-row-list',
           name: 'SR List',
-          coilStartAddress: 0,
+          coilStartAddress: 1,
           coilCount: 1,
           coilAutoRefresh: false,
           statusEntries: [
             StatusConfig(
               statusType: '0xxxx',
-              address: 0,
+              address: 1,
               comment: 'Pump enable',
             ),
           ],

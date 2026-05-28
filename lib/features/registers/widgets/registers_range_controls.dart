@@ -9,6 +9,7 @@ class RegistersRangeControls extends StatelessWidget {
   final TextEditingController startAddrCtrl;
   final TextEditingController countCtrl;
   final int maxCount;
+  final int minStartAddress;
   final bool autoRefresh;
   final ValueChanged<bool> onAutoRefreshChanged;
   final TextEditingController refreshIntervalCtrl;
@@ -19,6 +20,7 @@ class RegistersRangeControls extends StatelessWidget {
     required this.startAddrCtrl,
     required this.countCtrl,
     required this.maxCount,
+    this.minStartAddress = 0,
     required this.autoRefresh,
     required this.onAutoRefreshChanged,
     required this.refreshIntervalCtrl,
@@ -45,7 +47,10 @@ class RegistersRangeControls extends StatelessWidget {
             child: TextField(
               controller: startAddrCtrl,
               keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                MaxCountFormatter(max: null, min: minStartAddress),
+              ],
               style: tt.bodyMedium,
               textAlign: TextAlign.center,
               decoration: const InputDecoration(
@@ -70,7 +75,7 @@ class RegistersRangeControls extends StatelessWidget {
               keyboardType: TextInputType.number,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
-                MaxCountFormatter(max: maxCount),
+                MaxCountFormatter(max: maxCount, min: 1),
               ],
               style: tt.bodyMedium,
               textAlign: TextAlign.center,

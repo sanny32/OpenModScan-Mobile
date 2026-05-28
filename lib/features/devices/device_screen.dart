@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/l10n.dart';
 import '../../models/device_info.dart';
 
+import '../../models/app_settings.dart';
 import '../../models/register_address_type.dart';
 import '../../models/register_list.dart';
 import '../../navigation/navigation_targets.dart';
@@ -554,7 +555,11 @@ class _RegisterListTile extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final offset = _regTypeOffset(list.regType);
-    final start = offset + list.startAddress;
+    final minStart = AppSettings.instance.addressBaseStart;
+    final startAddress = list.startAddress < minStart
+        ? minStart
+        : list.startAddress;
+    final start = offset + startAddress;
     final end = start + list.count - 1;
     return Card(
       margin: const EdgeInsets.only(bottom: 6),

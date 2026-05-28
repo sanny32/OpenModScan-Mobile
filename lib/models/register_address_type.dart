@@ -22,12 +22,15 @@ enum RegisterAddressType {
 
   bool get supportsStatusRead => isBit;
 
-  int toModbusAddress(int displayAddress) {
-    final registerNumber = displayAddress - displayOffset;
-    if (registerNumber < 0) {
+  int toModbusAddress(int displayAddress, {int addressBase = 1}) {
+    final firstDisplayAddress = displayOffset + addressBase;
+    if (addressBase < 0 || addressBase > 1) {
+      throw RangeError.value(addressBase, 'addressBase');
+    }
+    if (displayAddress < firstDisplayAddress) {
       throw RangeError.value(displayAddress, 'displayAddress');
     }
-    return registerNumber == 0 ? 0 : registerNumber - 1;
+    return displayAddress - firstDisplayAddress;
   }
 
   static RegisterAddressType fromCode(

@@ -100,6 +100,62 @@ void main() {
     expect(loaded.last.createdAt.isAfter(loaded.first.createdAt), isTrue);
   });
 
+  test('SharedPreferences store migrates legacy status addresses', () async {
+    final legacyDevices = [
+      {
+        'id': 'device-status-legacy',
+        'name': 'Status Legacy',
+        'host': '127.0.0.1',
+        'port': 502,
+        'protocol': 'modbusTcp',
+        'unitId': 1,
+        'timeout': 1000,
+        'reconnectDelay': 3000,
+        'notes': '',
+        'registerLists': [
+          {
+            'id': 'status-list-legacy',
+            'name': 'Status List',
+            'coilStartAddress': 7,
+            'statusEntries': [
+              {'statusType': '0xxxx', 'address': 7, 'comment': 'Ready'},
+              {'statusType': '1xxxx', 'address': 12, 'comment': 'Line ready'},
+            ],
+          },
+        ],
+      },
+    ];
+    SharedPreferences.setMockInitialValues({
+      SharedPreferencesDeviceStore.key: jsonEncode(legacyDevices),
+    });
+
+    final store = const SharedPreferencesDeviceStore();
+    final loaded = await store.load();
+    final list = loaded.single.registerLists.single;
+
+    expect(list.coilStartAddress, 8);
+    expect(list.statusEntries.map((entry) => entry.address), [8, 10013]);
+
+    await store.save(loaded);
+    final reloaded = await store.load();
+    final reloadedList = reloaded.single.registerLists.single;
+
+    expect(reloadedList.coilStartAddress, 8);
+    expect(reloadedList.statusEntries.map((entry) => entry.address), [
+      8,
+      10013,
+    ]);
+
+    final savedRaw = SharedPreferences.getInstance().then(
+      (prefs) => prefs.getString(SharedPreferencesDeviceStore.key),
+    );
+    final savedJson = jsonDecode((await savedRaw)!) as List<dynamic>;
+    final savedList =
+        (savedJson.single as Map<String, dynamic>)['registerLists'].single
+            as Map<String, dynamic>;
+    expect(savedList['statusAddressMode'], kStatusAddressModeDisplay);
+  });
+
   test('repository delegates persistence to store', () async {
     final store = _FakeDeviceStore();
     final repository = DeviceRepository(store);
