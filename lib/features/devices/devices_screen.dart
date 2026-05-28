@@ -372,8 +372,8 @@ class _ScanNetworkDock extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: OutlinedButton.icon(
         icon: Icon(
-          scanning ? Icons.travel_explore : Icons.radar_outlined,
-          size: 18,
+          scanning ? Icons.travel_explore : Icons.sensors,
+          size: 24,
         ),
         label: Text(
           scanning ? l10n.devicesScanningTitle : l10n.devicesScanNetwork,
@@ -383,7 +383,7 @@ class _ScanNetworkDock extends StatelessWidget {
           minimumSize: const Size(double.infinity, 52),
           side: BorderSide(color: cs.primary),
           foregroundColor: cs.primary,
-          textStyle: tt.labelLarge,
+          textStyle: tt.titleSmall,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),

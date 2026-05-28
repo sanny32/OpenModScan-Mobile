@@ -272,7 +272,7 @@ class _ScanSheetState extends State<ScanSheet> {
                   child: _ScanActionButton(
                     icon: controller.scannerState == ScannerStateView.scanning
                         ? Icons.stop_circle_outlined
-                        : Icons.radar_outlined,
+                        : Icons.sensors,
                     label: controller.scannerState == ScannerStateView.scanning
                         ? l10n.devicesScanStop
                         : l10n.devicesScanNetwork,
@@ -384,14 +384,14 @@ class _ScanActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
-      icon: Icon(icon),
+      icon: Icon(icon, size: 24),
       label: Text(label),
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(double.infinity, 44),
         side: BorderSide(color: color),
         foregroundColor: color,
-        textStyle: Theme.of(context).textTheme.labelLarge,
+        textStyle: Theme.of(context).textTheme.titleSmall,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
@@ -409,14 +409,14 @@ class _ScanNetworkButton extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
     return OutlinedButton.icon(
-      icon: const Icon(Icons.radar_outlined, size: 18),
+      icon: const Icon(Icons.sensors, size: 24),
       label: Text(l10n.devicesScanNetwork),
       onPressed: onStart,
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(double.infinity, 52),
         side: BorderSide(color: cs.primary),
         foregroundColor: cs.primary,
-        textStyle: tt.labelLarge,
+        textStyle: tt.titleSmall,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
@@ -619,7 +619,7 @@ class _ScanningCard extends StatelessWidget {
             if (completed && onRestart != null) ...[
               const SizedBox(height: 12),
               _ScanActionButton(
-                icon: Icons.radar_outlined,
+                icon: Icons.sensors,
                 label: l10n.devicesScanNetwork,
                 onPressed: onRestart!,
                 color: cs.primary,
