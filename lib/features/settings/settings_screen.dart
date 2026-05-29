@@ -129,7 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   IconData _sectionIcon(_SettingsSection section) {
     return switch (section) {
       _SettingsSection.connection => Icons.wifi,
-      _SettingsSection.networkScanner => Icons.hub_outlined,
+      _SettingsSection.networkScanner => Icons.sensors,
       _SettingsSection.readWrite => Icons.tune,
       _SettingsSection.log => Icons.receipt_long_outlined,
       _SettingsSection.appearance => Icons.palette_outlined,
