@@ -7,7 +7,8 @@ extension DeviceMarkerColorPalette on DeviceMarkerColor {
   Color resolve(ColorScheme colorScheme) {
     final dark = colorScheme.brightness == Brightness.dark;
     return switch (this) {
-      DeviceMarkerColor.blue => colorScheme.primary,
+      DeviceMarkerColor.blue =>
+        dark ? const Color(0xFF42A5F5) : const Color(0xFF1976D2),
       DeviceMarkerColor.green =>
         dark ? const Color(0xFF66BB6A) : const Color(0xFF2E7D32),
       DeviceMarkerColor.amber =>

@@ -18,6 +18,12 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color writeActionColor;
   final Color brandGreen;
 
+  /// Bright "live/good/connected" green — sampled from the logo's vivid tile.
+  /// Kept distinct from the deep brand green used for chrome so status reads as
+  /// a lively state, not as another piece of UI. For fills/dots/icons; small
+  /// status text stays on the more legible [connectedColor]/[valueColor].
+  final Color liveColor;
+
   const AppColors({
     required this.valueColor,
     required this.previousValueColor,
@@ -33,6 +39,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.openLogColor,
     required this.writeActionColor,
     required this.brandGreen,
+    required this.liveColor,
   });
 
   static const dark = AppColors(
@@ -50,6 +57,7 @@ class AppColors extends ThemeExtension<AppColors> {
     openLogColor: Color(0xFFCE93D8),
     writeActionColor: Color(0xFF66BB6A),
     brandGreen: Color(0xFF3DDC3D),
+    liveColor: Color(0xFF35D15A),
   );
 
   static const light = AppColors(
@@ -67,6 +75,7 @@ class AppColors extends ThemeExtension<AppColors> {
     openLogColor: Color(0xFF7B1FA2),
     writeActionColor: Color(0xFF2E7D32),
     brandGreen: Color(0xFF259025),
+    liveColor: Color(0xFF22C55E),
   );
 
   @override
@@ -85,6 +94,7 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? openLogColor,
     Color? writeActionColor,
     Color? brandGreen,
+    Color? liveColor,
   }) => AppColors(
     valueColor: valueColor ?? this.valueColor,
     previousValueColor: previousValueColor ?? this.previousValueColor,
@@ -100,6 +110,7 @@ class AppColors extends ThemeExtension<AppColors> {
     openLogColor: openLogColor ?? this.openLogColor,
     writeActionColor: writeActionColor ?? this.writeActionColor,
     brandGreen: brandGreen ?? this.brandGreen,
+    liveColor: liveColor ?? this.liveColor,
   );
 
   @override
@@ -140,12 +151,16 @@ class AppColors extends ThemeExtension<AppColors> {
         t,
       )!,
       brandGreen: Color.lerp(brandGreen, other.brandGreen, t)!,
+      liveColor: Color.lerp(liveColor, other.liveColor, t)!,
     );
   }
 }
 
 class AppTheme {
-  static const _primary = Color(0xFF1976D2);
+  // Brand green, sampled from the logo's dark-green tile. A deeper tone than
+  // the semantic "connected/good" green so chrome (app bar, tabs, switches)
+  // stays distinct from status indicators.
+  static const _primary = Color(0xFF1E8E3E);
 
   static const TextTheme textTheme = TextTheme(
     headlineMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),

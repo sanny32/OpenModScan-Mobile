@@ -473,7 +473,7 @@ class _ScanningCard extends StatelessWidget {
     final l10n = context.l10n;
     final pct = total == 0 ? 0 : (progress * 100).clamp(0, 100).round();
     final accent = completed
-        ? (appColors?.connectedColor ?? Colors.green)
+        ? (appColors?.liveColor ?? Colors.green)
         : cs.primary;
     final protocolName = _protocolLabel(l10n, protocol);
     // Whether an action button (stop or restart) renders inside this card.

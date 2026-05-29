@@ -43,7 +43,7 @@ class DeviceCard extends StatelessWidget {
                 margin: const EdgeInsets.only(right: 10),
                 decoration: BoxDecoration(
                   color: connected
-                      ? (appColors?.connectedColor ?? cs.primary)
+                      ? (appColors?.liveColor ?? cs.primary)
                       : cs.onSurfaceVariant,
                   shape: BoxShape.circle,
                 ),
