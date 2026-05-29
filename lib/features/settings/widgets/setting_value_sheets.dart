@@ -153,17 +153,22 @@ class _TextSettingSheetState extends State<TextSettingSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        left: 20,
+        right: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
       ),
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
+            Text(
+              widget.title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: _controller,
               keyboardType: widget.keyboardType,
@@ -175,14 +180,13 @@ class _TextSettingSheetState extends State<TextSettingSheet> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            ElevatedButton(
+            const SizedBox(height: 20),
+            _SaveButton(
               onPressed: () async {
                 final value = _controller.text.trim();
                 Navigator.pop(context);
                 await widget.onSubmitted(value);
               },
-              child: Text(context.l10n.save),
             ),
           ],
         ),
@@ -235,17 +239,22 @@ class _RangeSettingSheetState extends State<RangeSettingSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        left: 20,
+        right: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
       ),
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
+            Text(
+              widget.title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -270,8 +279,8 @@ class _RangeSettingSheetState extends State<RangeSettingSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            ElevatedButton(
+            const SizedBox(height: 20),
+            _SaveButton(
               onPressed: () async {
                 final start =
                     int.tryParse(_startController.text) ?? widget.startValue;
@@ -283,11 +292,36 @@ class _RangeSettingSheetState extends State<RangeSettingSheet> {
                   end.clamp(widget.min, widget.max).toInt(),
                 );
               },
-              child: Text(context.l10n.save),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Full-width, solid primary save action used across the setting sheets so the
+/// button reads clearly against the sheet surface.
+class _SaveButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _SaveButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return FilledButton(
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(
+        backgroundColor: cs.primary,
+        foregroundColor: cs.onPrimary,
+        textStyle: Theme.of(context).textTheme.titleMedium,
+        minimumSize: const Size(double.infinity, 52),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      child: Text(context.l10n.save),
     );
   }
 }
