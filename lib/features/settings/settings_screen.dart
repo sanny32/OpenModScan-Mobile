@@ -453,8 +453,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       showDragHandle: true,
       builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.only(bottom: 8),
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -507,49 +508,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required TextInputType keyboardType,
     required FutureOr<void> Function(String) onSubmitted,
   }) async {
-    final controller = TextEditingController(text: initialValue);
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(title, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                keyboardType: keyboardType,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 14,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  await onSubmitted(controller.text.trim());
-                },
-                child: Text(context.l10n.save),
-              ),
-            ],
-          ),
-        ),
+      builder: (ctx) => _TextSettingSheet(
+        title: title,
+        initialValue: initialValue,
+        keyboardType: keyboardType,
+        onSubmitted: onSubmitted,
       ),
     );
-    controller.dispose();
   }
 
   Future<void> _showRangeSheet({
@@ -560,70 +529,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required int max,
     required FutureOr<void> Function(int, int) onSubmitted,
   }) async {
-    final startController = TextEditingController(text: '$startValue');
-    final endController = TextEditingController(text: '$endValue');
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(title, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: startController,
-                      keyboardType: TextInputType.number,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        labelText: context.l10n.settingsRangeStart,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: endController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: context.l10n.settingsRangeEnd,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () async {
-                  final start =
-                      int.tryParse(startController.text) ?? startValue;
-                  final end = int.tryParse(endController.text) ?? endValue;
-                  Navigator.pop(ctx);
-                  await onSubmitted(
-                    start.clamp(min, max).toInt(),
-                    end.clamp(min, max).toInt(),
-                  );
-                },
-                child: Text(context.l10n.save),
-              ),
-            ],
-          ),
-        ),
+      builder: (ctx) => _RangeSettingSheet(
+        title: title,
+        startValue: startValue,
+        endValue: endValue,
+        min: min,
+        max: max,
+        onSubmitted: onSubmitted,
       ),
     );
-    startController.dispose();
-    endController.dispose();
   }
 
   String _themeOptionLabel(AppLocalizations l10n, String option) {
@@ -696,6 +614,180 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(l10n.settingsResetDefaults),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TextSettingSheet extends StatefulWidget {
+  final String title;
+  final String initialValue;
+  final TextInputType keyboardType;
+  final FutureOr<void> Function(String) onSubmitted;
+
+  const _TextSettingSheet({
+    required this.title,
+    required this.initialValue,
+    required this.keyboardType,
+    required this.onSubmitted,
+  });
+
+  @override
+  State<_TextSettingSheet> createState() => _TextSettingSheetState();
+}
+
+class _TextSettingSheetState extends State<_TextSettingSheet> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _controller,
+              keyboardType: widget.keyboardType,
+              autofocus: true,
+              decoration: const InputDecoration(
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () async {
+                final value = _controller.text.trim();
+                Navigator.pop(context);
+                await widget.onSubmitted(value);
+              },
+              child: Text(context.l10n.save),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RangeSettingSheet extends StatefulWidget {
+  final String title;
+  final int startValue;
+  final int endValue;
+  final int min;
+  final int max;
+  final FutureOr<void> Function(int, int) onSubmitted;
+
+  const _RangeSettingSheet({
+    required this.title,
+    required this.startValue,
+    required this.endValue,
+    required this.min,
+    required this.max,
+    required this.onSubmitted,
+  });
+
+  @override
+  State<_RangeSettingSheet> createState() => _RangeSettingSheetState();
+}
+
+class _RangeSettingSheetState extends State<_RangeSettingSheet> {
+  late final TextEditingController _startController;
+  late final TextEditingController _endController;
+
+  @override
+  void initState() {
+    super.initState();
+    _startController = TextEditingController(text: '${widget.startValue}');
+    _endController = TextEditingController(text: '${widget.endValue}');
+  }
+
+  @override
+  void dispose() {
+    _startController.dispose();
+    _endController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _startController,
+                    keyboardType: TextInputType.number,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.settingsRangeStart,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _endController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.settingsRangeEnd,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () async {
+                final start =
+                    int.tryParse(_startController.text) ?? widget.startValue;
+                final end =
+                    int.tryParse(_endController.text) ?? widget.endValue;
+                Navigator.pop(context);
+                await widget.onSubmitted(
+                  start.clamp(widget.min, widget.max).toInt(),
+                  end.clamp(widget.min, widget.max).toInt(),
+                );
+              },
+              child: Text(context.l10n.save),
+            ),
+          ],
+        ),
       ),
     );
   }
