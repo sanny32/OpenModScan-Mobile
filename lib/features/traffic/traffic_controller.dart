@@ -39,6 +39,15 @@ class TrafficController extends ChangeNotifier {
 
   bool isConnected(DeviceInfo device) => _connectionRuntime.isConnected(device);
 
+  Future<void> toggleConnection(DeviceInfo device) async {
+    if (_connectionRuntime.isConnected(device)) {
+      await _connectionRuntime.disconnect(device);
+      return;
+    }
+    await _connectionRuntime.connect(device);
+    await _repository.update(device.copyWith(lastConnectedAt: DateTime.now()));
+  }
+
   List<LogEntry> get entries {
     final all = _logs.entriesFor(_selectedDeviceId);
     return switch (_filter) {

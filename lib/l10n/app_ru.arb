@@ -74,6 +74,7 @@
   "colFunction": "Функция",
   "logMessages": "Сообщений: {count}",
   "logClearOnDisconnect": "Очищать при отключении",
+  "logClearTraffic": "Очистить трафик",
   "editDevice": "Редактировать устройство",
   "deviceDeleted": "Устройство удалено",
   "undo": "Отменить",

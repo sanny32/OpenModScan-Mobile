@@ -5,6 +5,7 @@ import '../../models/log_entry.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/connection_info_bar.dart';
 import '../../widgets/connection_status_chip.dart';
+import '../../widgets/error_feedback.dart';
 import 'traffic_controller.dart';
 
 class TrafficScreen extends StatefulWidget {
@@ -17,7 +18,30 @@ class TrafficScreen extends StatefulWidget {
 }
 
 class _TrafficScreenState extends State<TrafficScreen> {
+  bool _connectionBusy = false;
+
   DeviceInfo? get _selectedDevice => widget.controller.selectedDevice;
+
+  void _clearTraffic() {
+    // TODO: wire up traffic log clearing once TrafficLogSource exposes it.
+  }
+
+  Future<void> _toggleSelectedConnection() async {
+    final device = _selectedDevice;
+    if (device == null || _connectionBusy) return;
+
+    setState(() => _connectionBusy = true);
+    try {
+      await widget.controller.toggleConnection(device);
+    } catch (error) {
+      if (!mounted) return;
+      showErrorSnackBar(context, error);
+    } finally {
+      if (mounted) {
+        setState(() => _connectionBusy = false);
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -60,32 +84,56 @@ class _TrafficScreenState extends State<TrafficScreen> {
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.delete_outline), onPressed: () {}),
+          if (selected != null)
+            IconButton(
+              icon: Icon(
+                Icons.power_settings_new,
+                color: widget.controller.isConnected(selected)
+                    ? appColors.connectedColor
+                    : cs.onSurfaceVariant,
+              ),
+              tooltip: widget.controller.isConnected(selected)
+                  ? l10n.disconnect
+                  : l10n.connect,
+              onPressed: _connectionBusy ? null : _toggleSelectedConnection,
+            ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: widget.controller.selectDevice,
-            itemBuilder: (context) => widget.controller.connectedDevices
-                .map(
-                  (d) => PopupMenuItem<String>(
-                    value: d.id,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.memory,
-                          size: 18,
-                          color: cs.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(d.name),
-                        if (d.id == selected?.id) ...[
-                          const Spacer(),
-                          Icon(Icons.check, size: 16, color: cs.primary),
-                        ],
-                      ],
+            itemBuilder: (context) => [
+              PopupMenuItem<String>(
+                onTap: _clearTraffic,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.delete_outline,
+                      size: 18,
+                      color: cs.onSurfaceVariant,
                     ),
+                    const SizedBox(width: 10),
+                    Text(l10n.logClearTraffic),
+                  ],
+                ),
+              ),
+              if (widget.controller.connectedDevices.isNotEmpty)
+                const PopupMenuDivider(),
+              ...widget.controller.connectedDevices.map(
+                (d) => PopupMenuItem<String>(
+                  value: d.id,
+                  child: Row(
+                    children: [
+                      Icon(Icons.memory, size: 18, color: cs.onSurfaceVariant),
+                      const SizedBox(width: 10),
+                      Text(d.name),
+                      if (d.id == selected?.id) ...[
+                        const Spacer(),
+                        Icon(Icons.check, size: 16, color: cs.primary),
+                      ],
+                    ],
                   ),
-                )
-                .toList(),
+                ),
+              ),
+            ],
           ),
         ],
       ),

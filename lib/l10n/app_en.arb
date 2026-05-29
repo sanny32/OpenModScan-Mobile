@@ -279,6 +279,9 @@
   "logClearOnDisconnect": "Clear on disconnect",
   "@logClearOnDisconnect": {},
 
+  "logClearTraffic": "Clear traffic",
+  "@logClearTraffic": {},
+
   "editDevice": "Edit Device",
   "@editDevice": {},
 

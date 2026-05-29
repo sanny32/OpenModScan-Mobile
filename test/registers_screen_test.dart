@@ -29,7 +29,7 @@ void main() {
     await DeviceRepository.instance.replaceAll(List.of(demoDevices));
   });
 
-  testWidgets('Registers menu toggles selected device connection', (
+  testWidgets('Registers header icon toggles selected device connection', (
     WidgetTester tester,
   ) async {
     final device = DeviceInfo(
@@ -69,16 +69,12 @@ void main() {
 
     expect(connections.isConnected(device), isFalse);
 
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Connect'));
+    await tester.tap(find.byTooltip('Connect'));
     await tester.pumpAndSettle();
 
     expect(connections.isConnected(device), isTrue);
 
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Disconnect'));
+    await tester.tap(find.byTooltip('Disconnect'));
     await tester.pumpAndSettle();
 
     expect(connections.isConnected(device), isFalse);
