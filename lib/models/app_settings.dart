@@ -50,7 +50,7 @@ class AppSettings {
   static const themeOptions = ['System', 'Light', 'Dark'];
   static const languageOptions = ['System', 'English', 'Russian'];
 
-  String connectionType = 'Modbus TCP';
+  ProtocolType connectionType = ProtocolType.modbusTcp;
   int timeout = 1000;
   int reconnectDelay = 3000;
   int readFailureAttempts = 3;
@@ -98,7 +98,7 @@ class AppSettings {
 
   Future<void> load() async {
     await _store.load();
-    connectionType = _store.getString(_connectionTypeKey) ?? 'Modbus TCP';
+    connectionType = _protocolFromValue(_store.getString(_connectionTypeKey));
     timeout = _store.getInt(_timeoutKey) ?? 1000;
     reconnectDelay = _store.getInt(_reconnectDelayKey) ?? 3000;
     readFailureAttempts = _store.getInt(_readFailureAttemptsKey) ?? 3;
@@ -161,6 +161,31 @@ class AppSettings {
 
   Future<void> setReadFailureAttempts(int value) async {
     readFailureAttempts = value;
+    await _saveEditableValues();
+  }
+
+  Future<void> setConnectionType(ProtocolType value) async {
+    connectionType = value;
+    await _saveEditableValues();
+  }
+
+  Future<void> setTimeout(int value) async {
+    timeout = _clampInt(value, 100, 60000);
+    await _saveEditableValues();
+  }
+
+  Future<void> setReconnectDelay(int value) async {
+    reconnectDelay = _clampInt(value, 500, 60000);
+    await _saveEditableValues();
+  }
+
+  Future<void> setDefaultUnitId(int value) async {
+    defaultUnitId = _clampInt(value, 1, 247);
+    await _saveEditableValues();
+  }
+
+  Future<void> setDefaultReadQty(int value) async {
+    defaultReadQty = _clampInt(value, 1, 125);
     await _saveEditableValues();
   }
 
@@ -254,7 +279,7 @@ class AppSettings {
   }
 
   Future<void> resetToDefaults() async {
-    connectionType = 'Modbus TCP';
+    connectionType = ProtocolType.modbusTcp;
     timeout = 1000;
     reconnectDelay = 3000;
     readFailureAttempts = 3;
@@ -285,8 +310,115 @@ class AppSettings {
     await _setLocale(null);
   }
 
+  /// Serializes every persisted setting into a JSON-friendly map for backup.
+  Map<String, dynamic> toJson() => {
+    _connectionTypeKey: connectionType.name,
+    _timeoutKey: timeout,
+    _reconnectDelayKey: reconnectDelay,
+    _readFailureAttemptsKey: readFailureAttempts,
+    _defaultUnitIdKey: defaultUnitId,
+    _defaultReadQtyKey: defaultReadQty,
+    _addressBaseKey: addressBase,
+    _registerOrderKey: registerOrder,
+    _byteOrderKey: byteOrder,
+    _writeEnabledKey: writeEnabled,
+    _confirmBeforeWriteKey: confirmBeforeWrite,
+    _showLastValuesKey: showLastValues,
+    _showTypeBadgesKey: showTypeBadges,
+    _saveLogToFileKey: saveLogToFile,
+    _clearLogOnDisconnectKey: clearLogOnDisconnect,
+    _maxLogEntriesKey: maxLogEntries,
+    _scanProtocolKey: scanProtocol.name,
+    _scanSubnetPrefixKey: scanSubnetPrefix,
+    _scanPortStartKey: scanPortStart,
+    _scanPortEndKey: scanPortEnd,
+    _scanUnitIdStartKey: scanUnitIdStart,
+    _scanUnitIdEndKey: scanUnitIdEnd,
+    _scanRequestTypeKey: scanRequestType.name,
+    _scanRequestAddressKey: scanRequestAddress,
+    _savedDevicesSortModeKey: savedDevicesSortMode.name,
+    _scanClearOnStartKey: scanClearOnStart,
+    _themeModeKey: themeMode.name,
+    _localeKey: locale?.languageCode ?? 'system',
+  };
+
+  /// Restores settings from a backup map produced by [toJson]. Unknown or
+  /// missing entries keep the current value; numeric values are clamped and
+  /// scan ranges normalized exactly as during [load].
+  Future<void> applyJson(Map<String, dynamic> json) async {
+    T? read<T>(String key) {
+      final value = json[key];
+      return value is T ? value : null;
+    }
+
+    connectionType = _protocolFromValue(read<String>(_connectionTypeKey));
+    timeout = _clampInt(read<int>(_timeoutKey) ?? timeout, 100, 60000);
+    reconnectDelay = _clampInt(
+      read<int>(_reconnectDelayKey) ?? reconnectDelay,
+      500,
+      60000,
+    );
+    readFailureAttempts =
+        read<int>(_readFailureAttemptsKey) ?? readFailureAttempts;
+    defaultUnitId = _clampInt(read<int>(_defaultUnitIdKey) ?? defaultUnitId, 1, 247);
+    defaultReadQty = _clampInt(
+      read<int>(_defaultReadQtyKey) ?? defaultReadQty,
+      1,
+      125,
+    );
+    addressBase = read<String>(_addressBaseKey) ?? addressBase;
+    registerOrder = read<String>(_registerOrderKey) ?? registerOrder;
+    byteOrder = read<String>(_byteOrderKey) ?? byteOrder;
+    writeEnabled = read<bool>(_writeEnabledKey) ?? writeEnabled;
+    confirmBeforeWrite = read<bool>(_confirmBeforeWriteKey) ?? confirmBeforeWrite;
+    showLastValues = read<bool>(_showLastValuesKey) ?? showLastValues;
+    showTypeBadges = read<bool>(_showTypeBadgesKey) ?? showTypeBadges;
+    saveLogToFile = read<bool>(_saveLogToFileKey) ?? saveLogToFile;
+    clearLogOnDisconnect =
+        read<bool>(_clearLogOnDisconnectKey) ?? clearLogOnDisconnect;
+    maxLogEntries = read<int>(_maxLogEntriesKey) ?? maxLogEntries;
+    scanProtocol = _protocolFromValue(read<String>(_scanProtocolKey));
+    scanSubnetPrefix = _clampInt(
+      read<int>(_scanSubnetPrefixKey) ?? scanSubnetPrefix,
+      16,
+      30,
+    );
+    scanPortStart = _clampInt(
+      read<int>(_scanPortStartKey) ?? scanPortStart,
+      1,
+      65535,
+    );
+    scanPortEnd = _clampInt(read<int>(_scanPortEndKey) ?? scanPortEnd, 1, 65535);
+    scanUnitIdStart = _clampInt(
+      read<int>(_scanUnitIdStartKey) ?? scanUnitIdStart,
+      1,
+      247,
+    );
+    scanUnitIdEnd = _clampInt(
+      read<int>(_scanUnitIdEndKey) ?? scanUnitIdEnd,
+      1,
+      247,
+    );
+    _normalizeScanRanges();
+    scanRequestType = ModbusScanRequestTypeX.fromName(
+      read<String>(_scanRequestTypeKey),
+    );
+    scanRequestAddress = _clampInt(
+      read<int>(_scanRequestAddressKey) ?? scanRequestAddress,
+      0,
+      0xffff,
+    );
+    savedDevicesSortMode = _deviceSortModeFromValue(
+      read<String>(_savedDevicesSortModeKey),
+    );
+    scanClearOnStart = read<bool>(_scanClearOnStartKey) ?? scanClearOnStart;
+    await _saveEditableValues();
+    await _setThemeMode(_themeModeFromValue(read<String>(_themeModeKey)));
+    await _setLocale(_localeFromValue(read<String>(_localeKey)));
+  }
+
   Future<void> _saveEditableValues() async {
-    await _store.setString(_connectionTypeKey, connectionType);
+    await _store.setString(_connectionTypeKey, connectionType.name);
     await _store.setInt(_timeoutKey, timeout);
     await _store.setInt(_reconnectDelayKey, reconnectDelay);
     await _store.setInt(_readFailureAttemptsKey, readFailureAttempts);

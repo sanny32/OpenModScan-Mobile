@@ -3,11 +3,14 @@ import 'package:flutter/foundation.dart';
 import '../../models/app_settings.dart';
 import '../../models/device_info.dart';
 import '../../models/modbus_scan.dart';
+import '../../services/backup_service.dart';
 
 class SettingsController extends ChangeNotifier {
   final AppSettings settings;
+  final BackupService _backup;
 
-  SettingsController(this.settings);
+  SettingsController(this.settings, {BackupService? backupService})
+    : _backup = backupService ?? BackupService();
 
   Future<void> setTheme(String value) async {
     await settings.setTheme(value);
@@ -21,6 +24,31 @@ class SettingsController extends ChangeNotifier {
 
   Future<void> setReadFailureAttempts(int value) async {
     await settings.setReadFailureAttempts(value);
+    notifyListeners();
+  }
+
+  Future<void> setConnectionType(ProtocolType value) async {
+    await settings.setConnectionType(value);
+    notifyListeners();
+  }
+
+  Future<void> setTimeout(int value) async {
+    await settings.setTimeout(value);
+    notifyListeners();
+  }
+
+  Future<void> setReconnectDelay(int value) async {
+    await settings.setReconnectDelay(value);
+    notifyListeners();
+  }
+
+  Future<void> setDefaultUnitId(int value) async {
+    await settings.setDefaultUnitId(value);
+    notifyListeners();
+  }
+
+  Future<void> setDefaultReadQty(int value) async {
+    await settings.setDefaultReadQty(value);
     notifyListeners();
   }
 
@@ -107,5 +135,14 @@ class SettingsController extends ChangeNotifier {
   Future<void> resetToDefaults() async {
     await settings.resetToDefaults();
     notifyListeners();
+  }
+
+  Future<BackupResult> exportBackup({String? dialogTitle}) =>
+      _backup.export(dialogTitle: dialogTitle);
+
+  Future<BackupResult> importBackup({String? dialogTitle}) async {
+    final result = await _backup.import(dialogTitle: dialogTitle);
+    if (result == BackupResult.success) notifyListeners();
+    return result;
   }
 }

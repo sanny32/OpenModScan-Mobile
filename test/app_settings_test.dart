@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omodscan_mobile/models/app_settings.dart';
 import 'package:omodscan_mobile/models/device_info.dart';
@@ -109,6 +110,90 @@ void main() {
     expect(settings.scanUnitIdEnd, 10);
     expect(settings.writeEnabled, isTrue);
     expect(settings.confirmBeforeWrite, isFalse);
+  });
+
+  test('connection defaults persist and clamp out-of-range values', () async {
+    final settings = AppSettings.instance;
+    await settings.resetToDefaults();
+
+    await settings.setConnectionType(ProtocolType.modbusRtuIp);
+    await settings.setTimeout(50); // below min → clamped to 100
+    await settings.setReconnectDelay(99999); // above max → clamped to 60000
+    await settings.setDefaultUnitId(500); // above max → clamped to 247
+    await settings.setDefaultReadQty(0); // below min → clamped to 1
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('connectionType'), 'modbusRtuIp');
+    expect(prefs.getInt('timeout'), 100);
+    expect(prefs.getInt('reconnectDelay'), 60000);
+    expect(prefs.getInt('defaultUnitId'), 247);
+    expect(prefs.getInt('defaultReadQty'), 1);
+
+    await settings.load();
+    expect(settings.connectionType, ProtocolType.modbusRtuIp);
+    expect(settings.timeout, 100);
+    expect(settings.reconnectDelay, 60000);
+    expect(settings.defaultUnitId, 247);
+    expect(settings.defaultReadQty, 1);
+
+    await settings.resetToDefaults();
+    expect(settings.connectionType, ProtocolType.modbusTcp);
+    expect(settings.timeout, 1000);
+    expect(settings.reconnectDelay, 3000);
+    expect(settings.defaultUnitId, 1);
+    expect(settings.defaultReadQty, 20);
+  });
+
+  test('toJson/applyJson round-trips every setting', () async {
+    final source = AppSettings.withStore(FakeSettingsStore());
+    await source.setConnectionType(ProtocolType.modbusRtuIp);
+    await source.setTimeout(2500);
+    await source.setReconnectDelay(7000);
+    await source.setDefaultUnitId(9);
+    await source.setDefaultReadQty(64);
+    await source.setReadFailureAttempts(5);
+    await source.setAddressBase('1-based');
+    await source.setRegisterOrder('LSRF');
+    await source.setByteOrder('Swapped');
+    await source.setWriteEnabled(false);
+    await source.setConfirmBeforeWrite(true);
+    await source.setShowTypeBadges(true);
+    await source.setScanSubnetPrefix(20);
+    await source.setScanPortRange(100, 200);
+    await source.setScanUnitIdRange(2, 8);
+    await source.setScanRequestType(ModbusScanRequestType.coils);
+    await source.setScanRequestAddress(42);
+    await source.setSavedDevicesSortMode(DeviceSortMode.created);
+    await source.setTheme('Dark');
+    await source.setLanguage('Russian');
+
+    final backup = source.toJson();
+
+    final target = AppSettings.withStore(FakeSettingsStore());
+    await target.applyJson(backup);
+
+    expect(target.connectionType, ProtocolType.modbusRtuIp);
+    expect(target.timeout, 2500);
+    expect(target.reconnectDelay, 7000);
+    expect(target.defaultUnitId, 9);
+    expect(target.defaultReadQty, 64);
+    expect(target.readFailureAttempts, 5);
+    expect(target.addressBase, '1-based');
+    expect(target.registerOrder, 'LSRF');
+    expect(target.byteOrder, 'Swapped');
+    expect(target.writeEnabled, isFalse);
+    expect(target.confirmBeforeWrite, isTrue);
+    expect(target.showTypeBadges, isTrue);
+    expect(target.scanSubnetPrefix, 20);
+    expect(target.scanPortStart, 100);
+    expect(target.scanPortEnd, 200);
+    expect(target.scanUnitIdStart, 2);
+    expect(target.scanUnitIdEnd, 8);
+    expect(target.scanRequestType, ModbusScanRequestType.coils);
+    expect(target.scanRequestAddress, 42);
+    expect(target.savedDevicesSortMode, DeviceSortMode.created);
+    expect(target.themeMode, ThemeMode.dark);
+    expect(target.locale?.languageCode, 'ru');
   });
 
   test('delegates persistence to the injected SettingsStore', () async {

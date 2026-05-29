@@ -232,6 +232,20 @@ void main() {
     expect(find.text('Name already exists'), findsOneWidget);
   });
 
+  testWidgets('Register list dialog prefills count from default read qty', (
+    WidgetTester tester,
+  ) async {
+    await AppSettings.instance.setDefaultReadQty(33);
+
+    await tester.pumpWidget(const RegisterListDialogHarness());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open dialog'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('33'), findsOneWidget);
+  });
+
   testWidgets('Register list dialog clears error when name is changed', (
     WidgetTester tester,
   ) async {

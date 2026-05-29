@@ -598,6 +598,24 @@
   "settingsBackupRestore": "Backup & Restore",
   "@settingsBackupRestore": {},
 
+  "settingsBackupExport": "Export backup",
+  "@settingsBackupExport": {},
+
+  "settingsBackupImport": "Import backup",
+  "@settingsBackupImport": {},
+
+  "settingsBackupImportConfirmMessage": "Importing will replace your current settings and saved devices.",
+  "@settingsBackupImportConfirmMessage": {},
+
+  "settingsBackupExportSuccess": "Backup exported",
+  "@settingsBackupExportSuccess": {},
+
+  "settingsBackupImportSuccess": "Backup imported",
+  "@settingsBackupImportSuccess": {},
+
+  "settingsBackupFailure": "Backup operation failed",
+  "@settingsBackupFailure": {},
+
   "settingsResetDefaults": "Reset to defaults",
   "@settingsResetDefaults": {},
 

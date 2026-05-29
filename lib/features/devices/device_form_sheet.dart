@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../l10n/l10n.dart';
+import '../../models/app_settings.dart';
 import '../../models/device_info.dart';
 import 'device_marker_color_palette.dart';
 
@@ -47,15 +48,23 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
   void initState() {
     super.initState();
     final d = widget.initial;
-    _connType = d?.protocol == ProtocolType.modbusRtuIp ? 1 : 0;
+    final defaults = AppSettings.instance;
+    _connType =
+        (d?.protocol ?? defaults.connectionType) == ProtocolType.modbusRtuIp
+        ? 1
+        : 0;
     _markerColor = d?.markerColor ?? DeviceMarkerColor.blue;
     _nameCtrl = TextEditingController(text: d?.name ?? '');
     _hostCtrl = TextEditingController(text: d?.host ?? '');
     _portCtrl = TextEditingController(text: (d?.port ?? 502).toString());
-    _unitCtrl = TextEditingController(text: (d?.unitId ?? 1).toString());
-    _timeoutCtrl = TextEditingController(text: (d?.timeout ?? 1000).toString());
+    _unitCtrl = TextEditingController(
+      text: (d?.unitId ?? defaults.defaultUnitId).toString(),
+    );
+    _timeoutCtrl = TextEditingController(
+      text: (d?.timeout ?? defaults.timeout).toString(),
+    );
     _reconnectCtrl = TextEditingController(
-      text: (d?.reconnectDelay ?? 3000).toString(),
+      text: (d?.reconnectDelay ?? defaults.reconnectDelay).toString(),
     );
     _notesCtrl = TextEditingController(text: d?.notes ?? '');
   }

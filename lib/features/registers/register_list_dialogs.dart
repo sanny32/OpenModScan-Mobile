@@ -44,7 +44,9 @@ class _RegisterListDialogState extends State<_RegisterListDialog> {
     final minStart = AppSettings.instance.addressBaseStart;
     _nameCtrl = TextEditingController(text: widget.defaultName);
     _startCtrl = TextEditingController(text: minStart.toString());
-    _countCtrl = TextEditingController(text: '20');
+    _countCtrl = TextEditingController(
+      text: '${AppSettings.instance.defaultReadQty}',
+    );
   }
 
   @override
@@ -80,8 +82,9 @@ class _RegisterListDialogState extends State<_RegisterListDialog> {
   }
 
   int _count() {
-    final value = int.tryParse(_countCtrl.text) ?? 20;
-    return value < 1 ? 20 : value;
+    final fallback = AppSettings.instance.defaultReadQty;
+    final value = int.tryParse(_countCtrl.text) ?? fallback;
+    return value < 1 ? fallback : value;
   }
 
   @override

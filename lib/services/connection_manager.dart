@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../models/app_settings.dart';
 import '../models/device_info.dart';
 import '../runtime/runtime_ports.dart';
 import 'modbus_client.dart';
@@ -45,28 +46,40 @@ class ConnectionManager implements ConnectionRuntime {
     DeviceInfo device, {
     required int startAddress,
     required int count,
-  }) => _clientFor(device).readHoldingRegisters(startAddress, count);
+  }) => _withRetry(
+    device,
+    () => _clientFor(device).readHoldingRegisters(startAddress, count),
+  );
 
   @override
   Future<List<int>> readInputRegisters(
     DeviceInfo device, {
     required int startAddress,
     required int count,
-  }) => _clientFor(device).readInputRegisters(startAddress, count);
+  }) => _withRetry(
+    device,
+    () => _clientFor(device).readInputRegisters(startAddress, count),
+  );
 
   @override
   Future<List<bool>> readCoils(
     DeviceInfo device, {
     required int startAddress,
     required int count,
-  }) => _clientFor(device).readCoils(startAddress, count);
+  }) => _withRetry(
+    device,
+    () => _clientFor(device).readCoils(startAddress, count),
+  );
 
   @override
   Future<List<bool>> readDiscreteInputs(
     DeviceInfo device, {
     required int startAddress,
     required int count,
-  }) => _clientFor(device).readDiscreteInputs(startAddress, count);
+  }) => _withRetry(
+    device,
+    () => _clientFor(device).readDiscreteInputs(startAddress, count),
+  );
 
   @override
   Future<void> writeHoldingRegister(
@@ -82,11 +95,56 @@ class ConnectionManager implements ConnectionRuntime {
     required bool value,
   }) => _clientFor(device).writeCoil(address, value);
 
+  /// Runs a read [op], retrying up to `readFailureAttempts` times. Between
+  /// failed attempts it waits the device's `reconnectDelay` and makes a
+  /// best-effort reconnect, so transient drops recover transparently.
+  Future<T> _withRetry<T>(DeviceInfo device, Future<T> Function() op) {
+    return runReadWithRetry(
+      attempts: AppSettings.instance.readFailureAttempts,
+      reconnectDelay: Duration(milliseconds: device.reconnectDelay),
+      read: op,
+      reconnect: () async {
+        final client = clients.value[device.id];
+        await client?.disconnect();
+        await client?.connect();
+      },
+    );
+  }
+
   ModbusClient _clientFor(DeviceInfo device) {
     final client = clients.value[device.id];
     if (client == null || !client.isConnected) {
       throw StateError('${device.name} is not connected.');
     }
     return client;
+  }
+}
+
+/// Attempts [read] up to [attempts] times (at least once). After a failed
+/// attempt — except the final one — it waits [reconnectDelay] and runs the
+/// best-effort [reconnect] before retrying. The last failure is rethrown.
+///
+/// Extracted as a top-level function so the retry policy can be unit-tested
+/// without a live Modbus connection.
+@visibleForTesting
+Future<T> runReadWithRetry<T>({
+  required int attempts,
+  required Duration reconnectDelay,
+  required Future<T> Function() read,
+  required Future<void> Function() reconnect,
+}) async {
+  final maxAttempts = attempts.clamp(1, 100);
+  for (var attempt = 1; ; attempt++) {
+    try {
+      return await read();
+    } catch (_) {
+      if (attempt >= maxAttempts) rethrow;
+      await Future<void>.delayed(reconnectDelay);
+      try {
+        await reconnect();
+      } catch (_) {
+        // Reconnect failed; the next attempt will retry or rethrow.
+      }
+    }
   }
 }

@@ -3,6 +3,7 @@ import '../../l10n/l10n.dart';
 import '../../models/app_settings.dart';
 import '../../models/device_info.dart';
 import '../../models/modbus_scan.dart';
+import '../../services/backup_service.dart';
 import 'settings_controller.dart';
 import 'about_screen.dart';
 import 'widgets/setting_value_sheets.dart';
@@ -150,7 +151,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _sectionSummary(AppLocalizations l10n, _SettingsSection section) {
     return switch (section) {
       _SettingsSection.connection =>
-        '${_s.connectionType} · ${l10n.settingsValueMs(_s.timeout)}',
+        '${_protocolLabel(l10n, _s.connectionType)} · ${l10n.settingsValueMs(_s.timeout)}',
       _SettingsSection.networkScanner =>
         '${_protocolLabel(l10n, _s.scanProtocol)} · /${_s.scanSubnetPrefix} · ${l10n.settingsSummaryPort(_formatRange(_s.scanPortStart, _s.scanPortEnd))}',
       _SettingsSection.readWrite =>
@@ -171,19 +172,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _navTile(
           icon: Icons.wifi,
           label: l10n.settingsDefaultConnectionType,
-          value: _s.connectionType,
+          value: _protocolLabel(l10n, _s.connectionType),
+          onTap: () => showSettingChoiceSheet(
+            context,
+            title: l10n.settingsDefaultConnectionType,
+            options: ProtocolType.values.map((value) => value.name).toList(),
+            selected: _s.connectionType.name,
+            optionLabel: (value) => _protocolLabel(
+              l10n,
+              ProtocolType.values.firstWhere(
+                (protocol) => protocol.name == value,
+              ),
+            ),
+            onSelected: (value) => widget.controller.setConnectionType(
+              ProtocolType.values.firstWhere(
+                (protocol) => protocol.name == value,
+              ),
+            ),
+          ),
         ),
         _divider(),
         _navTile(
           icon: Icons.timer_outlined,
           label: l10n.settingsDefaultTimeout,
           value: l10n.settingsValueMs(_s.timeout),
+          onTap: () => showSettingNumberSheet(
+            context,
+            title: l10n.settingsDefaultTimeout,
+            initialValue: _s.timeout,
+            min: 100,
+            max: 60000,
+            onSubmitted: widget.controller.setTimeout,
+          ),
         ),
         _divider(),
         _navTile(
           icon: Icons.sync,
           label: l10n.settingsReconnectDelay,
           value: l10n.settingsValueMs(_s.reconnectDelay),
+          onTap: () => showSettingNumberSheet(
+            context,
+            title: l10n.settingsReconnectDelay,
+            initialValue: _s.reconnectDelay,
+            min: 500,
+            max: 60000,
+            onSubmitted: widget.controller.setReconnectDelay,
+          ),
         ),
         _divider(),
         _navTile(
@@ -206,6 +240,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.tag,
           label: l10n.settingsDefaultUnitId,
           value: '${_s.defaultUnitId}',
+          onTap: () => showSettingNumberSheet(
+            context,
+            title: l10n.settingsDefaultUnitId,
+            initialValue: _s.defaultUnitId,
+            min: 1,
+            max: 247,
+            onSubmitted: widget.controller.setDefaultUnitId,
+          ),
         ),
       ],
       _SettingsSection.networkScanner => [
@@ -327,6 +369,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.dashboard_outlined,
           label: l10n.settingsDefaultReadQty,
           value: '${_s.defaultReadQty}',
+          onTap: () => showSettingNumberSheet(
+            context,
+            title: l10n.settingsDefaultReadQty,
+            initialValue: _s.defaultReadQty,
+            min: 1,
+            max: 125,
+            onSubmitted: widget.controller.setDefaultReadQty,
+          ),
         ),
         _divider(),
         _navTile(
@@ -455,6 +505,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.backup_outlined,
           label: l10n.settingsBackupRestore,
           value: '',
+          onTap: _showBackupRestoreSheet,
         ),
         _divider(),
         _navTile(
@@ -593,5 +644,94 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  void _showBackupRestoreSheet() {
+    final l10n = context.l10n;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.upload_file_outlined),
+              title: Text(l10n.settingsBackupExport),
+              onTap: () {
+                Navigator.pop(ctx);
+                _exportBackup();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.download_outlined),
+              title: Text(l10n.settingsBackupImport),
+              onTap: () {
+                Navigator.pop(ctx);
+                _confirmImportBackup();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _exportBackup() async {
+    final l10n = context.l10n;
+    final result = await widget.controller.exportBackup(
+      dialogTitle: l10n.settingsBackupExport,
+    );
+    _showBackupResult(
+      result,
+      successMessage: l10n.settingsBackupExportSuccess,
+    );
+  }
+
+  void _confirmImportBackup() {
+    final l10n = context.l10n;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.settingsBackupImport),
+        content: Text(l10n.settingsBackupImportConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _importBackup();
+            },
+            child: Text(l10n.settingsBackupImport),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _importBackup() async {
+    final l10n = context.l10n;
+    final result = await widget.controller.importBackup(
+      dialogTitle: l10n.settingsBackupImport,
+    );
+    _showBackupResult(
+      result,
+      successMessage: l10n.settingsBackupImportSuccess,
+    );
+  }
+
+  void _showBackupResult(
+    BackupResult result, {
+    required String successMessage,
+  }) {
+    if (!mounted || result == BackupResult.cancelled) return;
+    final l10n = context.l10n;
+    final message = result == BackupResult.success
+        ? successMessage
+        : l10n.settingsBackupFailure;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 }
