@@ -44,7 +44,7 @@ class RegisterDetailScreen extends StatefulWidget {
   final RegisterEntry entry;
   final bool canWrite;
   final void Function(String typeName, String? comment)? onSaved;
-  final Future<void> Function(String newValue)? onValueWritten;
+  final Future<String?> Function(String newValue)? onValueWritten;
 
   const RegisterDetailScreen({
     super.key,
@@ -63,13 +63,15 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
   late TextEditingController _commentCtrl;
   late String _registerOrder;
   late String _byteOrder;
+  late RegisterEntry _entry;
 
   @override
   void initState() {
     super.initState();
+    _entry = widget.entry;
     final settings = AppSettings.instance;
-    _selectedType = kRegisterTypes.contains(widget.entry.typeName)
-        ? widget.entry.typeName
+    _selectedType = kRegisterTypes.contains(_entry.typeName)
+        ? _entry.typeName
         : kRegisterTypes.first;
     _registerOrder = AppSettings.registerOrders.contains(settings.registerOrder)
         ? settings.registerOrder
@@ -77,7 +79,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     _byteOrder = AppSettings.byteOrders.contains(settings.byteOrder)
         ? settings.byteOrder
         : AppSettings.byteOrders.first;
-    _commentCtrl = TextEditingController(text: widget.entry.comment ?? '');
+    _commentCtrl = TextEditingController(text: _entry.comment ?? '');
     AppSettings.instance.showTypeBadgesNotifier.addListener(_onSettingChanged);
     AppSettings.instance.showLastValuesNotifier.addListener(_onSettingChanged);
   }
@@ -88,9 +90,9 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     final rawInt = int.tryParse(raw);
     if (rawInt == null) return raw;
     return computeDisplayValue(
-      widget.entry.address,
+      _entry.address,
       _selectedType,
-      {widget.entry.address: rawInt},
+      {_entry.address: rawInt},
       registerOrder: _registerOrder,
       byteOrder: _byteOrder,
     );
@@ -124,11 +126,11 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     super.dispose();
   }
 
-  bool get _hasRawWords => widget.entry.rawWords.isNotEmpty;
+  bool get _hasRawWords => _entry.rawWords.isNotEmpty;
 
   List<_Interpretation> _buildInterpretations() {
-    final addr = widget.entry.address;
-    final words = widget.entry.rawWords;
+    final addr = _entry.address;
+    final words = _entry.rawWords;
     String v(String type) => computeDisplayValue(
       addr,
       type,
@@ -140,18 +142,18 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
   }
 
   String _displayValueForType(String type) {
-    if (!_hasRawWords) return widget.entry.displayValue ?? widget.entry.value;
+    if (!_hasRawWords) return _entry.displayValue ?? _entry.value;
     for (final interp in _buildInterpretations()) {
       if (interp.typeName == type) return interp.value;
     }
-    return widget.entry.value;
+    return _entry.value;
   }
 
   Future<void> _showWriteDialog() async {
     final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final ctrl = TextEditingController(text: widget.entry.value);
+    final ctrl = TextEditingController(text: _entry.value);
     String? error;
     var writing = false;
 
@@ -171,7 +173,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                     style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
                   ),
                   Text(
-                    '${widget.entry.address}',
+                    '${_entry.address}',
                     style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -184,13 +186,13 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                     style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
                   ),
                   Text(
-                    widget.entry.value,
+                    _entry.value,
                     style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
                   ),
-                  if (widget.entry.previousValue != null) ...[
+                  if (_entry.previousValue != null) ...[
                     const SizedBox(width: 8),
                     Text(
-                      '← ${widget.entry.previousValue}',
+                      '← ${_entry.previousValue}',
                       style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                     ),
                   ],
@@ -250,6 +252,21 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     );
   }
 
+  void _applyWrittenValue(String newValue) {
+    final now = DateTime.now();
+    final rawWords = Map<int, int>.from(_entry.rawWords);
+    final intValue = int.tryParse(newValue);
+    if (intValue != null) rawWords[_entry.address] = intValue;
+    _entry = _entry.copyWith(
+      value: newValue,
+      previousValue: _entry.value,
+      valueState: RegisterValueState.received,
+      timestamp: formatModbusTime(now),
+      date: formatModbusDate(now),
+      rawWords: rawWords,
+    );
+  }
+
   Future<void> _doWrite(
     BuildContext ctx,
     TextEditingController ctrl,
@@ -265,7 +282,10 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     }
     setInnerState(() => setWriting(true));
     try {
-      await widget.onValueWritten?.call(ctrl.text);
+      final newValue = await widget.onValueWritten?.call(ctrl.text);
+      if (newValue != null && mounted) {
+        setState(() => _applyWrittenValue(newValue));
+      }
       if (ctx.mounted) Navigator.pop(ctx);
     } catch (error) {
       if (ctx.mounted && mounted) {
@@ -344,7 +364,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>()!;
-    final entry = widget.entry;
+    final entry = _entry;
     final currentValue = _displayValueForType(_selectedType);
     final valueColor = _valueColor(context, entry.valueState);
     final showPreviousValue =

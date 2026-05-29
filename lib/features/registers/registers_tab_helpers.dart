@@ -3,15 +3,9 @@ part of 'registers_screen.dart';
 int _regTypeOffset(String regType) =>
     RegisterAddressType.fromCode(regType).displayOffset;
 
-String _formatTimestamp(DateTime value) =>
-    '${value.hour.toString().padLeft(2, '0')}:'
-    '${value.minute.toString().padLeft(2, '0')}:'
-    '${value.second.toString().padLeft(2, '0')}';
+String _formatTimestamp(DateTime value) => formatModbusTime(value);
 
-String _formatDate(DateTime value) =>
-    '${value.day.toString().padLeft(2, '0')}.'
-    '${value.month.toString().padLeft(2, '0')}.'
-    '${value.year.toString().padLeft(4, '0')}';
+String _formatDate(DateTime value) => formatModbusDate(value);
 
 String _bitRangeLabel(AppLocalizations l10n, int start, int end) {
   final raw = l10n.registersShowing(start, end);

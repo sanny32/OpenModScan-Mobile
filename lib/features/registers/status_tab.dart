@@ -32,7 +32,7 @@ class _StatusTab extends StatefulWidget {
   })
   onRead;
   final void Function(int address, String? comment) onEntryChanged;
-  final Future<void> Function({
+  final Future<bool?> Function({
     required String statusType,
     required int address,
     required bool value,
@@ -341,12 +341,12 @@ class _StatusTabState extends State<_StatusTab> {
     );
   }
 
-  Future<void> _writeStatusValue(
+  Future<bool?> _writeStatusValue(
     StatusEntry entry,
     bool value, {
     bool rethrowError = false,
   }) async {
-    if (!_canWrite || !AppSettings.instance.writeEnabled) return;
+    if (!_canWrite || !AppSettings.instance.writeEnabled) return null;
 
     if (AppSettings.instance.confirmBeforeWrite) {
       final confirmed = await showDialog<bool>(
@@ -368,11 +368,11 @@ class _StatusTabState extends State<_StatusTab> {
           ],
         ),
       );
-      if (confirmed != true || !mounted) return;
+      if (confirmed != true || !mounted) return null;
     }
 
     try {
-      await widget.onValueWritten(
+      return await widget.onValueWritten(
         statusType: widget.statusType,
         address: entry.address,
         value: value,
@@ -380,6 +380,7 @@ class _StatusTabState extends State<_StatusTab> {
     } catch (error) {
       if (rethrowError) rethrow;
       if (mounted) showErrorSnackBar(context, error);
+      return null;
     }
   }
 }

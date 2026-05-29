@@ -260,10 +260,10 @@ class _RegistersScreenState extends State<RegistersScreen>
     }
   }
 
-  Future<void> _onValueWritten(int address, String value) =>
+  Future<String?> _onValueWritten(int address, String value) =>
       widget.controller.writeValue(address, value);
 
-  Future<void> _onStatusValueWritten({
+  Future<bool?> _onStatusValueWritten({
     required String statusType,
     required int address,
     required bool value,

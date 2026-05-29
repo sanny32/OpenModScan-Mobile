@@ -2,6 +2,16 @@ import 'dart:typed_data';
 
 import '../models/app_settings.dart';
 
+String formatModbusTime(DateTime value) =>
+    '${value.hour.toString().padLeft(2, '0')}:'
+    '${value.minute.toString().padLeft(2, '0')}:'
+    '${value.second.toString().padLeft(2, '0')}';
+
+String formatModbusDate(DateTime value) =>
+    '${value.day.toString().padLeft(2, '0')}.'
+    '${value.month.toString().padLeft(2, '0')}.'
+    '${value.year.toString().padLeft(4, '0')}';
+
 String formatFloat(double f) {
   if (f.isNaN) return 'NaN';
   if (f.isInfinite) return f > 0 ? '+inf' : '-inf';

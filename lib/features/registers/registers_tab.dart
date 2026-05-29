@@ -34,7 +34,7 @@ class _RegistersTab extends StatefulWidget {
   onRead;
   final void Function(int address, String typeName, String? comment)
   onEntryChanged;
-  final Future<void> Function(int address, String value) onValueWritten;
+  final Future<String?> Function(int address, String value) onValueWritten;
 
   const _RegistersTab({
     required this.regType,

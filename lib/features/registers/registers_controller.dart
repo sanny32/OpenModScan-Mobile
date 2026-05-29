@@ -191,10 +191,10 @@ class RegistersController extends ChangeNotifier {
     );
   }
 
-  Future<void> writeValue(int address, String value) async {
+  Future<String?> writeValue(int address, String value) async {
     final device = selectedDevice;
-    if (device == null) return;
-    if (!_settings.writeEnabled) return;
+    if (device == null) return null;
+    if (!_settings.writeEnabled) return null;
     if (!_connectionRuntime.isConnected(device)) {
       throw StateError('${device.name} is not connected.');
     }
@@ -212,22 +212,36 @@ class RegistersController extends ChangeNotifier {
       address: modbusAddress,
       value: raw,
     );
+    // Read the value back from the device so the UI reflects its actual state
+    // after the write, regardless of the auto-refresh setting.
+    var newValue = value;
+    try {
+      final readBack = await _connectionRuntime.readHoldingRegisters(
+        device,
+        startAddress: modbusAddress,
+        count: 1,
+      );
+      if (readBack.isNotEmpty) newValue = readBack.first.toString();
+    } catch (_) {
+      // The write succeeded; keep the written value if the read-back fails.
+    }
     _runtimeValues[address] = (
-      value: value,
+      value: newValue,
       previous: previous,
       readAt: DateTime.now(),
     );
     notifyListeners();
+    return newValue;
   }
 
-  Future<void> writeStatusValue({
+  Future<bool?> writeStatusValue({
     required String statusType,
     required int address,
     required bool value,
   }) async {
     final device = selectedDevice;
-    if (device == null) return;
-    if (!_settings.writeEnabled) return;
+    if (device == null) return null;
+    if (!_settings.writeEnabled) return null;
     if (!_connectionRuntime.isConnected(device)) {
       throw StateError('${device.name} is not connected.');
     }
@@ -248,12 +262,26 @@ class RegistersController extends ChangeNotifier {
       address: modbusAddress,
       value: value,
     );
+    // Read the value back from the device so the UI reflects its actual state
+    // after the write, regardless of the auto-refresh setting.
+    var newValue = value;
+    try {
+      final readBack = await _connectionRuntime.readCoils(
+        device,
+        startAddress: modbusAddress,
+        count: 1,
+      );
+      if (readBack.isNotEmpty) newValue = readBack.first;
+    } catch (_) {
+      // The write succeeded; keep the written value if the read-back fails.
+    }
     _runtimeStatusValues[key] = (
-      value: value,
+      value: newValue,
       previous: previous,
       readAt: DateTime.now(),
     );
     notifyListeners();
+    return newValue;
   }
 
   Future<void> readRegisters({

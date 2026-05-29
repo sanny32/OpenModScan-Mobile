@@ -18,7 +18,7 @@ class RegisterRow extends StatelessWidget {
   final VoidCallback? onGroupExpansionToggled;
   final void Function(int address, String typeName, String? comment)?
   onEntryChanged;
-  final Future<void> Function(int address, String value)? onValueWritten;
+  final Future<String?> Function(int address, String value)? onValueWritten;
 
   const RegisterRow({
     super.key,
@@ -220,7 +220,7 @@ class _RawRegisterWordRow extends StatelessWidget {
 Future<void> _showWriteRegisterDialog(
   BuildContext context,
   RegisterEntry entry,
-  Future<void> Function(int address, String value)? onValueWritten,
+  Future<String?> Function(int address, String value)? onValueWritten,
 ) async {
   final l10n = context.l10n;
   final cs = Theme.of(context).colorScheme;

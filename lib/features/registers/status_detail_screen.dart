@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
+import '../../utils/modbus_format.dart';
 import '../../widgets/error_feedback.dart';
 
 class StatusDetailScreen extends StatefulWidget {
@@ -11,7 +12,7 @@ class StatusDetailScreen extends StatefulWidget {
   final String? timestamp;
   final String? date;
   final ValueChanged<String?>? onSaved;
-  final Future<void> Function(bool value)? onValueWritten;
+  final Future<bool?> Function(bool value)? onValueWritten;
 
   const StatusDetailScreen({
     super.key,
@@ -32,6 +33,8 @@ class StatusDetailScreen extends StatefulWidget {
 class _StatusDetailScreenState extends State<StatusDetailScreen> {
   late bool _value;
   late final TextEditingController _commentCtrl;
+  String? _timestamp;
+  String? _date;
   bool _hasChanges = false;
   bool _writing = false;
 
@@ -39,6 +42,8 @@ class _StatusDetailScreenState extends State<StatusDetailScreen> {
   void initState() {
     super.initState();
     _value = widget.initialValue;
+    _timestamp = widget.timestamp;
+    _date = widget.date;
     _commentCtrl = TextEditingController(text: widget.comment);
     _commentCtrl.addListener(_onTextChanged);
   }
@@ -57,8 +62,9 @@ class _StatusDetailScreenState extends State<StatusDetailScreen> {
   Future<void> _setValue(bool value) async {
     if (!widget.canWrite) return;
     setState(() => _writing = true);
+    bool? written;
     try {
-      await widget.onValueWritten?.call(value);
+      written = await widget.onValueWritten?.call(value);
     } catch (error) {
       if (mounted) {
         setState(() => _writing = false);
@@ -67,8 +73,11 @@ class _StatusDetailScreenState extends State<StatusDetailScreen> {
       return;
     }
     if (!mounted) return;
+    final now = DateTime.now();
     setState(() {
-      _value = value;
+      _value = written ?? value;
+      _timestamp = formatModbusTime(now);
+      _date = formatModbusDate(now);
       _hasChanges = true;
       _writing = false;
     });
@@ -128,7 +137,7 @@ class _StatusDetailScreenState extends State<StatusDetailScreen> {
                         ),
                       ),
                       const Spacer(),
-                      if (widget.timestamp != null) ...[
+                      if (_timestamp != null) ...[
                         Padding(
                           padding: const EdgeInsets.only(top: 1),
                           child: Icon(
@@ -141,9 +150,9 @@ class _StatusDetailScreenState extends State<StatusDetailScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (widget.date != null) ...[
+                            if (_date != null) ...[
                               Text(
-                                widget.date!,
+                                _date!,
                                 maxLines: 1,
                                 softWrap: false,
                                 style: tt.bodyLarge!.copyWith(
@@ -155,7 +164,7 @@ class _StatusDetailScreenState extends State<StatusDetailScreen> {
                               const SizedBox(height: 5),
                             ],
                             Text(
-                              '${widget.timestamp!}.000',
+                              '${_timestamp!}.000',
                               maxLines: 1,
                               softWrap: false,
                               style: tt.bodyLarge!.copyWith(

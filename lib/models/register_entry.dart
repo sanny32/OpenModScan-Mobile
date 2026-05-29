@@ -53,4 +53,28 @@ class RegisterEntry {
     this.date,
     this.rawWords = const {},
   });
+
+  RegisterEntry copyWith({
+    int? address,
+    String? value,
+    String? displayValue,
+    String? previousValue,
+    RegisterValueState? valueState,
+    String? typeName,
+    String? comment,
+    String? timestamp,
+    String? date,
+    Map<int, int>? rawWords,
+  }) => RegisterEntry(
+    address: address ?? this.address,
+    value: value ?? this.value,
+    displayValue: displayValue ?? this.displayValue,
+    previousValue: previousValue ?? this.previousValue,
+    valueState: valueState ?? this.valueState,
+    typeName: typeName ?? this.typeName,
+    comment: comment ?? this.comment,
+    timestamp: timestamp ?? this.timestamp,
+    date: date ?? this.date,
+    rawWords: rawWords ?? this.rawWords,
+  );
 }

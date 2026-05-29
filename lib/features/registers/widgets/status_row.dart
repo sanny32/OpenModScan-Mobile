@@ -11,7 +11,7 @@ class StatusRow extends StatelessWidget {
   final bool canWrite;
   final ValueChanged<bool>? onChanged;
   final void Function(int address, String? comment)? onEntryChanged;
-  final Future<void> Function(bool value)? onDetailValueWritten;
+  final Future<bool?> Function(bool value)? onDetailValueWritten;
 
   const StatusRow({
     super.key,
