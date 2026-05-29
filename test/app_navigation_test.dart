@@ -63,6 +63,23 @@ void main() {
     expect(find.text('PLC #1'), findsOneWidget);
   });
 
+  testWidgets('System back from another tab returns to the devices tab', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const OModScanApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('PLC #1'), findsNothing);
+
+    // Android system back should land back on the devices branch.
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('PLC #1'), findsOneWidget);
+  });
+
   testWidgets('Deleted device snackbar disappears after timeout', (
     WidgetTester tester,
   ) async {

@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/settings_store.dart';
 import 'device_info.dart';
 import 'modbus_scan.dart';
 
 class AppSettings {
   static final AppSettings instance = AppSettings._();
-  AppSettings._();
+
+  final SettingsStore _store;
+
+  AppSettings._() : _store = SharedPreferencesSettingsStore();
+
+  /// Test seam: build a settings instance over an injected [SettingsStore].
+  @visibleForTesting
+  AppSettings.withStore(this._store);
 
   static const _themeModeKey = 'themeMode';
   static const _localeKey = 'locale';
@@ -90,58 +97,58 @@ class AppSettings {
   String get language => _languageLabel(locale);
 
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    connectionType = _getString(prefs, _connectionTypeKey) ?? 'Modbus TCP';
-    timeout = prefs.getInt(_timeoutKey) ?? 1000;
-    reconnectDelay = prefs.getInt(_reconnectDelayKey) ?? 3000;
-    readFailureAttempts = prefs.getInt(_readFailureAttemptsKey) ?? 3;
-    defaultUnitId = prefs.getInt(_defaultUnitIdKey) ?? 1;
-    defaultReadQty = prefs.getInt(_defaultReadQtyKey) ?? 20;
-    addressBase = _getString(prefs, _addressBaseKey) ?? addressBases.first;
-    registerOrder =
-        _getString(prefs, _registerOrderKey) ?? registerOrders.first;
-    byteOrder = _getString(prefs, _byteOrderKey) ?? byteOrders.first;
-    writeEnabled = prefs.getBool(_writeEnabledKey) ?? true;
-    confirmBeforeWrite = prefs.getBool(_confirmBeforeWriteKey) ?? false;
-    showLastValuesNotifier.value = prefs.getBool(_showLastValuesKey) ?? true;
-    showTypeBadgesNotifier.value = prefs.getBool(_showTypeBadgesKey) ?? false;
-    saveLogToFile = prefs.getBool(_saveLogToFileKey) ?? false;
-    clearLogOnDisconnect = prefs.getBool(_clearLogOnDisconnectKey) ?? false;
-    maxLogEntries = prefs.getInt(_maxLogEntriesKey) ?? 1000;
-    scanProtocol = _protocolFromValue(_getString(prefs, _scanProtocolKey));
+    await _store.load();
+    connectionType = _store.getString(_connectionTypeKey) ?? 'Modbus TCP';
+    timeout = _store.getInt(_timeoutKey) ?? 1000;
+    reconnectDelay = _store.getInt(_reconnectDelayKey) ?? 3000;
+    readFailureAttempts = _store.getInt(_readFailureAttemptsKey) ?? 3;
+    defaultUnitId = _store.getInt(_defaultUnitIdKey) ?? 1;
+    defaultReadQty = _store.getInt(_defaultReadQtyKey) ?? 20;
+    addressBase = _store.getString(_addressBaseKey) ?? addressBases.first;
+    registerOrder = _store.getString(_registerOrderKey) ?? registerOrders.first;
+    byteOrder = _store.getString(_byteOrderKey) ?? byteOrders.first;
+    writeEnabled = _store.getBool(_writeEnabledKey) ?? true;
+    confirmBeforeWrite = _store.getBool(_confirmBeforeWriteKey) ?? false;
+    showLastValuesNotifier.value = _store.getBool(_showLastValuesKey) ?? true;
+    showTypeBadgesNotifier.value = _store.getBool(_showTypeBadgesKey) ?? false;
+    saveLogToFile = _store.getBool(_saveLogToFileKey) ?? false;
+    clearLogOnDisconnect = _store.getBool(_clearLogOnDisconnectKey) ?? false;
+    maxLogEntries = _store.getInt(_maxLogEntriesKey) ?? 1000;
+    scanProtocol = _protocolFromValue(_store.getString(_scanProtocolKey));
     scanSubnetPrefix = _clampInt(
-      prefs.getInt(_scanSubnetPrefixKey) ?? 24,
+      _store.getInt(_scanSubnetPrefixKey) ?? 24,
       16,
       30,
     );
-    scanPortStart = _clampInt(prefs.getInt(_scanPortStartKey) ?? 502, 1, 65535);
-    scanPortEnd = _clampInt(prefs.getInt(_scanPortEndKey) ?? 502, 1, 65535);
-    scanUnitIdStart = _clampInt(prefs.getInt(_scanUnitIdStartKey) ?? 1, 1, 247);
-    scanUnitIdEnd = _clampInt(prefs.getInt(_scanUnitIdEndKey) ?? 10, 1, 247);
+    scanPortStart = _clampInt(
+      _store.getInt(_scanPortStartKey) ?? 502,
+      1,
+      65535,
+    );
+    scanPortEnd = _clampInt(_store.getInt(_scanPortEndKey) ?? 502, 1, 65535);
+    scanUnitIdStart = _clampInt(
+      _store.getInt(_scanUnitIdStartKey) ?? 1,
+      1,
+      247,
+    );
+    scanUnitIdEnd = _clampInt(_store.getInt(_scanUnitIdEndKey) ?? 10, 1, 247);
     _normalizeScanRanges();
     scanRequestType = ModbusScanRequestTypeX.fromName(
-      _getString(prefs, _scanRequestTypeKey),
+      _store.getString(_scanRequestTypeKey),
     );
     scanRequestAddress = _clampInt(
-      prefs.getInt(_scanRequestAddressKey) ?? 0,
+      _store.getInt(_scanRequestAddressKey) ?? 0,
       0,
       0xffff,
     );
     savedDevicesSortMode = _deviceSortModeFromValue(
-      _getString(prefs, _savedDevicesSortModeKey),
+      _store.getString(_savedDevicesSortModeKey),
     );
-    scanClearOnStart = prefs.getBool(_scanClearOnStartKey) ?? true;
+    scanClearOnStart = _store.getBool(_scanClearOnStartKey) ?? true;
     themeModeNotifier.value = _themeModeFromValue(
-      _getString(prefs, _themeModeKey),
+      _store.getString(_themeModeKey),
     );
-    localeNotifier.value = _localeFromValue(_getString(prefs, _localeKey));
-  }
-
-  // Guards against keys that were previously stored as a different type.
-  String? _getString(SharedPreferences prefs, String key) {
-    final value = prefs.get(key);
-    if (value is String) return value;
-    return null;
+    localeNotifier.value = _localeFromValue(_store.getString(_localeKey));
   }
 
   Future<void> setTheme(String value) async {
@@ -279,47 +286,42 @@ class AppSettings {
   }
 
   Future<void> _saveEditableValues() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_connectionTypeKey, connectionType);
-    await prefs.setInt(_timeoutKey, timeout);
-    await prefs.setInt(_reconnectDelayKey, reconnectDelay);
-    await prefs.setInt(_readFailureAttemptsKey, readFailureAttempts);
-    await prefs.setInt(_defaultUnitIdKey, defaultUnitId);
-    await prefs.setInt(_defaultReadQtyKey, defaultReadQty);
-    await prefs.setString(_addressBaseKey, addressBase);
-    await prefs.setString(_registerOrderKey, registerOrder);
-    await prefs.setString(_byteOrderKey, byteOrder);
-    await prefs.setBool(_writeEnabledKey, writeEnabled);
-    await prefs.setBool(_confirmBeforeWriteKey, confirmBeforeWrite);
-    await prefs.setBool(_showLastValuesKey, showLastValues);
-    await prefs.setBool(_showTypeBadgesKey, showTypeBadges);
-    await prefs.setBool(_saveLogToFileKey, saveLogToFile);
-    await prefs.setBool(_clearLogOnDisconnectKey, clearLogOnDisconnect);
-    await prefs.setInt(_maxLogEntriesKey, maxLogEntries);
-    await prefs.setString(_scanProtocolKey, scanProtocol.name);
-    await prefs.setInt(_scanSubnetPrefixKey, scanSubnetPrefix);
-    await prefs.setInt(_scanPortStartKey, scanPortStart);
-    await prefs.setInt(_scanPortEndKey, scanPortEnd);
-    await prefs.setInt(_scanUnitIdStartKey, scanUnitIdStart);
-    await prefs.setInt(_scanUnitIdEndKey, scanUnitIdEnd);
-    await prefs.setString(_scanRequestTypeKey, scanRequestType.name);
-    await prefs.setInt(_scanRequestAddressKey, scanRequestAddress);
-    await prefs.setString(_savedDevicesSortModeKey, savedDevicesSortMode.name);
-    await prefs.setBool(_scanClearOnStartKey, scanClearOnStart);
+    await _store.setString(_connectionTypeKey, connectionType);
+    await _store.setInt(_timeoutKey, timeout);
+    await _store.setInt(_reconnectDelayKey, reconnectDelay);
+    await _store.setInt(_readFailureAttemptsKey, readFailureAttempts);
+    await _store.setInt(_defaultUnitIdKey, defaultUnitId);
+    await _store.setInt(_defaultReadQtyKey, defaultReadQty);
+    await _store.setString(_addressBaseKey, addressBase);
+    await _store.setString(_registerOrderKey, registerOrder);
+    await _store.setString(_byteOrderKey, byteOrder);
+    await _store.setBool(_writeEnabledKey, writeEnabled);
+    await _store.setBool(_confirmBeforeWriteKey, confirmBeforeWrite);
+    await _store.setBool(_showLastValuesKey, showLastValues);
+    await _store.setBool(_showTypeBadgesKey, showTypeBadges);
+    await _store.setBool(_saveLogToFileKey, saveLogToFile);
+    await _store.setBool(_clearLogOnDisconnectKey, clearLogOnDisconnect);
+    await _store.setInt(_maxLogEntriesKey, maxLogEntries);
+    await _store.setString(_scanProtocolKey, scanProtocol.name);
+    await _store.setInt(_scanSubnetPrefixKey, scanSubnetPrefix);
+    await _store.setInt(_scanPortStartKey, scanPortStart);
+    await _store.setInt(_scanPortEndKey, scanPortEnd);
+    await _store.setInt(_scanUnitIdStartKey, scanUnitIdStart);
+    await _store.setInt(_scanUnitIdEndKey, scanUnitIdEnd);
+    await _store.setString(_scanRequestTypeKey, scanRequestType.name);
+    await _store.setInt(_scanRequestAddressKey, scanRequestAddress);
+    await _store.setString(_savedDevicesSortModeKey, savedDevicesSortMode.name);
+    await _store.setBool(_scanClearOnStartKey, scanClearOnStart);
   }
 
   Future<void> _setThemeMode(ThemeMode value) async {
     themeModeNotifier.value = value;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_themeModeKey, value.name);
+    await _store.setString(_themeModeKey, value.name);
   }
 
   Future<void> _setLocale(Locale? value) async {
     localeNotifier.value = value;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_localeKey, value?.languageCode ?? 'system');
+    await _store.setString(_localeKey, value?.languageCode ?? 'system');
   }
 
   ThemeMode _themeModeFromValue(String? value) {

@@ -17,6 +17,7 @@ import '../../widgets/error_feedback.dart';
 import '../../utils/modbus_format.dart';
 import '../../widgets/type_badge.dart';
 import 'register_list_dialogs.dart';
+import 'register_runtime_value.dart';
 import 'registers_controller.dart';
 import 'widgets/register_list_dropdown.dart';
 import 'widgets/register_row.dart';
@@ -109,6 +110,7 @@ class _RegistersScreenState extends State<RegistersScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _lists = _buildListsFromDevice();
+    _activeList = widget.controller.activeListIndex.clamp(0, _lists.length - 1);
     _listSignature = _currentListSignature;
     _tabController.addListener(_onTabChanged);
     _tabController.animation?.addListener(_onTabAnimationChanged);

@@ -33,6 +33,7 @@ void main() {
       repository,
       _TestConnectionRuntime(),
       DemoRegisterRuntime(),
+      AppSettings.instance,
     );
 
     await controller.selectTarget(
@@ -77,6 +78,7 @@ void main() {
       repository,
       _TestConnectionRuntime(),
       DemoRegisterRuntime(),
+      AppSettings.instance,
     );
 
     await controller.selectTarget(
@@ -126,6 +128,7 @@ void main() {
       repository,
       connections,
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     await controller.selectTarget(
       const RegistersRouteArgs(deviceId: 'device-c', registerListId: 'list-c'),
@@ -141,15 +144,15 @@ void main() {
 
     expect(connections.lastHoldingStartAddress, 1);
     expect(connections.lastHoldingCount, 2);
-    expect(controller.runtimeValues[40001]?.$1, '17');
-    expect(controller.runtimeValues[40001]?.$2, isNull);
-    final readAt = controller.runtimeValues[40001]?.$3;
+    expect(controller.runtimeValues[40001]?.value, '17');
+    expect(controller.runtimeValues[40001]?.previous, isNull);
+    final readAt = controller.runtimeValues[40001]?.readAt;
     expect(readAt, isNotNull);
     expect(readAt!.isBefore(beforeRead), isFalse);
     expect(readAt.isAfter(afterRead), isFalse);
     expect(controller.lastRegisterReadAt, readAt);
-    expect(controller.runtimeValues[40002]?.$1, '23');
-    expect(controller.runtimeValues[40002]?.$3, readAt);
+    expect(controller.runtimeValues[40002]?.value, '23');
+    expect(controller.runtimeValues[40002]?.readAt, readAt);
 
     connections.holdingValues = [19, 29];
     await controller.readRegisters(
@@ -157,8 +160,8 @@ void main() {
       startAddress: 40001,
       count: 2,
     );
-    expect(controller.runtimeValues[40001]?.$1, '19');
-    expect(controller.runtimeValues[40001]?.$2, '17');
+    expect(controller.runtimeValues[40001]?.value, '19');
+    expect(controller.runtimeValues[40001]?.previous, '17');
 
     controller.dispose();
   });
@@ -182,6 +185,7 @@ void main() {
       repository,
       connections,
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     await controller.selectTarget(
       const RegistersRouteArgs(
@@ -198,8 +202,8 @@ void main() {
 
     expect(connections.lastInputStartAddress, 1);
     expect(connections.lastInputCount, 2);
-    expect(controller.runtimeValues[30001]?.$1, '31');
-    expect(controller.runtimeValues[30002]?.$1, '37');
+    expect(controller.runtimeValues[30001]?.value, '31');
+    expect(controller.runtimeValues[30002]?.value, '37');
 
     controller.dispose();
   });
@@ -223,6 +227,7 @@ void main() {
       repository,
       connections,
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     await controller.selectTarget(
       const RegistersRouteArgs(deviceId: 'device-d', registerListId: 'list-d'),
@@ -239,13 +244,13 @@ void main() {
     expect(connections.lastCoilStartAddress, 0);
     expect(connections.lastCoilCount, 2);
     final first = controller.runtimeStatusValues[('0xxxx', 0)];
-    expect(first?.$1, isTrue);
-    expect(first?.$2, isNull);
-    expect(first?.$3, isNotNull);
-    expect(first!.$3!.isBefore(beforeRead), isFalse);
-    expect(first.$3!.isAfter(afterRead), isFalse);
-    expect(controller.lastStatusReadAt, first.$3);
-    expect(controller.runtimeStatusValues[('0xxxx', 1)]?.$1, isFalse);
+    expect(first?.value, isTrue);
+    expect(first?.previous, isNull);
+    expect(first?.readAt, isNotNull);
+    expect(first!.readAt!.isBefore(beforeRead), isFalse);
+    expect(first.readAt!.isAfter(afterRead), isFalse);
+    expect(controller.lastStatusReadAt, first.readAt);
+    expect(controller.runtimeStatusValues[('0xxxx', 1)]?.value, isFalse);
 
     connections.coilValues = [false, true];
     await controller.readStatuses(
@@ -253,8 +258,8 @@ void main() {
       startAddress: 0,
       count: 2,
     );
-    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.$1, isFalse);
-    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.$2, isTrue);
+    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.value, isFalse);
+    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.previous, isTrue);
 
     controller.dispose();
   });
@@ -279,6 +284,7 @@ void main() {
       repository,
       connections,
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     await controller.selectTarget(
       const RegistersRouteArgs(
@@ -295,8 +301,8 @@ void main() {
 
     expect(connections.lastDiscreteInputStartAddress, 12);
     expect(connections.lastDiscreteInputCount, 2);
-    expect(controller.runtimeStatusValues[('1xxxx', 10012)]?.$1, isFalse);
-    expect(controller.runtimeStatusValues[('1xxxx', 10013)]?.$1, isTrue);
+    expect(controller.runtimeStatusValues[('1xxxx', 10012)]?.value, isFalse);
+    expect(controller.runtimeStatusValues[('1xxxx', 10013)]?.value, isTrue);
 
     controller.dispose();
   });
@@ -318,6 +324,7 @@ void main() {
       repository,
       _TestConnectionRuntime(),
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     await controller.selectTarget(
       const RegistersRouteArgs(deviceId: 'device-e', registerListId: 'list-e'),
@@ -357,6 +364,7 @@ void main() {
       repository,
       connections,
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     await controller.selectTarget(
       const RegistersRouteArgs(
@@ -369,13 +377,13 @@ void main() {
 
     expect(connections.lastWriteHoldingAddress, 1);
     expect(connections.lastWriteHoldingValue, 42);
-    expect(controller.runtimeValues[40001]?.$1, '42');
-    expect(controller.runtimeValues[40001]?.$2, isNull);
-    expect(controller.runtimeValues[40001]?.$3, isNotNull);
+    expect(controller.runtimeValues[40001]?.value, '42');
+    expect(controller.runtimeValues[40001]?.previous, isNull);
+    expect(controller.runtimeValues[40001]?.readAt, isNotNull);
 
     await controller.writeValue(40001, '43');
-    expect(controller.runtimeValues[40001]?.$1, '43');
-    expect(controller.runtimeValues[40001]?.$2, '42');
+    expect(controller.runtimeValues[40001]?.value, '43');
+    expect(controller.runtimeValues[40001]?.previous, '42');
 
     controller.dispose();
   });
@@ -399,6 +407,7 @@ void main() {
       repository,
       connections,
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     await controller.selectTarget(
       const RegistersRouteArgs(
@@ -415,17 +424,17 @@ void main() {
 
     expect(connections.lastWriteCoilAddress, 0);
     expect(connections.lastWriteCoilValue, isTrue);
-    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.$1, isTrue);
-    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.$2, isNull);
-    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.$3, isNotNull);
+    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.value, isTrue);
+    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.previous, isNull);
+    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.readAt, isNotNull);
 
     await controller.writeStatusValue(
       statusType: '0xxxx',
       address: 0,
       value: false,
     );
-    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.$1, isFalse);
-    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.$2, isTrue);
+    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.value, isFalse);
+    expect(controller.runtimeStatusValues[('0xxxx', 0)]?.previous, isTrue);
 
     controller.dispose();
   });
@@ -449,6 +458,7 @@ void main() {
       repository,
       connections,
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     await controller.selectTarget(
       const RegistersRouteArgs(
@@ -469,6 +479,46 @@ void main() {
     expect(connections.lastWriteCoilAddress, isNull);
     expect(controller.runtimeValues[40001], isNull);
     expect(controller.runtimeStatusValues[('0xxxx', 0)], isNull);
+
+    controller.dispose();
+  });
+
+  test('honors injected addressBase when computing modbus address', () async {
+    final repository = DeviceRepository.instance;
+    final device = DeviceInfo(
+      id: 'device-base',
+      name: 'PLC Base',
+      host: '127.0.0.16',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [RegisterList(id: 'list-base', name: 'List 1')],
+    );
+    await repository.replaceAll([device]);
+
+    final connections = _TestConnectionRuntime();
+    await connections.connect(device);
+    final controller = RegistersController(
+      repository,
+      connections,
+      const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
+    );
+    await controller.selectTarget(
+      const RegistersRouteArgs(
+        deviceId: 'device-base',
+        registerListId: 'list-base',
+      ),
+    );
+
+    // 0-based (default): display 40001 maps to modbus offset 1.
+    await controller.writeValue(40001, '7');
+    expect(connections.lastWriteHoldingAddress, 1);
+
+    // 1-based: the injected setting shifts the same display address to 0.
+    await AppSettings.instance.setAddressBase(AppSettings.addressBases[1]);
+    await controller.writeValue(40001, '7');
+    expect(connections.lastWriteHoldingAddress, 0);
 
     controller.dispose();
   });

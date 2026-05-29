@@ -8,7 +8,7 @@ import '../../runtime/runtime_ports.dart';
 import '../../services/device_repository.dart';
 
 class DevicesController extends ChangeNotifier {
-  final DeviceRepository _repository;
+  final DeviceRepositoryPort _repository;
   final ConnectionRuntime _connectionRuntime;
   final DeviceScannerPort _scanner;
   final AppSettings _settings;
@@ -44,10 +44,7 @@ class DevicesController extends ChangeNotifier {
     final sortedNonFavs = _sortByCreatedNewestFirst(
       filtered.where((d) => !d.isFavorite).toList(),
     );
-    return [
-      ...sortedFavs,
-      ...sortedNonFavs.take(limit - sortedFavs.length),
-    ];
+    return [...sortedFavs, ...sortedNonFavs.take(limit - sortedFavs.length)];
   }
 
   List<DeviceInfo> get filteredDevices =>

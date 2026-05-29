@@ -4,8 +4,152 @@ import 'package:omodscan_mobile/features/registers/register_list_dialogs.dart';
 import 'package:omodscan_mobile/l10n/l10n.dart';
 import 'package:omodscan_mobile/models/device_info.dart';
 import 'package:omodscan_mobile/models/modbus_exception.dart';
+import 'package:omodscan_mobile/models/register_list.dart';
 import 'package:omodscan_mobile/runtime/runtime_ports.dart';
+import 'package:omodscan_mobile/services/device_repository.dart';
 import 'package:omodscan_mobile/services/modbus_client.dart';
+
+/// In-memory [DeviceRepositoryPort] used to verify that controllers depend on
+/// the port rather than the concrete [DeviceRepository]/`SharedPreferences`.
+class FakeDeviceRepository implements DeviceRepositoryPort {
+  @override
+  final ValueNotifier<List<DeviceInfo>> devices = ValueNotifier(const []);
+
+  FakeDeviceRepository([List<DeviceInfo> initial = const []]) {
+    devices.value = List.of(initial);
+  }
+
+  @override
+  List<DeviceInfo> get snapshot => List.unmodifiable(devices.value);
+
+  @override
+  DeviceInfo? findById(String id) {
+    for (final device in devices.value) {
+      if (device.id == id) return device;
+    }
+    return null;
+  }
+
+  @override
+  Future<void> replaceAll(List<DeviceInfo> newDevices) async {
+    devices.value = List.of(newDevices);
+  }
+
+  @override
+  Future<void> add(DeviceInfo device) => replaceAll([...devices.value, device]);
+
+  @override
+  Future<void> insert(int index, DeviceInfo device) async {
+    final updated = List.of(devices.value);
+    updated.insert(index.clamp(0, updated.length), device);
+    await replaceAll(updated);
+  }
+
+  @override
+  Future<void> update(DeviceInfo device) async {
+    final updated = List.of(devices.value);
+    final index = updated.indexWhere((item) => item.id == device.id);
+    if (index == -1) return;
+    updated[index] = device;
+    await replaceAll(updated);
+  }
+
+  @override
+  Future<DeviceInfo?> remove(String deviceId) async {
+    final updated = List.of(devices.value);
+    final index = updated.indexWhere((item) => item.id == deviceId);
+    if (index == -1) return null;
+    final removed = updated.removeAt(index);
+    await replaceAll(updated);
+    return removed;
+  }
+
+  @override
+  Future<void> addRegisterList(String deviceId, RegisterList list) async {
+    final device = findById(deviceId);
+    if (device == null) return;
+    await update(
+      device.copyWith(registerLists: [...device.registerLists, list]),
+    );
+  }
+
+  @override
+  Future<void> removeRegisterList(String deviceId, String listId) async {
+    final device = findById(deviceId);
+    if (device == null) return;
+    await update(
+      device.copyWith(
+        registerLists: device.registerLists
+            .where((list) => list.id != listId)
+            .toList(),
+      ),
+    );
+  }
+
+  @override
+  Future<void> updateRegisterList(
+    String deviceId,
+    RegisterList registerList,
+  ) async {
+    final device = findById(deviceId);
+    if (device == null) return;
+    final updated = List.of(device.registerLists);
+    final index = updated.indexWhere((list) => list.id == registerList.id);
+    if (index == -1) return;
+    updated[index] = registerList;
+    await update(device.copyWith(registerLists: updated));
+  }
+
+  @override
+  Future<void> upsertRegisterConfig(
+    String deviceId,
+    String listId,
+    RegisterConfig config,
+  ) async {
+    final device = findById(deviceId);
+    if (device == null) return;
+    final indexOfList = device.registerLists.indexWhere(
+      (item) => item.id == listId,
+    );
+    if (indexOfList == -1) return;
+    final list = device.registerLists[indexOfList];
+    final entries = List.of(list.entries);
+    final index = entries.indexWhere((item) => item.address == config.address);
+    if (index == -1) {
+      entries.add(config);
+    } else {
+      entries[index] = config;
+    }
+    await updateRegisterList(deviceId, list.copyWith(entries: entries));
+  }
+
+  @override
+  Future<void> upsertStatusConfig(
+    String deviceId,
+    String listId,
+    StatusConfig config,
+  ) async {
+    final device = findById(deviceId);
+    if (device == null) return;
+    final indexOfList = device.registerLists.indexWhere(
+      (item) => item.id == listId,
+    );
+    if (indexOfList == -1) return;
+    final list = device.registerLists[indexOfList];
+    final entries = List.of(list.statusEntries);
+    final index = entries.indexWhere(
+      (item) =>
+          item.statusType == config.statusType &&
+          item.address == config.address,
+    );
+    if (index == -1) {
+      entries.add(config);
+    } else {
+      entries[index] = config;
+    }
+    await updateRegisterList(deviceId, list.copyWith(statusEntries: entries));
+  }
+}
 
 class RegisterListDialogHarness extends StatelessWidget {
   final List<String> existingNames;

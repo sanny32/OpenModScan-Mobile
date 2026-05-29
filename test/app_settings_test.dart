@@ -2,7 +2,36 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:omodscan_mobile/models/app_settings.dart';
 import 'package:omodscan_mobile/models/device_info.dart';
 import 'package:omodscan_mobile/models/modbus_scan.dart';
+import 'package:omodscan_mobile/services/settings_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// In-memory [SettingsStore] used to verify [AppSettings] persists purely
+/// through the store abstraction rather than touching SharedPreferences.
+class FakeSettingsStore implements SettingsStore {
+  final Map<String, Object?> values = {};
+  bool loaded = false;
+
+  @override
+  Future<void> load() async => loaded = true;
+
+  @override
+  String? getString(String key) => values[key] as String?;
+
+  @override
+  int? getInt(String key) => values[key] as int?;
+
+  @override
+  bool? getBool(String key) => values[key] as bool?;
+
+  @override
+  Future<void> setString(String key, String value) async => values[key] = value;
+
+  @override
+  Future<void> setInt(String key, int value) async => values[key] = value;
+
+  @override
+  Future<void> setBool(String key, bool value) async => values[key] = value;
+}
 
 void main() {
   setUp(() {
@@ -80,5 +109,27 @@ void main() {
     expect(settings.scanUnitIdEnd, 10);
     expect(settings.writeEnabled, isTrue);
     expect(settings.confirmBeforeWrite, isFalse);
+  });
+
+  test('delegates persistence to the injected SettingsStore', () async {
+    final store = FakeSettingsStore();
+    final settings = AppSettings.withStore(store);
+
+    await settings.setWriteEnabled(false);
+    await settings.setScanSubnetPrefix(20);
+    await settings.setByteOrder('Swapped');
+
+    // Values land in the store, not in SharedPreferences.
+    expect(store.values['writeEnabled'], isFalse);
+    expect(store.values['scanSubnetPrefix'], 20);
+    expect(store.values['byteOrder'], 'Swapped');
+
+    // load() hydrates the model straight from the store.
+    final reloaded = AppSettings.withStore(store);
+    await reloaded.load();
+    expect(store.loaded, isTrue);
+    expect(reloaded.writeEnabled, isFalse);
+    expect(reloaded.scanSubnetPrefix, 20);
+    expect(reloaded.byteOrder, 'Swapped');
   });
 }

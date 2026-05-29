@@ -9,21 +9,24 @@ import '../../models/status_entry.dart';
 import '../../navigation/navigation_targets.dart';
 import '../../runtime/runtime_ports.dart';
 import '../../services/device_repository.dart';
+import 'register_runtime_value.dart';
 
 class RegistersController extends ChangeNotifier {
-  final DeviceRepository _repository;
+  final DeviceRepositoryPort _repository;
   final ConnectionRuntime _connectionRuntime;
   final RegisterRuntime _registerRuntime;
+  final AppSettings _settings;
 
   String? _selectedDeviceId;
   String? _selectedListId;
-  final Map<int, (String, String?, DateTime?)> _runtimeValues = {};
-  final Map<(String, int), (bool, bool?, DateTime?)> _runtimeStatusValues = {};
+  final Map<int, RegisterRuntimeValue> _runtimeValues = {};
+  final Map<(String, int), StatusRuntimeValue> _runtimeStatusValues = {};
 
   RegistersController(
     this._repository,
     this._connectionRuntime,
     this._registerRuntime,
+    this._settings,
   ) {
     _repository.devices.addListener(_onRepositoryChanged);
     _connectionRuntime.connectedDeviceIds.addListener(_forwardChange);
@@ -48,17 +51,17 @@ class RegistersController extends ChangeNotifier {
   RegisterList? get activeList =>
       lists.isEmpty ? null : lists[activeListIndex.clamp(0, lists.length - 1)];
 
-  Map<int, (String, String?, DateTime?)> get runtimeValues =>
+  Map<int, RegisterRuntimeValue> get runtimeValues =>
       Map.unmodifiable(_runtimeValues);
 
-  Map<(String, int), (bool, bool?, DateTime?)> get runtimeStatusValues =>
+  Map<(String, int), StatusRuntimeValue> get runtimeStatusValues =>
       Map.unmodifiable(_runtimeStatusValues);
 
   DateTime? get lastRegisterReadAt =>
-      _latestReadAt(_runtimeValues.values.map((value) => value.$3));
+      _latestReadAt(_runtimeValues.values.map((value) => value.readAt));
 
   DateTime? get lastStatusReadAt =>
-      _latestReadAt(_runtimeStatusValues.values.map((value) => value.$3));
+      _latestReadAt(_runtimeStatusValues.values.map((value) => value.readAt));
 
   bool isConnected(DeviceInfo device) => _connectionRuntime.isConnected(device);
 
@@ -191,7 +194,7 @@ class RegistersController extends ChangeNotifier {
   Future<void> writeValue(int address, String value) async {
     final device = selectedDevice;
     if (device == null) return;
-    if (!AppSettings.instance.writeEnabled) return;
+    if (!_settings.writeEnabled) return;
     if (!_connectionRuntime.isConnected(device)) {
       throw StateError('${device.name} is not connected.');
     }
@@ -201,16 +204,19 @@ class RegistersController extends ChangeNotifier {
     }
     final modbusAddress = RegisterAddressType.holdingRegisters.toModbusAddress(
       address,
-      addressBase: AppSettings.instance.addressBaseStart,
+      addressBase: _settings.addressBaseStart,
     );
-    final runtimeValue = _runtimeValues[address];
-    final previous = runtimeValue?.$1;
+    final previous = _runtimeValues[address]?.value;
     await _connectionRuntime.writeHoldingRegister(
       device,
       address: modbusAddress,
       value: raw,
     );
-    _runtimeValues[address] = (value, previous, DateTime.now());
+    _runtimeValues[address] = (
+      value: value,
+      previous: previous,
+      readAt: DateTime.now(),
+    );
     notifyListeners();
   }
 
@@ -221,7 +227,7 @@ class RegistersController extends ChangeNotifier {
   }) async {
     final device = selectedDevice;
     if (device == null) return;
-    if (!AppSettings.instance.writeEnabled) return;
+    if (!_settings.writeEnabled) return;
     if (!_connectionRuntime.isConnected(device)) {
       throw StateError('${device.name} is not connected.');
     }
@@ -232,18 +238,21 @@ class RegistersController extends ChangeNotifier {
     }
     final modbusAddress = addressType.toModbusAddress(
       address,
-      addressBase: AppSettings.instance.addressBaseStart,
+      addressBase: _settings.addressBaseStart,
     );
 
     final key = (statusType, address);
-    final runtimeValue = _runtimeStatusValues[key];
-    final previous = runtimeValue?.$1;
+    final previous = _runtimeStatusValues[key]?.value;
     await _connectionRuntime.writeCoil(
       device,
       address: modbusAddress,
       value: value,
     );
-    _runtimeStatusValues[key] = (value, previous, DateTime.now());
+    _runtimeStatusValues[key] = (
+      value: value,
+      previous: previous,
+      readAt: DateTime.now(),
+    );
     notifyListeners();
   }
 
@@ -266,7 +275,7 @@ class RegistersController extends ChangeNotifier {
     }
     final modbusStartAddress = addressType.toModbusAddress(
       startAddress,
-      addressBase: AppSettings.instance.addressBaseStart,
+      addressBase: _settings.addressBaseStart,
     );
     final values = switch (addressType) {
       RegisterAddressType.holdingRegisters =>
@@ -287,8 +296,12 @@ class RegistersController extends ChangeNotifier {
     final readAt = DateTime.now();
     for (var index = 0; index < values.length; index++) {
       final address = startAddress + index;
-      final previous = _runtimeValues[address]?.$1;
-      _runtimeValues[address] = (values[index].toString(), previous, readAt);
+      final previous = _runtimeValues[address]?.value;
+      _runtimeValues[address] = (
+        value: values[index].toString(),
+        previous: previous,
+        readAt: readAt,
+      );
     }
     notifyListeners();
   }
@@ -312,7 +325,7 @@ class RegistersController extends ChangeNotifier {
     }
     final modbusStartAddress = addressType.toModbusAddress(
       startAddress,
-      addressBase: AppSettings.instance.addressBaseStart,
+      addressBase: _settings.addressBaseStart,
     );
     final values = switch (addressType) {
       RegisterAddressType.coils => await _connectionRuntime.readCoils(
@@ -333,8 +346,12 @@ class RegistersController extends ChangeNotifier {
     for (var index = 0; index < values.length; index++) {
       final address = startAddress + index;
       final key = (statusType, address);
-      final previous = _runtimeStatusValues[key]?.$1;
-      _runtimeStatusValues[key] = (values[index], previous, readAt);
+      final previous = _runtimeStatusValues[key]?.value;
+      _runtimeStatusValues[key] = (
+        value: values[index],
+        previous: previous,
+        readAt: readAt,
+      );
     }
     notifyListeners();
   }

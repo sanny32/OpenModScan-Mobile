@@ -13,7 +13,7 @@ class _StatusTab extends StatefulWidget {
   final TextEditingController startAddrCtrl;
   final TextEditingController countCtrl;
   final RegisterList registerList;
-  final Map<(String, int), (bool, bool?, DateTime?)> runtimeValues;
+  final Map<(String, int), StatusRuntimeValue> runtimeValues;
   final DateTime? lastReadAt;
   final List<StatusEntry> Function(int startAddress, int count)
   referenceStatuses;
@@ -228,16 +228,18 @@ class _StatusTabState extends State<_StatusTab> {
       final address = startAddress + i;
       final reference = references[address];
       final runtime = widget.runtimeValues[(widget.statusType, address)];
-      final value = runtime?.$1 ?? reference?.value ?? false;
+      final value = runtime?.value ?? reference?.value ?? false;
       return StatusEntry(
         address: address,
         value: value,
-        previousValue: runtime?.$2 ?? reference?.previousValue,
+        previousValue: runtime?.previous ?? reference?.previousValue,
         comment: configByAddress[address]?.comment ?? reference?.comment ?? '',
-        timestamp: runtime?.$3 == null
+        timestamp: runtime?.readAt == null
             ? reference?.timestamp
-            : _formatTimestamp(runtime!.$3!),
-        date: runtime?.$3 == null ? reference?.date : _formatDate(runtime!.$3!),
+            : _formatTimestamp(runtime!.readAt!),
+        date: runtime?.readAt == null
+            ? reference?.date
+            : _formatDate(runtime!.readAt!),
       );
     });
 

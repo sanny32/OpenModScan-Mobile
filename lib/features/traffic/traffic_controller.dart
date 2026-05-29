@@ -9,7 +9,7 @@ import '../../services/device_repository.dart';
 enum TrafficFilter { all, tx, rx, errors }
 
 class TrafficController extends ChangeNotifier {
-  final DeviceRepository _repository;
+  final DeviceRepositoryPort _repository;
   final ConnectionRuntime _connectionRuntime;
   final TrafficLogSource _logs;
 

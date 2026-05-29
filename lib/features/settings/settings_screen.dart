@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import '../../l10n/l10n.dart';
 import '../../models/app_settings.dart';
@@ -7,6 +5,7 @@ import '../../models/device_info.dart';
 import '../../models/modbus_scan.dart';
 import 'settings_controller.dart';
 import 'about_screen.dart';
+import 'widgets/setting_value_sheets.dart';
 
 enum _SettingsSection {
   connection,
@@ -191,7 +190,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.warning_amber_outlined,
           label: 'Read failure attempts',
           value: '${_s.readFailureAttempts}',
-          onTap: () => _showChoiceSheet(
+          onTap: () => showSettingChoiceSheet(
+            context,
             title: 'Read failure attempts',
             options: AppSettings.readFailureAttemptOptions
                 .map((value) => '$value')
@@ -213,7 +213,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.hub_outlined,
           label: l10n.settingsScanProtocol,
           value: _protocolLabel(l10n, _s.scanProtocol),
-          onTap: () => _showChoiceSheet(
+          onTap: () => showSettingChoiceSheet(
+            context,
             title: l10n.settingsScanProtocol,
             options: ProtocolType.values.map((value) => value.name).toList(),
             selected: _s.scanProtocol.name,
@@ -235,7 +236,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.account_tree_outlined,
           label: l10n.settingsScanSubnetPrefix,
           value: '/${_s.scanSubnetPrefix}',
-          onTap: () => _showNumberSheet(
+          onTap: () => showSettingNumberSheet(
+            context,
             title: l10n.settingsScanSubnetPrefix,
             initialValue: _s.scanSubnetPrefix,
             min: 16,
@@ -248,7 +250,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.settings_ethernet,
           label: l10n.settingsScanPortRange,
           value: _formatRange(_s.scanPortStart, _s.scanPortEnd),
-          onTap: () => _showRangeSheet(
+          onTap: () => showSettingRangeSheet(
+            context,
             title: l10n.settingsScanPortRange,
             startValue: _s.scanPortStart,
             endValue: _s.scanPortEnd,
@@ -262,7 +265,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.tag,
           label: l10n.settingsScanUnitIdRange,
           value: _formatRange(_s.scanUnitIdStart, _s.scanUnitIdEnd),
-          onTap: () => _showRangeSheet(
+          onTap: () => showSettingRangeSheet(
+            context,
             title: l10n.settingsScanUnitIdRange,
             startValue: _s.scanUnitIdStart,
             endValue: _s.scanUnitIdEnd,
@@ -276,7 +280,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.call_received,
           label: l10n.settingsScanRequestType,
           value: _scanRequestTypeLabel(l10n, _s.scanRequestType),
-          onTap: () => _showChoiceSheet(
+          onTap: () => showSettingChoiceSheet(
+            context,
             title: l10n.settingsScanRequestType,
             options: ModbusScanRequestType.values
                 .map((value) => value.name)
@@ -300,7 +305,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.pin_outlined,
           label: l10n.settingsScanRequestAddress,
           value: '${_s.scanRequestAddress}',
-          onTap: () => _showNumberSheet(
+          onTap: () => showSettingNumberSheet(
+            context,
             title: l10n.settingsScanRequestAddress,
             initialValue: _s.scanRequestAddress,
             min: 0,
@@ -327,7 +333,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.pin_outlined,
           label: 'AddressBase',
           value: _s.addressBase,
-          onTap: () => _showChoiceSheet(
+          onTap: () => showSettingChoiceSheet(
+            context,
             title: 'AddressBase',
             options: AppSettings.addressBases,
             selected: _s.addressBase,
@@ -339,7 +346,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.swap_vert_rounded,
           label: l10n.labelRegisterOrder,
           value: _s.registerOrder,
-          onTap: () => _showChoiceSheet(
+          onTap: () => showSettingChoiceSheet(
+            context,
             title: l10n.labelRegisterOrder,
             options: AppSettings.registerOrders,
             selected: _s.registerOrder,
@@ -351,7 +359,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.swap_horiz_rounded,
           label: l10n.labelByteOrder,
           value: _s.byteOrder,
-          onTap: () => _showChoiceSheet(
+          onTap: () => showSettingChoiceSheet(
+            context,
             title: l10n.labelByteOrder,
             options: AppSettings.byteOrders,
             selected: _s.byteOrder,
@@ -413,7 +422,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.light_mode_outlined,
           label: l10n.settingsTheme,
           value: _themeOptionLabel(l10n, _s.theme),
-          onTap: () => _showChoiceSheet(
+          onTap: () => showSettingChoiceSheet(
+            context,
             title: l10n.settingsTheme,
             options: AppSettings.themeOptions,
             selected: _s.theme,
@@ -428,7 +438,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.language,
           label: l10n.settingsLanguage,
           value: _languageOptionLabel(l10n, _s.language),
-          onTap: () => _showChoiceSheet(
+          onTap: () => showSettingChoiceSheet(
+            context,
             title: l10n.settingsLanguage,
             options: AppSettings.languageOptions,
             selected: _s.language,
@@ -510,110 +521,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _showChoiceSheet({
-    required String title,
-    required List<String> options,
-    required String selected,
-    String Function(String)? optionLabel,
-    required FutureOr<void> Function(String) onSelected,
-  }) async {
-    final cs = Theme.of(context).colorScheme;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          padding: const EdgeInsets.only(bottom: 8),
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-            ),
-            for (final option in options)
-              ListTile(
-                title: Text(optionLabel?.call(option) ?? option),
-                trailing: option == selected
-                    ? Icon(Icons.check, color: cs.primary)
-                    : null,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await onSelected(option);
-                },
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showNumberSheet({
-    required String title,
-    required int initialValue,
-    required int min,
-    required int max,
-    required FutureOr<void> Function(int) onSubmitted,
-  }) async {
-    await _showTextSheet(
-      title: title,
-      initialValue: '$initialValue',
-      keyboardType: TextInputType.number,
-      onSubmitted: (value) async {
-        final parsed = int.tryParse(value) ?? initialValue;
-        await onSubmitted(parsed.clamp(min, max).toInt());
-      },
-    );
-  }
-
-  Future<void> _showTextSheet({
-    required String title,
-    required String initialValue,
-    required TextInputType keyboardType,
-    required FutureOr<void> Function(String) onSubmitted,
-  }) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (ctx) => _TextSettingSheet(
-        title: title,
-        initialValue: initialValue,
-        keyboardType: keyboardType,
-        onSubmitted: onSubmitted,
-      ),
-    );
-  }
-
-  Future<void> _showRangeSheet({
-    required String title,
-    required int startValue,
-    required int endValue,
-    required int min,
-    required int max,
-    required FutureOr<void> Function(int, int) onSubmitted,
-  }) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (ctx) => _RangeSettingSheet(
-        title: title,
-        startValue: startValue,
-        endValue: endValue,
-        min: min,
-        max: max,
-        onSubmitted: onSubmitted,
-      ),
-    );
-  }
-
   String _themeOptionLabel(AppLocalizations l10n, String option) {
     switch (option) {
       case 'Light':
@@ -684,180 +591,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(l10n.settingsResetDefaults),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _TextSettingSheet extends StatefulWidget {
-  final String title;
-  final String initialValue;
-  final TextInputType keyboardType;
-  final FutureOr<void> Function(String) onSubmitted;
-
-  const _TextSettingSheet({
-    required this.title,
-    required this.initialValue,
-    required this.keyboardType,
-    required this.onSubmitted,
-  });
-
-  @override
-  State<_TextSettingSheet> createState() => _TextSettingSheetState();
-}
-
-class _TextSettingSheetState extends State<_TextSettingSheet> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _controller,
-              keyboardType: widget.keyboardType,
-              autofocus: true,
-              decoration: const InputDecoration(
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 14,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () async {
-                final value = _controller.text.trim();
-                Navigator.pop(context);
-                await widget.onSubmitted(value);
-              },
-              child: Text(context.l10n.save),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RangeSettingSheet extends StatefulWidget {
-  final String title;
-  final int startValue;
-  final int endValue;
-  final int min;
-  final int max;
-  final FutureOr<void> Function(int, int) onSubmitted;
-
-  const _RangeSettingSheet({
-    required this.title,
-    required this.startValue,
-    required this.endValue,
-    required this.min,
-    required this.max,
-    required this.onSubmitted,
-  });
-
-  @override
-  State<_RangeSettingSheet> createState() => _RangeSettingSheetState();
-}
-
-class _RangeSettingSheetState extends State<_RangeSettingSheet> {
-  late final TextEditingController _startController;
-  late final TextEditingController _endController;
-
-  @override
-  void initState() {
-    super.initState();
-    _startController = TextEditingController(text: '${widget.startValue}');
-    _endController = TextEditingController(text: '${widget.endValue}');
-  }
-
-  @override
-  void dispose() {
-    _startController.dispose();
-    _endController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _startController,
-                    keyboardType: TextInputType.number,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      labelText: context.l10n.settingsRangeStart,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _endController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: context.l10n.settingsRangeEnd,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () async {
-                final start =
-                    int.tryParse(_startController.text) ?? widget.startValue;
-                final end =
-                    int.tryParse(_endController.text) ?? widget.endValue;
-                Navigator.pop(context);
-                await widget.onSubmitted(
-                  start.clamp(widget.min, widget.max).toInt(),
-                  end.clamp(widget.min, widget.max).toInt(),
-                );
-              },
-              child: Text(context.l10n.save),
-            ),
-          ],
-        ),
       ),
     );
   }

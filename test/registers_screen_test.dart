@@ -115,6 +115,7 @@ void main() {
       DeviceRepository.instance,
       connections,
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     final returnDeviceId = ValueNotifier<String?>(null);
     final screenActive = ValueNotifier(true);
@@ -199,6 +200,7 @@ void main() {
       DeviceRepository.instance,
       connections,
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     final returnDeviceId = ValueNotifier<String?>(null);
 
@@ -272,6 +274,7 @@ void main() {
       DeviceRepository.instance,
       PollingConnectionRuntime(),
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     final returnDeviceId = ValueNotifier<String?>(null);
 
@@ -371,6 +374,7 @@ void main() {
         DeviceRepository.instance,
         PollingConnectionRuntime(),
         const DemoRegisterRuntime(enabled: false),
+        AppSettings.instance,
       );
       final returnDeviceId = ValueNotifier<String?>(null);
 
@@ -432,6 +436,7 @@ void main() {
       DeviceRepository.instance,
       PollingConnectionRuntime(),
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     final returnDeviceId = ValueNotifier<String?>(null);
 
@@ -477,6 +482,7 @@ void main() {
       DeviceRepository.instance,
       PollingConnectionRuntime(),
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     final returnDeviceId = ValueNotifier<String?>(null);
 
@@ -531,6 +537,7 @@ void main() {
       DeviceRepository.instance,
       connections,
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     final returnDeviceId = ValueNotifier<String?>(null);
 
@@ -600,6 +607,7 @@ void main() {
       DeviceRepository.instance,
       connections,
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     final returnDeviceId = ValueNotifier<String?>(null);
 
@@ -681,6 +689,7 @@ void main() {
       DeviceRepository.instance,
       PollingConnectionRuntime(),
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     final returnDeviceId = ValueNotifier<String?>(null);
 
@@ -1049,6 +1058,7 @@ void main() {
       DeviceRepository.instance,
       PollingConnectionRuntime(),
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     final returnDeviceId = ValueNotifier<String?>(null);
 
@@ -1107,6 +1117,7 @@ void main() {
       DeviceRepository.instance,
       PollingConnectionRuntime(),
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     final returnDeviceId = ValueNotifier<String?>(null);
 
@@ -1166,6 +1177,7 @@ void main() {
         DeviceRepository.instance,
         PollingConnectionRuntime(),
         const DemoRegisterRuntime(enabled: false),
+        AppSettings.instance,
       );
       final returnDeviceId = ValueNotifier<String?>(null);
 
@@ -1466,6 +1478,7 @@ void main() {
       DeviceRepository.instance,
       PollingConnectionRuntime(),
       const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
     );
     final returnDeviceId = ValueNotifier<String?>(null);
 
@@ -1608,6 +1621,7 @@ Future<_RegistersHarness> _pumpRegistersHarness(
     DeviceRepository.instance,
     PollingConnectionRuntime(),
     const DemoRegisterRuntime(enabled: false),
+    AppSettings.instance,
   );
   final returnDeviceId = ValueNotifier<String?>(null);
 
@@ -1655,6 +1669,7 @@ Future<_RegistersHarness> _pumpWritableRegistersHarness(
     DeviceRepository.instance,
     connections,
     const DemoRegisterRuntime(enabled: false),
+    AppSettings.instance,
   );
   final returnDeviceId = ValueNotifier<String?>(null);
 
@@ -1703,6 +1718,7 @@ Future<_RegistersHarness> _pumpStatusHarness(
     DeviceRepository.instance,
     connections,
     const DemoRegisterRuntime(enabled: false),
+    AppSettings.instance,
   );
   final returnDeviceId = ValueNotifier<String?>(null);
 

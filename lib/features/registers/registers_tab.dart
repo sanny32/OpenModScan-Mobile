@@ -13,7 +13,7 @@ class _RegistersTab extends StatefulWidget {
   final TextEditingController startAddrCtrl;
   final TextEditingController countCtrl;
   final RegisterList registerList;
-  final Map<int, (String, String?, DateTime?)> runtimeValues;
+  final Map<int, RegisterRuntimeValue> runtimeValues;
   final DateTime? lastReadAt;
   final List<RegisterEntry> Function(int startAddress, int count)
   referenceRegisters;
@@ -224,7 +224,7 @@ class _RegistersTabState extends State<_RegistersTab> {
       final addr = startAddr + i;
       final runtime = widget.runtimeValues[addr];
       final mock = mockByAddress[addr];
-      rawInts[addr] = int.tryParse(runtime?.$1 ?? mock?.value ?? '') ?? 0;
+      rawInts[addr] = int.tryParse(runtime?.value ?? mock?.value ?? '') ?? 0;
     }
     final visibleRegisters = List.generate(count, (i) {
       final addr = startAddr + i;
@@ -232,7 +232,7 @@ class _RegistersTabState extends State<_RegistersTab> {
       final config = configByAddress[addr];
       final runtime = widget.runtimeValues[addr];
       final typeName = config?.typeName ?? mock?.typeName ?? 'UInt16';
-      final rawStr = runtime?.$1 ?? mock?.value ?? '0';
+      final rawStr = runtime?.value ?? mock?.value ?? '0';
       final valueState = !widget.isConnected
           ? RegisterValueState.unavailable
           : widget.valueState == RegisterValueState.exception
@@ -244,14 +244,16 @@ class _RegistersTabState extends State<_RegistersTab> {
         address: addr,
         value: rawStr,
         displayValue: computeDisplayValue(addr, typeName, rawInts),
-        previousValue: runtime?.$2 ?? mock?.previousValue,
+        previousValue: runtime?.previous ?? mock?.previousValue,
         valueState: valueState,
         typeName: typeName,
         comment: config?.comment ?? mock?.comment,
-        timestamp: runtime?.$3 == null
+        timestamp: runtime?.readAt == null
             ? mock?.timestamp
-            : _formatTimestamp(runtime!.$3!),
-        date: runtime?.$3 == null ? mock?.date : _formatDate(runtime!.$3!),
+            : _formatTimestamp(runtime!.readAt!),
+        date: runtime?.readAt == null
+            ? mock?.date
+            : _formatDate(runtime!.readAt!),
         rawWords: {
           for (var j = 0; j <= 3; j++)
             if (rawInts.containsKey(addr + j)) addr + j: rawInts[addr + j]!,
