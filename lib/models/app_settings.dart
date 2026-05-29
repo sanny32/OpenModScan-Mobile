@@ -180,7 +180,7 @@ class AppSettings {
   }
 
   Future<void> setDefaultUnitId(int value) async {
-    defaultUnitId = _clampInt(value, 1, 247);
+    defaultUnitId = _clampInt(value, 1, 255);
     await _saveEditableValues();
   }
 
@@ -252,8 +252,8 @@ class AppSettings {
   }
 
   Future<void> setScanUnitIdRange(int start, int end) async {
-    scanUnitIdStart = _clampInt(start, 1, 247);
-    scanUnitIdEnd = _clampInt(end, 1, 247);
+    scanUnitIdStart = _clampInt(start, 1, 255);
+    scanUnitIdEnd = _clampInt(end, 1, 255);
     _normalizeScanRanges();
     await _saveEditableValues();
   }
