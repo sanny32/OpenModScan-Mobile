@@ -68,6 +68,15 @@ class RegistersController extends ChangeNotifier {
   List<DeviceInfo> get connectedDevices =>
       devices.where(_connectionRuntime.isConnected).toList();
 
+  Future<void> toggleConnection(DeviceInfo device) async {
+    if (_connectionRuntime.isConnected(device)) {
+      await _connectionRuntime.disconnect(device);
+      return;
+    }
+    await _connectionRuntime.connect(device);
+    await _repository.update(device.copyWith(lastConnectedAt: DateTime.now()));
+  }
+
   List<RegisterEntry> referenceRegisters(int startAddress, int count) =>
       _registerRuntime.registersForRange(startAddress, count);
 

@@ -30,7 +30,7 @@ part 'registers_tab_helpers.dart';
 part 'registers_tab.dart';
 part 'status_tab.dart';
 
-enum _MenuAction { selectDevice, removeRegs, setAllTypes }
+enum _MenuAction { toggleConnection, selectDevice, removeRegs, setAllTypes }
 
 class RegistersScreen extends StatefulWidget {
   final RegistersController controller;
@@ -63,6 +63,7 @@ class _RegistersScreenState extends State<RegistersScreen>
   String? _registerValueStatusLabel;
   var _statusValueState = RegisterValueState.received;
   String? _statusValueStatusLabel;
+  var _connectionBusy = false;
 
   DeviceInfo? get _selectedDevice => widget.controller.selectedDevice;
   bool get _screenActive => widget.screenActive?.value ?? true;
@@ -201,12 +202,31 @@ class _RegistersScreenState extends State<RegistersScreen>
 
   void _handleMenu(_MenuAction action) {
     switch (action) {
+      case _MenuAction.toggleConnection:
+        _toggleSelectedConnection();
       case _MenuAction.selectDevice:
         _showSelectDeviceDialog();
       case _MenuAction.removeRegs:
         _removeActiveRegs();
       case _MenuAction.setAllTypes:
         _showSetAllTypesDialog();
+    }
+  }
+
+  Future<void> _toggleSelectedConnection() async {
+    final device = _selectedDevice;
+    if (device == null || _connectionBusy) return;
+
+    setState(() => _connectionBusy = true);
+    try {
+      await widget.controller.toggleConnection(device);
+    } catch (error) {
+      if (!mounted) return;
+      showErrorSnackBar(context, error);
+    } finally {
+      if (mounted) {
+        setState(() => _connectionBusy = false);
+      }
     }
   }
 
@@ -377,6 +397,28 @@ class _RegistersScreenState extends State<RegistersScreen>
             icon: const Icon(Icons.more_vert),
             onSelected: _handleMenu,
             itemBuilder: (context) => [
+              if (_selectedDevice != null) ...[
+                PopupMenuItem(
+                  enabled: !_connectionBusy,
+                  value: _MenuAction.toggleConnection,
+                  child: Row(
+                    children: [
+                      Icon(
+                        selectedDeviceConnected ? Icons.wifi_off : Icons.wifi,
+                        size: 18,
+                        color: cs.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        selectedDeviceConnected
+                            ? l10n.disconnect
+                            : l10n.connect,
+                      ),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+              ],
               PopupMenuItem(
                 value: _MenuAction.selectDevice,
                 child: Row(

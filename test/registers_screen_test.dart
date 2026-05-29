@@ -29,6 +29,61 @@ void main() {
     await DeviceRepository.instance.replaceAll(List.of(demoDevices));
   });
 
+  testWidgets('Registers menu toggles selected device connection', (
+    WidgetTester tester,
+  ) async {
+    final device = DeviceInfo(
+      id: 'menu-toggle-device',
+      name: 'Menu Toggle PLC',
+      host: '127.0.0.55',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      registerLists: [RegisterList(id: 'menu-toggle-list', name: 'List 1')],
+    );
+    await DeviceRepository.instance.replaceAll([device]);
+    final connections = PollingConnectionRuntime();
+    final controller = RegistersController(
+      DeviceRepository.instance,
+      connections,
+      const DemoRegisterRuntime(enabled: false),
+      AppSettings.instance,
+    );
+    final returnDeviceId = ValueNotifier<String?>(null);
+    addTearDown(controller.dispose);
+    addTearDown(returnDeviceId.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RegistersScreen(
+          controller: controller,
+          returnDeviceId: returnDeviceId,
+          onReturnToDevice: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(connections.isConnected(device), isFalse);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Connect'));
+    await tester.pumpAndSettle();
+
+    expect(connections.isConnected(device), isTrue);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Disconnect'));
+    await tester.pumpAndSettle();
+
+    expect(connections.isConnected(device), isFalse);
+  });
+
   testWidgets('Device register list opens registers with its range config', (
     WidgetTester tester,
   ) async {
