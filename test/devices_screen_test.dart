@@ -246,6 +246,120 @@ void main() {
     expect(scanCenter.dy, lessThan(navTop));
   });
 
+  testWidgets('saved devices never clip behind the scan dock', (tester) async {
+    tester.view.physicalSize = const Size(393, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await DeviceRepository.instance.replaceAll([
+      for (var i = 1; i <= 7; i++)
+        DeviceInfo(
+          name: 'Device #$i',
+          host: '192.168.0.${100 + i}',
+          port: 502,
+          protocol: ProtocolType.modbusTcp,
+          unitId: 1,
+          createdAt: DateTime(2026, 5, 24, 12, i),
+        ),
+    ]);
+
+    final controller = DevicesController(
+      DeviceRepository.instance,
+      PollingConnectionRuntime(),
+      _ScanPort(ScannerStateView.idle),
+      AppSettings.instance,
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: DevicesScreen(controller: controller, onOpenDevice: (_) {}),
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: 0,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.devices_outlined),
+                label: 'Devices',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.grid_on_outlined),
+                label: 'Registers',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    // Not all 7 fit, so a footer must offer the rest instead of clipping a card.
+    expect(find.text('Show all (7)'), findsOneWidget);
+
+    // No rendered device card may extend below the scan dock (no clipping).
+    final scanDockTop = tester
+        .getTopLeft(find.widgetWithText(OutlinedButton, 'Scan network'))
+        .dy;
+    for (final card in find.byType(DeviceCard).evaluate()) {
+      final bottom = tester.getBottomLeft(find.byWidget(card.widget)).dy;
+      expect(bottom, lessThanOrEqualTo(scanDockTop));
+    }
+  });
+
+  testWidgets('saved devices fit count adapts to text scale', (tester) async {
+    tester.view.physicalSize = const Size(393, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await DeviceRepository.instance.replaceAll([
+      for (var i = 1; i <= 7; i++)
+        DeviceInfo(
+          name: 'Device #$i',
+          host: '192.168.0.${100 + i}',
+          port: 502,
+          protocol: ProtocolType.modbusTcp,
+          unitId: 1,
+          createdAt: DateTime(2026, 5, 24, 12, i),
+        ),
+    ]);
+
+    final controller = DevicesController(
+      DeviceRepository.instance,
+      PollingConnectionRuntime(),
+      _ScanPort(ScannerStateView.idle),
+      AppSettings.instance,
+    );
+    addTearDown(controller.dispose);
+
+    Widget appAtScale(double scale) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Builder(
+        builder: (context) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(scale)),
+          child: Scaffold(
+            body: DevicesScreen(controller: controller, onOpenDevice: (_) {}),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(appAtScale(1.0));
+    final cardsAtNormal = find.byType(DeviceCard).evaluate().length;
+
+    // Larger font ⇒ taller cards ⇒ the measured-from-theme math fits fewer.
+    await tester.pumpWidget(appAtScale(1.8));
+    final cardsAtLarge = find.byType(DeviceCard).evaluate().length;
+
+    expect(cardsAtLarge, greaterThanOrEqualTo(1));
+    expect(cardsAtLarge, lessThan(cardsAtNormal));
+  });
+
   testWidgets('favorites are preferred on devices preview', (tester) async {
     await DeviceRepository.instance.replaceAll([
       DeviceInfo(

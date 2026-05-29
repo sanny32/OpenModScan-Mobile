@@ -10,6 +10,7 @@ import '../../widgets/error_feedback.dart';
 import 'device_form_sheet.dart';
 import 'discovered_devices_screen.dart';
 import 'devices_controller.dart';
+import 'layout_metrics.dart';
 import 'saved_devices_screen.dart';
 import 'widgets/device_card.dart';
 import 'widgets/devices_section_header.dart';
@@ -184,6 +185,13 @@ class _DevicesScreenState extends State<DevicesScreen> {
     final hasSavedDevices = widget.controller.devices.isNotEmpty;
     final useSplitLayout = hasDiscoveredDevices && hasSavedDevices;
 
+    // Row/header heights are measured from the actual theme text styles and the
+    // current text scale, so the "how many fit" math stays correct for any font
+    // size (accessibility scaling), theme, or locale — not just one screen.
+    final textScaler = MediaQuery.textScalerOf(context);
+    final savedCardHeight = _measuredSavedCardHeight(tt, textScaler);
+    final savedHeaderHeight = _measuredSavedHeaderHeight(tt, textScaler);
+
     Widget buildDismissible(DeviceInfo d) => Dismissible(
       key: ValueKey(d.id),
       direction: DismissDirection.endToStart,
@@ -331,11 +339,12 @@ class _DevicesScreenState extends State<DevicesScreen> {
                       )
                     : LayoutBuilder(
                         builder: (context, constraints) {
-                          // DevicesSectionHeader: 36pt
-                          // DeviceCard (with Card margin): 80pt
-                          // _SavedDevicesFooter (with Card margin): 60pt
-                          const headerH = 36.0;
-                          const cardH = 80.0;
+                          // _SavedDevicesFooter is a fixed 52pt box + 8pt
+                          // margin = 60pt (text is clipped to the box, so it
+                          // does not grow with text scale). The card and header
+                          // heights are measured from the theme above.
+                          final headerH = savedHeaderHeight;
+                          final cardH = savedCardHeight;
                           const footerH = 60.0;
                           final total = widget.controller.devices.length;
                           final filtered =
@@ -396,6 +405,23 @@ class _DevicesScreenState extends State<DevicesScreen> {
       ),
     );
   }
+}
+
+/// Full height of a [DeviceCard]: 8pt vertical margin + 28pt content padding +
+/// the three stacked text lines (title, address, protocol) with a 2pt gap.
+double _measuredSavedCardHeight(TextTheme tt, TextScaler scaler) {
+  return 8 +
+      28 +
+      measuredLineHeight(tt.titleSmall, scaler) +
+      2 +
+      measuredLineHeight(tt.bodyMedium, scaler) +
+      measuredLineHeight(tt.bodySmall, scaler) +
+      2; // sub-pixel rounding buffer so we never under-count and clip a card
+}
+
+/// Full height of a [DevicesSectionHeader]: 22pt vertical padding + one line.
+double _measuredSavedHeaderHeight(TextTheme tt, TextScaler scaler) {
+  return 22 + measuredLineHeight(tt.labelLarge, scaler);
 }
 
 class _ScanNetworkDock extends StatelessWidget {

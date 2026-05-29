@@ -9,6 +9,7 @@ import '../../../runtime/runtime_ports.dart';
 import '../../../theme/app_theme.dart';
 import '../devices_controller.dart';
 import '../discovered_devices_screen.dart';
+import '../layout_metrics.dart';
 
 class DiscoveredDevicesPreview extends StatelessWidget {
   final List<DiscoveredDevice> discoveredDevices;
@@ -31,8 +32,18 @@ class DiscoveredDevicesPreview extends StatelessWidget {
 
     int visibleCount;
     if (availableHeight != null) {
-      // Row with divider: 63pt. Footer+gap: 60pt. Bottom padding: 12pt.
-      const rowHeight = 63.0;
+      // Measure a DiscoveredDeviceRow from the active theme/text scale instead
+      // of hardcoding 63pt, so the row count stays correct at any font size.
+      // Row = 24pt padding + title line + 2pt gap + subtitle line + 1pt divider.
+      final tt = Theme.of(context).textTheme;
+      final scaler = MediaQuery.textScalerOf(context);
+      final rowHeight =
+          24 +
+          measuredLineHeight(tt.titleSmall, scaler) +
+          2 +
+          measuredLineHeight(tt.bodySmall, scaler) +
+          1;
+      // Footer is a fixed 52pt box + 8pt gap; bottom padding is 12pt.
       const footerWithGap = 60.0;
       const bottomPad = 12.0;
       final space = availableHeight! - bottomPad;
