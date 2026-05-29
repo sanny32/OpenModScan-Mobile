@@ -35,6 +35,8 @@ class _RegistersTab extends StatefulWidget {
   final void Function(int address, String typeName, String? comment)
   onEntryChanged;
   final Future<String?> Function(int address, String value) onValueWritten;
+  final Listenable valuesListenable;
+  final RegisterRuntimeValue? Function(int address) liveValueAt;
 
   const _RegistersTab({
     required this.regType,
@@ -59,6 +61,8 @@ class _RegistersTab extends StatefulWidget {
     required this.onRead,
     required this.onEntryChanged,
     required this.onValueWritten,
+    required this.valuesListenable,
+    required this.liveValueAt,
   });
 
   @override
@@ -370,6 +374,8 @@ class _RegistersTabState extends State<_RegistersTab> {
                     : null,
                 onEntryChanged: widget.onEntryChanged,
                 onValueWritten: widget.onValueWritten,
+                valuesListenable: widget.valuesListenable,
+                liveValueAt: widget.liveValueAt,
               );
             },
           ),

@@ -464,6 +464,9 @@ class _RegistersScreenState extends State<RegistersScreen>
                   onRead: widget.controller.readRegisters,
                   onEntryChanged: _onEntryChanged,
                   onValueWritten: _onValueWritten,
+                  valuesListenable: widget.controller,
+                  liveValueAt: (address) =>
+                      widget.controller.runtimeValues[address],
                 ),
                 _StatusTab(
                   statusType: active.coilType,

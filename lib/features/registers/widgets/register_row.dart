@@ -9,6 +9,7 @@ import '../../../utils/modbus_format.dart';
 import '../../../widgets/error_feedback.dart';
 import '../../../widgets/type_badge.dart';
 import '../register_detail_screen.dart';
+import '../register_runtime_value.dart';
 
 class RegisterRow extends StatelessWidget {
   final RegisterEntry entry;
@@ -19,6 +20,8 @@ class RegisterRow extends StatelessWidget {
   final void Function(int address, String typeName, String? comment)?
   onEntryChanged;
   final Future<String?> Function(int address, String value)? onValueWritten;
+  final Listenable? valuesListenable;
+  final RegisterRuntimeValue? Function(int address)? liveValueAt;
 
   const RegisterRow({
     super.key,
@@ -29,6 +32,8 @@ class RegisterRow extends StatelessWidget {
     this.onGroupExpansionToggled,
     this.onEntryChanged,
     this.onValueWritten,
+    this.valuesListenable,
+    this.liveValueAt,
   });
 
   @override
@@ -54,6 +59,8 @@ class RegisterRow extends StatelessWidget {
             onValueWritten: onValueWritten != null
                 ? (v) => onValueWritten!(entry.address, v)
                 : null,
+            valuesListenable: valuesListenable,
+            liveValueAt: liveValueAt,
           ),
         ),
       );

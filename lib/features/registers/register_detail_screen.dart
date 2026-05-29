@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/modbus_format.dart';
 import '../../widgets/error_feedback.dart';
 import '../../widgets/type_badge.dart';
+import 'register_runtime_value.dart';
 
 String _typeDescription(String type) {
   switch (type) {
@@ -45,6 +46,8 @@ class RegisterDetailScreen extends StatefulWidget {
   final bool canWrite;
   final void Function(String typeName, String? comment)? onSaved;
   final Future<String?> Function(String newValue)? onValueWritten;
+  final Listenable? valuesListenable;
+  final RegisterRuntimeValue? Function(int address)? liveValueAt;
 
   const RegisterDetailScreen({
     super.key,
@@ -52,6 +55,8 @@ class RegisterDetailScreen extends StatefulWidget {
     this.canWrite = true,
     this.onSaved,
     this.onValueWritten,
+    this.valuesListenable,
+    this.liveValueAt,
   });
 
   @override
@@ -82,9 +87,37 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     _commentCtrl = TextEditingController(text: _entry.comment ?? '');
     AppSettings.instance.showTypeBadgesNotifier.addListener(_onSettingChanged);
     AppSettings.instance.showLastValuesNotifier.addListener(_onSettingChanged);
+    widget.valuesListenable?.addListener(_refreshFromRuntime);
   }
 
   void _onSettingChanged() => setState(() {});
+
+  /// Pulls the latest value for this register from the live runtime source so
+  /// the screen reflects auto-refresh reads and writes while it is open.
+  void _refreshFromRuntime() {
+    final liveValueAt = widget.liveValueAt;
+    if (liveValueAt == null) return;
+    final runtime = liveValueAt(_entry.address);
+    if (runtime == null) return;
+    final rawWords = Map<int, int>.from(_entry.rawWords);
+    for (var j = 0; j <= 3; j++) {
+      final word = liveValueAt(_entry.address + j);
+      final parsed = word == null ? null : int.tryParse(word.value);
+      if (parsed != null) rawWords[_entry.address + j] = parsed;
+    }
+    setState(() {
+      _entry = _entry.copyWith(
+        value: runtime.value,
+        previousValue: runtime.previous,
+        valueState: RegisterValueState.received,
+        timestamp: runtime.readAt == null
+            ? null
+            : formatModbusTime(runtime.readAt!),
+        date: runtime.readAt == null ? null : formatModbusDate(runtime.readAt!),
+        rawWords: rawWords,
+      );
+    });
+  }
 
   String _displayPreviousValue(String raw) {
     final rawInt = int.tryParse(raw);
@@ -117,6 +150,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
   @override
   void dispose() {
     _commentCtrl.dispose();
+    widget.valuesListenable?.removeListener(_refreshFromRuntime);
     AppSettings.instance.showTypeBadgesNotifier.removeListener(
       _onSettingChanged,
     );
@@ -283,6 +317,8 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     setInnerState(() => setWriting(true));
     try {
       final newValue = await widget.onValueWritten?.call(ctrl.text);
+      // Always reflect the value read back after the write (the live listener,
+      // if any, applies the same value idempotently).
       if (newValue != null && mounted) {
         setState(() => _applyWrittenValue(newValue));
       }
