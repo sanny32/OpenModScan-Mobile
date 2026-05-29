@@ -604,6 +604,30 @@
   "settingsResetConfirmMessage": "All settings will be reset to their default values.",
   "@settingsResetConfirmMessage": {},
 
+  "settingsSummaryPort": "port {value}",
+  "@settingsSummaryPort": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+
+  "settingsSummaryEntries": "{value} entries",
+  "@settingsSummaryEntries": {
+    "placeholders": {
+      "value": {"type": "int"}
+    }
+  },
+
+  "settingsSummaryAddressBase": "{value}",
+  "@settingsSummaryAddressBase": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+
+  "settingsSummaryResetAndAbout": "Reset & About",
+  "@settingsSummaryResetAndAbout": {},
+
   "settingsValueMs": "{value} ms",
   "@settingsValueMs": {
     "placeholders": {

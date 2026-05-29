@@ -14,14 +14,9 @@ void main() {
   });
 
   testWidgets('Theme setting updates app theme', (WidgetTester tester) async {
-    await tester.pumpWidget(const OModScanApp());
+    await _pumpSettings(tester);
+    await _openSettingsSection(tester, 'Appearance');
 
-    await tester.tap(find.byIcon(Icons.settings_outlined));
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.byIcon(Icons.light_mode_outlined),
-      300,
-    );
     await tester.tap(find.byIcon(Icons.light_mode_outlined));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Dark'));
@@ -37,13 +32,9 @@ void main() {
   testWidgets('Language setting updates app locale', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const OModScanApp());
+    await _pumpSettings(tester);
+    await _openSettingsSection(tester, 'Appearance');
 
-    await tester.tap(find.byIcon(Icons.settings_outlined));
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.byIcon(Icons.language), 300);
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -100));
-    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.language));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Russian'));
@@ -62,6 +53,8 @@ void main() {
     WidgetTester tester,
   ) async {
     await _pumpSettings(tester);
+    await _openSettingsSection(tester, 'Network scanner');
+
     await tester.tap(find.text('Scan Protocol'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('RTU over TCP/IP'));
@@ -72,17 +65,35 @@ void main() {
     expect(find.text('RTU over TCP/IP'), findsOneWidget);
   });
 
+  testWidgets('Settings overview shows readable section summaries', (
+    WidgetTester tester,
+  ) async {
+    await _pumpSettings(tester);
+
+    expect(find.text('Modbus TCP · /24 · port 502'), findsOneWidget);
+    expect(find.text('0-based · MSRF · Direct'), findsOneWidget);
+    expect(find.text('1000 entries'), findsOneWidget);
+    expect(find.text('Reset & About'), findsOneWidget);
+  });
+
   testWidgets('Choice settings update and persist from settings screen', (
     WidgetTester tester,
   ) async {
     await _pumpSettings(tester);
 
+    await _openSettingsSection(tester, 'Connection');
     await _selectSettingOption(tester, 'Read failure attempts', '5');
+    await _backToSettingsHome(tester);
+
+    await _openSettingsSection(tester, 'Network scanner');
     await _selectSettingOption(
       tester,
       'Modbus request',
       'Read Input Registers',
     );
+    await _backToSettingsHome(tester);
+
+    await _openSettingsSection(tester, 'Registers');
     await _selectSettingOption(tester, 'AddressBase', '1-based');
     await _selectSettingOption(tester, 'Register Order', 'LSRF');
     await _selectSettingOption(tester, 'Byte Order', 'Swapped');
@@ -99,6 +110,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await _pumpSettings(tester);
+    await _openSettingsSection(tester, 'Network scanner');
 
     await _enterNumberSetting(tester, 'Current subnet mask', '20');
     await _enterRangeSetting(tester, 'Port range', start: '503', end: '505');
@@ -119,11 +131,18 @@ void main() {
   ) async {
     await _pumpSettings(tester);
 
+    await _openSettingsSection(tester, 'Network scanner');
     await _toggleSetting(tester, 'Clear results on new scan');
+    await _backToSettingsHome(tester);
+
+    await _openSettingsSection(tester, 'Registers');
     await _toggleSetting(tester, 'Allow writes');
     await _toggleSetting(tester, 'Confirm coil writes');
     await _toggleSetting(tester, 'Show last values after read');
     await _toggleSetting(tester, 'Show type badges');
+    await _backToSettingsHome(tester);
+
+    await _openSettingsSection(tester, 'Traffic');
     await _toggleSetting(tester, 'Save traffic to file');
     await _toggleSetting(tester, 'Clear traffic on disconnect');
 
@@ -146,6 +165,7 @@ void main() {
     await AppSettings.instance.setSaveLogToFile(true);
 
     await _pumpSettings(tester);
+    await _openSettingsSection(tester, 'Other');
     await _tapSetting(tester, 'Reset to defaults');
     await tester.tap(find.text('Reset to defaults').last);
     await tester.pumpAndSettle();
@@ -165,6 +185,22 @@ void main() {
 Future<void> _pumpSettings(WidgetTester tester) async {
   await tester.pumpWidget(const OModScanApp());
   await tester.tap(find.byIcon(Icons.settings_outlined));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openSettingsSection(WidgetTester tester, String section) async {
+  final sectionTile = find.widgetWithText(ListTile, section).first;
+  await tester.scrollUntilVisible(
+    sectionTile,
+    300,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.tap(sectionTile);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _backToSettingsHome(WidgetTester tester) async {
+  await tester.pageBack();
   await tester.pumpAndSettle();
 }
 

@@ -8,10 +8,25 @@ import '../../models/modbus_scan.dart';
 import 'settings_controller.dart';
 import 'about_screen.dart';
 
+enum _SettingsSection {
+  connection,
+  networkScanner,
+  readWrite,
+  log,
+  appearance,
+  other,
+}
+
 class SettingsScreen extends StatefulWidget {
   final SettingsController controller;
+  final _SettingsSection? _section;
 
-  const SettingsScreen({super.key, required this.controller});
+  const SettingsScreen({super.key, required this.controller}) : _section = null;
+
+  const SettingsScreen._section({
+    required this.controller,
+    required this._section,
+  });
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -38,6 +53,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final section = widget._section;
+    return section == null ? _buildHome() : _buildSection(section);
+  }
+
+  Widget _buildHome() {
     final l10n = context.l10n;
     final tt = Theme.of(context).textTheme;
     return Scaffold(
@@ -49,320 +69,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Text(l10n.settingsTitle, style: tt.headlineMedium),
             ),
-            _section(
-              label: l10n.settingsSectionConnection,
-              children: [
-                _navTile(
-                  icon: Icons.wifi,
-                  label: l10n.settingsDefaultConnectionType,
-                  value: _s.connectionType,
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.timer_outlined,
-                  label: l10n.settingsDefaultTimeout,
-                  value: l10n.settingsValueMs(_s.timeout),
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.sync,
-                  label: l10n.settingsReconnectDelay,
-                  value: l10n.settingsValueMs(_s.reconnectDelay),
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.warning_amber_outlined,
-                  label: 'Read failure attempts',
-                  value: '${_s.readFailureAttempts}',
-                  onTap: () => _showChoiceSheet(
-                    title: 'Read failure attempts',
-                    options: AppSettings.readFailureAttemptOptions
-                        .map((value) => '$value')
-                        .toList(),
-                    selected: '${_s.readFailureAttempts}',
-                    onSelected: (value) => widget.controller
-                        .setReadFailureAttempts(int.parse(value)),
-                  ),
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.tag,
-                  label: l10n.settingsDefaultUnitId,
-                  value: '${_s.defaultUnitId}',
-                ),
-              ],
-            ),
-            _section(
-              label: l10n.settingsSectionNetworkScan,
-              children: [
-                _navTile(
-                  icon: Icons.hub_outlined,
-                  label: l10n.settingsScanProtocol,
-                  value: _protocolLabel(l10n, _s.scanProtocol),
-                  onTap: () => _showChoiceSheet(
-                    title: l10n.settingsScanProtocol,
-                    options: ProtocolType.values
-                        .map((value) => value.name)
-                        .toList(),
-                    selected: _s.scanProtocol.name,
-                    optionLabel: (value) => _protocolLabel(
-                      l10n,
-                      ProtocolType.values.firstWhere(
-                        (protocol) => protocol.name == value,
-                      ),
-                    ),
-                    onSelected: (value) => widget.controller.setScanProtocol(
-                      ProtocolType.values.firstWhere(
-                        (protocol) => protocol.name == value,
-                      ),
-                    ),
-                  ),
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.account_tree_outlined,
-                  label: l10n.settingsScanSubnetPrefix,
-                  value: '/${_s.scanSubnetPrefix}',
-                  onTap: () => _showNumberSheet(
-                    title: l10n.settingsScanSubnetPrefix,
-                    initialValue: _s.scanSubnetPrefix,
-                    min: 16,
-                    max: 30,
-                    onSubmitted: widget.controller.setScanSubnetPrefix,
-                  ),
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.settings_ethernet,
-                  label: l10n.settingsScanPortRange,
-                  value: _formatRange(_s.scanPortStart, _s.scanPortEnd),
-                  onTap: () => _showRangeSheet(
-                    title: l10n.settingsScanPortRange,
-                    startValue: _s.scanPortStart,
-                    endValue: _s.scanPortEnd,
-                    min: 1,
-                    max: 65535,
-                    onSubmitted: widget.controller.setScanPortRange,
-                  ),
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.tag,
-                  label: l10n.settingsScanUnitIdRange,
-                  value: _formatRange(_s.scanUnitIdStart, _s.scanUnitIdEnd),
-                  onTap: () => _showRangeSheet(
-                    title: l10n.settingsScanUnitIdRange,
-                    startValue: _s.scanUnitIdStart,
-                    endValue: _s.scanUnitIdEnd,
-                    min: 1,
-                    max: 247,
-                    onSubmitted: widget.controller.setScanUnitIdRange,
-                  ),
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.call_received,
-                  label: l10n.settingsScanRequestType,
-                  value: _scanRequestTypeLabel(l10n, _s.scanRequestType),
-                  onTap: () => _showChoiceSheet(
-                    title: l10n.settingsScanRequestType,
-                    options: ModbusScanRequestType.values
-                        .map((value) => value.name)
-                        .toList(),
-                    selected: _s.scanRequestType.name,
-                    optionLabel: (value) => _scanRequestTypeLabel(
-                      l10n,
-                      ModbusScanRequestType.values.firstWhere(
-                        (type) => type.name == value,
-                      ),
-                    ),
-                    onSelected: (value) => widget.controller.setScanRequestType(
-                      ModbusScanRequestType.values.firstWhere(
-                        (type) => type.name == value,
-                      ),
-                    ),
-                  ),
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.pin_outlined,
-                  label: l10n.settingsScanRequestAddress,
-                  value: '${_s.scanRequestAddress}',
-                  onTap: () => _showNumberSheet(
-                    title: l10n.settingsScanRequestAddress,
-                    initialValue: _s.scanRequestAddress,
-                    min: 0,
-                    max: 65535,
-                    onSubmitted: widget.controller.setScanRequestAddress,
-                  ),
-                ),
-                _divider(),
-                _toggleTile(
-                  icon: Icons.cleaning_services_outlined,
-                  label: l10n.settingsScanClearOnStart,
-                  value: _s.scanClearOnStart,
-                  onChanged: widget.controller.setScanClearOnStart,
-                ),
-              ],
-            ),
-            _section(
-              label: l10n.settingsSectionReadWrite,
-              children: [
-                _navTile(
-                  icon: Icons.dashboard_outlined,
-                  label: l10n.settingsDefaultReadQty,
-                  value: '${_s.defaultReadQty}',
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.pin_outlined,
-                  label: 'AddressBase',
-                  value: _s.addressBase,
-                  onTap: () => _showChoiceSheet(
-                    title: 'AddressBase',
-                    options: AppSettings.addressBases,
-                    selected: _s.addressBase,
-                    onSelected: widget.controller.setAddressBase,
-                  ),
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.swap_vert_rounded,
-                  label: l10n.labelRegisterOrder,
-                  value: _s.registerOrder,
-                  onTap: () => _showChoiceSheet(
-                    title: l10n.labelRegisterOrder,
-                    options: AppSettings.registerOrders,
-                    selected: _s.registerOrder,
-                    onSelected: widget.controller.setRegisterOrder,
-                  ),
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.swap_horiz_rounded,
-                  label: l10n.labelByteOrder,
-                  value: _s.byteOrder,
-                  onTap: () => _showChoiceSheet(
-                    title: l10n.labelByteOrder,
-                    options: AppSettings.byteOrders,
-                    selected: _s.byteOrder,
-                    onSelected: widget.controller.setByteOrder,
-                  ),
-                ),
-                _divider(),
-                _toggleTile(
-                  icon: Icons.edit_note_outlined,
-                  label: l10n.settingsWriteEnabled,
-                  value: _s.writeEnabled,
-                  onChanged: widget.controller.setWriteEnabled,
-                ),
-                _divider(),
-                _toggleTile(
-                  icon: Icons.edit_outlined,
-                  label: l10n.settingsConfirmBeforeCoilWrite,
-                  value: _s.confirmBeforeWrite,
-                  onChanged: widget.controller.setConfirmBeforeWrite,
-                ),
-                _divider(),
-                _toggleTile(
-                  icon: Icons.show_chart,
-                  label: l10n.settingsShowLastValues,
-                  value: _s.showLastValues,
-                  onChanged: widget.controller.setShowLastValues,
-                ),
-                _divider(),
-                _toggleTile(
-                  icon: Icons.label_outline,
-                  label: l10n.settingsShowTypeBadges,
-                  value: _s.showTypeBadges,
-                  onChanged: widget.controller.setShowTypeBadges,
-                ),
-              ],
-            ),
-            _section(
-              label: l10n.settingsSectionLog,
-              children: [
-                _toggleTile(
-                  icon: Icons.save_outlined,
-                  label: l10n.settingsSaveLogToFile,
-                  value: _s.saveLogToFile,
-                  onChanged: widget.controller.setSaveLogToFile,
-                ),
-                _divider(),
-                _toggleTile(
-                  icon: Icons.delete_outline,
-                  label: l10n.settingsClearLogOnDisconnect,
-                  value: _s.clearLogOnDisconnect,
-                  onChanged: widget.controller.setClearLogOnDisconnect,
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.zoom_out_map,
-                  label: l10n.settingsMaxLogEntries,
-                  value: '${_s.maxLogEntries}',
-                ),
-              ],
-            ),
-            _section(
-              label: l10n.settingsSectionAppearance,
-              children: [
-                _navTile(
-                  icon: Icons.light_mode_outlined,
-                  label: l10n.settingsTheme,
-                  value: _themeOptionLabel(l10n, _s.theme),
-                  onTap: () => _showChoiceSheet(
-                    title: l10n.settingsTheme,
-                    options: AppSettings.themeOptions,
-                    selected: _s.theme,
-                    optionLabel: (value) => _themeOptionLabel(l10n, value),
-                    onSelected: (value) async {
-                      await widget.controller.setTheme(value);
-                    },
-                  ),
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.language,
-                  label: l10n.settingsLanguage,
-                  value: _languageOptionLabel(l10n, _s.language),
-                  onTap: () => _showChoiceSheet(
-                    title: l10n.settingsLanguage,
-                    options: AppSettings.languageOptions,
-                    selected: _s.language,
-                    optionLabel: (value) => _languageOptionLabel(l10n, value),
-                    onSelected: (value) async {
-                      await widget.controller.setLanguage(value);
-                    },
-                  ),
-                ),
-              ],
-            ),
-            _section(
-              label: l10n.settingsSectionOther,
-              children: [
-                _navTile(
-                  icon: Icons.backup_outlined,
-                  label: l10n.settingsBackupRestore,
-                  value: '',
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.settings_backup_restore,
-                  label: l10n.settingsResetDefaults,
-                  value: '',
-                  onTap: _confirmReset,
-                ),
-                _divider(),
-                _navTile(
-                  icon: Icons.info_outline,
-                  label: l10n.aboutTitle,
-                  value: '',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AboutScreen()),
-                  ),
-                ),
-              ],
+            Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  for (final section in _SettingsSection.values) ...[
+                    _sectionTile(section),
+                    if (section != _SettingsSection.values.last) _divider(),
+                  ],
+                ],
+              ),
             ),
             const SizedBox(height: 8),
           ],
@@ -371,29 +87,383 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _section({required String label, required List<Widget> children}) {
+  Widget _buildSection(_SettingsSection section) {
+    final l10n = context.l10n;
+    final title = _sectionTitle(l10n, section);
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.only(top: 16, bottom: 8),
+          children: [
+            Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(children: _sectionChildren(l10n, section)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionTile(_SettingsSection section) {
+    final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
-          child: Text(
-            label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: cs.onSurfaceVariant,
-              letterSpacing: 0.5,
+    return ListTile(
+      leading: Icon(_sectionIcon(section), color: cs.primary),
+      title: Text(_sectionTitle(l10n, section)),
+      subtitle: Text(_sectionSummary(l10n, section)),
+      trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SettingsScreen._section(
+            controller: widget.controller,
+            section: section,
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _sectionIcon(_SettingsSection section) {
+    return switch (section) {
+      _SettingsSection.connection => Icons.wifi,
+      _SettingsSection.networkScanner => Icons.hub_outlined,
+      _SettingsSection.readWrite => Icons.tune,
+      _SettingsSection.log => Icons.receipt_long_outlined,
+      _SettingsSection.appearance => Icons.palette_outlined,
+      _SettingsSection.other => Icons.more_horiz,
+    };
+  }
+
+  String _sectionTitle(AppLocalizations l10n, _SettingsSection section) {
+    return switch (section) {
+      _SettingsSection.connection => l10n.settingsSectionConnection,
+      _SettingsSection.networkScanner => l10n.settingsSectionNetworkScan,
+      _SettingsSection.readWrite => l10n.settingsSectionReadWrite,
+      _SettingsSection.log => l10n.settingsSectionLog,
+      _SettingsSection.appearance => l10n.settingsSectionAppearance,
+      _SettingsSection.other => l10n.settingsSectionOther,
+    };
+  }
+
+  String _sectionSummary(AppLocalizations l10n, _SettingsSection section) {
+    return switch (section) {
+      _SettingsSection.connection =>
+        '${_s.connectionType} · ${l10n.settingsValueMs(_s.timeout)}',
+      _SettingsSection.networkScanner =>
+        '${_protocolLabel(l10n, _s.scanProtocol)} · /${_s.scanSubnetPrefix} · ${l10n.settingsSummaryPort(_formatRange(_s.scanPortStart, _s.scanPortEnd))}',
+      _SettingsSection.readWrite =>
+        '${l10n.settingsSummaryAddressBase(_s.addressBase)} · ${_s.registerOrder} · ${_s.byteOrder}',
+      _SettingsSection.log => l10n.settingsSummaryEntries(_s.maxLogEntries),
+      _SettingsSection.appearance =>
+        '${_themeOptionLabel(l10n, _s.theme)} · ${_languageOptionLabel(l10n, _s.language)}',
+      _SettingsSection.other => l10n.settingsSummaryResetAndAbout,
+    };
+  }
+
+  List<Widget> _sectionChildren(
+    AppLocalizations l10n,
+    _SettingsSection section,
+  ) {
+    return switch (section) {
+      _SettingsSection.connection => [
+        _navTile(
+          icon: Icons.wifi,
+          label: l10n.settingsDefaultConnectionType,
+          value: _s.connectionType,
+        ),
+        _divider(),
+        _navTile(
+          icon: Icons.timer_outlined,
+          label: l10n.settingsDefaultTimeout,
+          value: l10n.settingsValueMs(_s.timeout),
+        ),
+        _divider(),
+        _navTile(
+          icon: Icons.sync,
+          label: l10n.settingsReconnectDelay,
+          value: l10n.settingsValueMs(_s.reconnectDelay),
+        ),
+        _divider(),
+        _navTile(
+          icon: Icons.warning_amber_outlined,
+          label: 'Read failure attempts',
+          value: '${_s.readFailureAttempts}',
+          onTap: () => _showChoiceSheet(
+            title: 'Read failure attempts',
+            options: AppSettings.readFailureAttemptOptions
+                .map((value) => '$value')
+                .toList(),
+            selected: '${_s.readFailureAttempts}',
+            onSelected: (value) =>
+                widget.controller.setReadFailureAttempts(int.parse(value)),
+          ),
+        ),
+        _divider(),
+        _navTile(
+          icon: Icons.tag,
+          label: l10n.settingsDefaultUnitId,
+          value: '${_s.defaultUnitId}',
+        ),
+      ],
+      _SettingsSection.networkScanner => [
+        _navTile(
+          icon: Icons.hub_outlined,
+          label: l10n.settingsScanProtocol,
+          value: _protocolLabel(l10n, _s.scanProtocol),
+          onTap: () => _showChoiceSheet(
+            title: l10n.settingsScanProtocol,
+            options: ProtocolType.values.map((value) => value.name).toList(),
+            selected: _s.scanProtocol.name,
+            optionLabel: (value) => _protocolLabel(
+              l10n,
+              ProtocolType.values.firstWhere(
+                (protocol) => protocol.name == value,
+              ),
+            ),
+            onSelected: (value) => widget.controller.setScanProtocol(
+              ProtocolType.values.firstWhere(
+                (protocol) => protocol.name == value,
+              ),
             ),
           ),
         ),
-        Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(children: children),
+        _divider(),
+        _navTile(
+          icon: Icons.account_tree_outlined,
+          label: l10n.settingsScanSubnetPrefix,
+          value: '/${_s.scanSubnetPrefix}',
+          onTap: () => _showNumberSheet(
+            title: l10n.settingsScanSubnetPrefix,
+            initialValue: _s.scanSubnetPrefix,
+            min: 16,
+            max: 30,
+            onSubmitted: widget.controller.setScanSubnetPrefix,
+          ),
+        ),
+        _divider(),
+        _navTile(
+          icon: Icons.settings_ethernet,
+          label: l10n.settingsScanPortRange,
+          value: _formatRange(_s.scanPortStart, _s.scanPortEnd),
+          onTap: () => _showRangeSheet(
+            title: l10n.settingsScanPortRange,
+            startValue: _s.scanPortStart,
+            endValue: _s.scanPortEnd,
+            min: 1,
+            max: 65535,
+            onSubmitted: widget.controller.setScanPortRange,
+          ),
+        ),
+        _divider(),
+        _navTile(
+          icon: Icons.tag,
+          label: l10n.settingsScanUnitIdRange,
+          value: _formatRange(_s.scanUnitIdStart, _s.scanUnitIdEnd),
+          onTap: () => _showRangeSheet(
+            title: l10n.settingsScanUnitIdRange,
+            startValue: _s.scanUnitIdStart,
+            endValue: _s.scanUnitIdEnd,
+            min: 1,
+            max: 247,
+            onSubmitted: widget.controller.setScanUnitIdRange,
+          ),
+        ),
+        _divider(),
+        _navTile(
+          icon: Icons.call_received,
+          label: l10n.settingsScanRequestType,
+          value: _scanRequestTypeLabel(l10n, _s.scanRequestType),
+          onTap: () => _showChoiceSheet(
+            title: l10n.settingsScanRequestType,
+            options: ModbusScanRequestType.values
+                .map((value) => value.name)
+                .toList(),
+            selected: _s.scanRequestType.name,
+            optionLabel: (value) => _scanRequestTypeLabel(
+              l10n,
+              ModbusScanRequestType.values.firstWhere(
+                (type) => type.name == value,
+              ),
+            ),
+            onSelected: (value) => widget.controller.setScanRequestType(
+              ModbusScanRequestType.values.firstWhere(
+                (type) => type.name == value,
+              ),
+            ),
+          ),
+        ),
+        _divider(),
+        _navTile(
+          icon: Icons.pin_outlined,
+          label: l10n.settingsScanRequestAddress,
+          value: '${_s.scanRequestAddress}',
+          onTap: () => _showNumberSheet(
+            title: l10n.settingsScanRequestAddress,
+            initialValue: _s.scanRequestAddress,
+            min: 0,
+            max: 65535,
+            onSubmitted: widget.controller.setScanRequestAddress,
+          ),
+        ),
+        _divider(),
+        _toggleTile(
+          icon: Icons.cleaning_services_outlined,
+          label: l10n.settingsScanClearOnStart,
+          value: _s.scanClearOnStart,
+          onChanged: widget.controller.setScanClearOnStart,
         ),
       ],
-    );
+      _SettingsSection.readWrite => [
+        _navTile(
+          icon: Icons.dashboard_outlined,
+          label: l10n.settingsDefaultReadQty,
+          value: '${_s.defaultReadQty}',
+        ),
+        _divider(),
+        _navTile(
+          icon: Icons.pin_outlined,
+          label: 'AddressBase',
+          value: _s.addressBase,
+          onTap: () => _showChoiceSheet(
+            title: 'AddressBase',
+            options: AppSettings.addressBases,
+            selected: _s.addressBase,
+            onSelected: widget.controller.setAddressBase,
+          ),
+        ),
+        _divider(),
+        _navTile(
+          icon: Icons.swap_vert_rounded,
+          label: l10n.labelRegisterOrder,
+          value: _s.registerOrder,
+          onTap: () => _showChoiceSheet(
+            title: l10n.labelRegisterOrder,
+            options: AppSettings.registerOrders,
+            selected: _s.registerOrder,
+            onSelected: widget.controller.setRegisterOrder,
+          ),
+        ),
+        _divider(),
+        _navTile(
+          icon: Icons.swap_horiz_rounded,
+          label: l10n.labelByteOrder,
+          value: _s.byteOrder,
+          onTap: () => _showChoiceSheet(
+            title: l10n.labelByteOrder,
+            options: AppSettings.byteOrders,
+            selected: _s.byteOrder,
+            onSelected: widget.controller.setByteOrder,
+          ),
+        ),
+        _divider(),
+        _toggleTile(
+          icon: Icons.edit_note_outlined,
+          label: l10n.settingsWriteEnabled,
+          value: _s.writeEnabled,
+          onChanged: widget.controller.setWriteEnabled,
+        ),
+        _divider(),
+        _toggleTile(
+          icon: Icons.edit_outlined,
+          label: l10n.settingsConfirmBeforeCoilWrite,
+          value: _s.confirmBeforeWrite,
+          onChanged: widget.controller.setConfirmBeforeWrite,
+        ),
+        _divider(),
+        _toggleTile(
+          icon: Icons.show_chart,
+          label: l10n.settingsShowLastValues,
+          value: _s.showLastValues,
+          onChanged: widget.controller.setShowLastValues,
+        ),
+        _divider(),
+        _toggleTile(
+          icon: Icons.label_outline,
+          label: l10n.settingsShowTypeBadges,
+          value: _s.showTypeBadges,
+          onChanged: widget.controller.setShowTypeBadges,
+        ),
+      ],
+      _SettingsSection.log => [
+        _toggleTile(
+          icon: Icons.save_outlined,
+          label: l10n.settingsSaveLogToFile,
+          value: _s.saveLogToFile,
+          onChanged: widget.controller.setSaveLogToFile,
+        ),
+        _divider(),
+        _toggleTile(
+          icon: Icons.delete_outline,
+          label: l10n.settingsClearLogOnDisconnect,
+          value: _s.clearLogOnDisconnect,
+          onChanged: widget.controller.setClearLogOnDisconnect,
+        ),
+        _divider(),
+        _navTile(
+          icon: Icons.zoom_out_map,
+          label: l10n.settingsMaxLogEntries,
+          value: '${_s.maxLogEntries}',
+        ),
+      ],
+      _SettingsSection.appearance => [
+        _navTile(
+          icon: Icons.light_mode_outlined,
+          label: l10n.settingsTheme,
+          value: _themeOptionLabel(l10n, _s.theme),
+          onTap: () => _showChoiceSheet(
+            title: l10n.settingsTheme,
+            options: AppSettings.themeOptions,
+            selected: _s.theme,
+            optionLabel: (value) => _themeOptionLabel(l10n, value),
+            onSelected: (value) async {
+              await widget.controller.setTheme(value);
+            },
+          ),
+        ),
+        _divider(),
+        _navTile(
+          icon: Icons.language,
+          label: l10n.settingsLanguage,
+          value: _languageOptionLabel(l10n, _s.language),
+          onTap: () => _showChoiceSheet(
+            title: l10n.settingsLanguage,
+            options: AppSettings.languageOptions,
+            selected: _s.language,
+            optionLabel: (value) => _languageOptionLabel(l10n, value),
+            onSelected: (value) async {
+              await widget.controller.setLanguage(value);
+            },
+          ),
+        ),
+      ],
+      _SettingsSection.other => [
+        _navTile(
+          icon: Icons.backup_outlined,
+          label: l10n.settingsBackupRestore,
+          value: '',
+        ),
+        _divider(),
+        _navTile(
+          icon: Icons.settings_backup_restore,
+          label: l10n.settingsResetDefaults,
+          value: '',
+          onTap: _confirmReset,
+        ),
+        _divider(),
+        _navTile(
+          icon: Icons.info_outline,
+          label: l10n.aboutTitle,
+          value: '',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AboutScreen()),
+          ),
+        ),
+      ],
+    };
   }
 
   Widget _divider() => Divider(
