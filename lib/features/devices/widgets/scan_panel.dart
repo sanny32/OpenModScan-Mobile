@@ -478,6 +478,9 @@ class _ScanningCard extends StatelessWidget {
         : completed
         ? 100
         : (progress * 100).clamp(0, 99).floor();
+    // The success check pops in liveColor on completion; everything structural
+    // (progress bar, percentage) stays in the primary green so the card reads
+    // as one coherent palette rather than two competing greens.
     final accent = completed
         ? (appColors?.liveColor ?? Colors.green)
         : cs.primary;
@@ -577,7 +580,7 @@ class _ScanningCard extends StatelessWidget {
                           : completed
                           ? 1.0
                           : progress.clamp(0.0, 0.99).toDouble(),
-                      color: accent,
+                      color: cs.primary,
                       backgroundColor: cs.surfaceContainerHighest,
                     ),
                   ),
