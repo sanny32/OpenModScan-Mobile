@@ -305,11 +305,13 @@ class _FilterBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
           color: selected ? effectiveColor : cs.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: selected ? effectiveColor : cs.outline),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: selected ? effectiveColor : Theme.of(context).dividerColor,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
