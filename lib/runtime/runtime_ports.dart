@@ -66,8 +66,10 @@ abstract interface class RegisterRuntime {
   });
 }
 
-abstract interface class TrafficLogSource {
+abstract interface class TrafficLogSource implements Listenable {
   List<LogEntry> entriesFor(String? deviceId);
+
+  void clear(String? deviceId);
 }
 
 abstract interface class DeviceScannerPort implements Listenable {

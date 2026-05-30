@@ -144,6 +144,23 @@ void main() {
     expect(settings.defaultReadQty, 20);
   });
 
+  test('max log entries persists and clamps out-of-range values', () async {
+    final settings = AppSettings.instance;
+    await settings.resetToDefaults();
+
+    await settings.setMaxLogEntries(10); // below min → clamped to 50
+    expect(settings.maxLogEntries, 50);
+
+    await settings.setMaxLogEntries(500000); // above max → clamped to 100000
+    final prefs = await SharedPreferences.getInstance();
+    expect(settings.maxLogEntries, 100000);
+    expect(prefs.getInt('maxLogEntries'), 100000);
+
+    await settings.setMaxLogEntries(2000);
+    await settings.load();
+    expect(settings.maxLogEntries, 2000);
+  });
+
   test('toJson/applyJson round-trips every setting', () async {
     final source = AppSettings.withStore(FakeSettingsStore());
     await source.setConnectionType(ProtocolType.modbusRtuIp);

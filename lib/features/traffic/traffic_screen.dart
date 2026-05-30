@@ -7,6 +7,7 @@ import '../../widgets/connection_info_bar.dart';
 import '../../widgets/connection_status_chip.dart';
 import '../../widgets/error_feedback.dart';
 import 'traffic_controller.dart';
+import 'traffic_detail_screen.dart';
 
 class TrafficScreen extends StatefulWidget {
   final TrafficController controller;
@@ -19,11 +20,12 @@ class TrafficScreen extends StatefulWidget {
 
 class _TrafficScreenState extends State<TrafficScreen> {
   bool _connectionBusy = false;
+  final ScrollController _scrollController = ScrollController();
 
   DeviceInfo? get _selectedDevice => widget.controller.selectedDevice;
 
   void _clearTraffic() {
-    // TODO: wire up traffic log clearing once TrafficLogSource exposes it.
+    widget.controller.clearTraffic();
   }
 
   Future<void> _toggleSelectedConnection() async {
@@ -50,12 +52,23 @@ class _TrafficScreenState extends State<TrafficScreen> {
   }
 
   void _onChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(() {});
+    if (widget.controller.autoScroll) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scrollController.hasClients) {
+          _scrollController.jumpTo(
+            _scrollController.position.maxScrollExtent,
+          );
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(_onChanged);
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -220,10 +233,19 @@ class _TrafficScreenState extends State<TrafficScreen> {
           Divider(height: 1, color: dividerColor),
           Expanded(
             child: ListView.separated(
+              controller: _scrollController,
               itemCount: entries.length,
               separatorBuilder: (_, _) =>
                   Divider(height: 1, color: dividerColor),
-              itemBuilder: (context, i) => _LogRow(entry: entries[i]),
+              itemBuilder: (context, i) => InkWell(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => TrafficDetailScreen(entry: entries[i]),
+                  ),
+                ),
+                child: _LogRow(entry: entries[i]),
+              ),
             ),
           ),
           Container(
@@ -233,7 +255,7 @@ class _TrafficScreenState extends State<TrafficScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  l10n.logMessages(128),
+                  l10n.logMessages(entries.length),
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                 ),
                 Row(

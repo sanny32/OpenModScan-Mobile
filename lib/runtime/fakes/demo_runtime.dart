@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../models/log_entry.dart';
 import '../../models/register_entry.dart';
 import '../../models/status_entry.dart';
@@ -41,12 +43,15 @@ class DemoRegisterRuntime implements RegisterRuntime {
   }) async {}
 }
 
-class DemoTrafficLogSource implements TrafficLogSource {
+class DemoTrafficLogSource extends ChangeNotifier implements TrafficLogSource {
   final bool enabled;
 
-  const DemoTrafficLogSource({this.enabled = true});
+  DemoTrafficLogSource({this.enabled = true});
 
   @override
   List<LogEntry> entriesFor(String? deviceId) =>
       enabled ? demoLogEntries : const [];
+
+  @override
+  void clear(String? deviceId) {}
 }

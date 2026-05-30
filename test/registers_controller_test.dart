@@ -102,7 +102,7 @@ void main() {
 
   test('demo runtime can expose an empty non-demo mode', () {
     const registers = DemoRegisterRuntime(enabled: false);
-    const logs = DemoTrafficLogSource(enabled: false);
+    final logs = DemoTrafficLogSource(enabled: false);
 
     expect(registers.registersForRange(40001, 10), isEmpty);
     expect(registers.statusesForRange(0, 10), isEmpty);

@@ -139,7 +139,7 @@ void main() {
     expect(find.byType(DeviceScreen), findsOneWidget);
   });
 
-  testWidgets('Register map auto refresh reads only while visible', (
+  testWidgets('Register map auto refresh keeps polling regardless of tab', (
     WidgetTester tester,
   ) async {
     final device = DeviceInfo(
@@ -169,7 +169,6 @@ void main() {
       AppSettings.instance,
     );
     final returnDeviceId = ValueNotifier<String?>(null);
-    final screenActive = ValueNotifier(true);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -179,7 +178,6 @@ void main() {
         home: RegistersScreen(
           controller: controller,
           returnDeviceId: returnDeviceId,
-          screenActive: screenActive,
           onReturnToDevice: () {},
         ),
       ),
@@ -193,21 +191,14 @@ void main() {
 
     expect(connections.holdingReadCount, greaterThan(1));
 
-    screenActive.value = false;
-    await tester.pump();
-    final hiddenScreenReadCount = connections.holdingReadCount;
-
+    // Polling keeps running over time — there is no screen-visibility gate.
+    final beforeWait = connections.holdingReadCount;
     await tester.pump(const Duration(milliseconds: 200));
     await tester.pump();
 
-    expect(connections.holdingReadCount, hiddenScreenReadCount);
+    expect(connections.holdingReadCount, greaterThan(beforeWait));
 
-    screenActive.value = true;
-    await tester.pump();
-    await tester.pump();
-
-    expect(connections.holdingReadCount, greaterThan(hiddenScreenReadCount));
-
+    // Switching to the Status sub-tab still stops register polling.
     await tester.tap(find.text('Status'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
@@ -221,7 +212,6 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     controller.dispose();
     returnDeviceId.dispose();
-    screenActive.dispose();
   });
 
   testWidgets('Status map auto refresh reads connected coils', (

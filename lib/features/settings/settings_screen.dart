@@ -465,6 +465,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.zoom_out_map,
           label: l10n.settingsMaxLogEntries,
           value: '${_s.maxLogEntries}',
+          onTap: () => showSettingNumberSheet(
+            context,
+            title: l10n.settingsMaxLogEntries,
+            initialValue: _s.maxLogEntries,
+            min: 50,
+            max: 100000,
+            onSubmitted: widget.controller.setMaxLogEntries,
+          ),
         ),
       ],
       _SettingsSection.appearance => [

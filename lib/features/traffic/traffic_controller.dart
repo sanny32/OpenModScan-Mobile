@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../models/app_settings.dart';
 import '../../models/device_info.dart';
 import '../../models/log_entry.dart';
 import '../../navigation/navigation_targets.dart';
@@ -16,11 +17,14 @@ class TrafficController extends ChangeNotifier {
   String? _selectedDeviceId;
   TrafficFilter _filter = TrafficFilter.all;
   bool _autoScroll = true;
-  bool _clearOnDisconnect = false;
+  bool _clearOnDisconnect = AppSettings.instance.clearLogOnDisconnect;
+  Set<String> _connectedSnapshot = const {};
 
   TrafficController(this._repository, this._connectionRuntime, this._logs) {
     _repository.devices.addListener(_onRepositoryChanged);
-    _connectionRuntime.connectedDeviceIds.addListener(_forwardChange);
+    _connectionRuntime.connectedDeviceIds.addListener(_onConnectionChanged);
+    _logs.addListener(_forwardChange);
+    _connectedSnapshot = Set.of(_connectionRuntime.connectedDeviceIds.value);
     _selectedDeviceId = _repository.snapshot.isEmpty
         ? null
         : _repository.snapshot.first.id;
@@ -61,6 +65,8 @@ class TrafficController extends ChangeNotifier {
     };
   }
 
+  void clearTraffic() => _logs.clear(_selectedDeviceId);
+
   void selectTarget(TrafficRouteArgs target) {
     _selectedDeviceId = target.deviceId;
     notifyListeners();
@@ -84,7 +90,20 @@ class TrafficController extends ChangeNotifier {
   }
 
   void setClearOnDisconnect(bool value) {
+    if (_clearOnDisconnect == value) return;
     _clearOnDisconnect = value;
+    AppSettings.instance.setClearLogOnDisconnect(value);
+    notifyListeners();
+  }
+
+  void _onConnectionChanged() {
+    final current = _connectionRuntime.connectedDeviceIds.value;
+    if (_clearOnDisconnect) {
+      for (final id in _connectedSnapshot) {
+        if (!current.contains(id)) _logs.clear(id);
+      }
+    }
+    _connectedSnapshot = Set.of(current);
     notifyListeners();
   }
 
@@ -102,7 +121,8 @@ class TrafficController extends ChangeNotifier {
   @override
   void dispose() {
     _repository.devices.removeListener(_onRepositoryChanged);
-    _connectionRuntime.connectedDeviceIds.removeListener(_forwardChange);
+    _connectionRuntime.connectedDeviceIds.removeListener(_onConnectionChanged);
+    _logs.removeListener(_forwardChange);
     super.dispose();
   }
 }

@@ -32,7 +32,6 @@ GoRouter createAppRouter({
   required TrafficController trafficController,
   required SettingsController settingsController,
   required ValueNotifier<String?> registersReturnDeviceId,
-  required ValueNotifier<bool> registersScreenActive,
 }) {
   Future<void> openRegisters(
     BuildContext context,
@@ -62,7 +61,6 @@ GoRouter createAppRouter({
         builder: (context, state, navigationShell) => _ShellScaffold(
           navigationShell: navigationShell,
           registersReturnDeviceId: registersReturnDeviceId,
-          registersScreenActive: registersScreenActive,
         ),
         branches: [
           StatefulShellBranch(
@@ -96,7 +94,6 @@ GoRouter createAppRouter({
                 builder: (context, state) => RegistersScreen(
                   controller: registersController,
                   returnDeviceId: registersReturnDeviceId,
-                  screenActive: registersScreenActive,
                   onReturnToDevice: () => returnFromRegisters(context),
                 ),
               ),
@@ -129,12 +126,10 @@ GoRouter createAppRouter({
 class _ShellScaffold extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
   final ValueNotifier<String?> registersReturnDeviceId;
-  final ValueNotifier<bool> registersScreenActive;
 
   const _ShellScaffold({
     required this.navigationShell,
     required this.registersReturnDeviceId,
-    required this.registersScreenActive,
   });
 
   void _onTap(int index) {
@@ -165,10 +160,6 @@ class _ShellScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    // Keep the registers auto-refresh gate in sync with tab visibility.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      registersScreenActive.value = navigationShell.currentIndex == 1;
-    });
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {

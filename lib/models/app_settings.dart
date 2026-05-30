@@ -113,7 +113,7 @@ class AppSettings {
     showTypeBadgesNotifier.value = _store.getBool(_showTypeBadgesKey) ?? false;
     saveLogToFile = _store.getBool(_saveLogToFileKey) ?? false;
     clearLogOnDisconnect = _store.getBool(_clearLogOnDisconnectKey) ?? false;
-    maxLogEntries = _store.getInt(_maxLogEntriesKey) ?? 1000;
+    maxLogEntries = _clampInt(_store.getInt(_maxLogEntriesKey) ?? 1000, 50, 100000);
     scanProtocol = _protocolFromValue(_store.getString(_scanProtocolKey));
     scanSubnetPrefix = _clampInt(
       _store.getInt(_scanSubnetPrefixKey) ?? 24,
@@ -180,7 +180,7 @@ class AppSettings {
   }
 
   Future<void> setDefaultUnitId(int value) async {
-    defaultUnitId = _clampInt(value, 1, 255);
+    defaultUnitId = _clampInt(value, 1, 247);
     await _saveEditableValues();
   }
 
@@ -231,6 +231,11 @@ class AppSettings {
 
   Future<void> setClearLogOnDisconnect(bool value) async {
     clearLogOnDisconnect = value;
+    await _saveEditableValues();
+  }
+
+  Future<void> setMaxLogEntries(int value) async {
+    maxLogEntries = _clampInt(value, 50, 100000);
     await _saveEditableValues();
   }
 
@@ -376,7 +381,11 @@ class AppSettings {
     saveLogToFile = read<bool>(_saveLogToFileKey) ?? saveLogToFile;
     clearLogOnDisconnect =
         read<bool>(_clearLogOnDisconnectKey) ?? clearLogOnDisconnect;
-    maxLogEntries = read<int>(_maxLogEntriesKey) ?? maxLogEntries;
+    maxLogEntries = _clampInt(
+      read<int>(_maxLogEntriesKey) ?? maxLogEntries,
+      50,
+      100000,
+    );
     scanProtocol = _protocolFromValue(read<String>(_scanProtocolKey));
     scanSubnetPrefix = _clampInt(
       read<int>(_scanSubnetPrefixKey) ?? scanSubnetPrefix,

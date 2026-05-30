@@ -35,14 +35,12 @@ enum _MenuAction { selectDevice, removeRegs, setAllTypes }
 class RegistersScreen extends StatefulWidget {
   final RegistersController controller;
   final ValueListenable<String?> returnDeviceId;
-  final ValueListenable<bool>? screenActive;
   final VoidCallback onReturnToDevice;
 
   const RegistersScreen({
     super.key,
     required this.controller,
     required this.returnDeviceId,
-    this.screenActive,
     required this.onReturnToDevice,
   });
 
@@ -66,7 +64,6 @@ class _RegistersScreenState extends State<RegistersScreen>
   var _connectionBusy = false;
 
   DeviceInfo? get _selectedDevice => widget.controller.selectedDevice;
-  bool get _screenActive => widget.screenActive?.value ?? true;
 
   List<_ListConfig> _buildListsFromDevice() {
     final lists = widget.controller.lists;
@@ -116,17 +113,7 @@ class _RegistersScreenState extends State<RegistersScreen>
     _tabController.addListener(_onTabChanged);
     _tabController.animation?.addListener(_onTabAnimationChanged);
     widget.controller.addListener(_onChanged);
-    widget.screenActive?.addListener(_onScreenActiveChanged);
     widget.controller.ensureSelectedList();
-  }
-
-  @override
-  void didUpdateWidget(RegistersScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.screenActive != widget.screenActive) {
-      oldWidget.screenActive?.removeListener(_onScreenActiveChanged);
-      widget.screenActive?.addListener(_onScreenActiveChanged);
-    }
   }
 
   void _onTabChanged() {
@@ -140,10 +127,6 @@ class _RegistersScreenState extends State<RegistersScreen>
     if (index != null) {
       _setActiveTab(index.clamp(0, _tabController.length - 1));
     }
-  }
-
-  void _onScreenActiveChanged() {
-    if (mounted) setState(() {});
   }
 
   void _onChanged() {
@@ -190,7 +173,6 @@ class _RegistersScreenState extends State<RegistersScreen>
   @override
   void dispose() {
     widget.controller.removeListener(_onChanged);
-    widget.screenActive?.removeListener(_onScreenActiveChanged);
     _tabController.animation?.removeListener(_onTabAnimationChanged);
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
@@ -474,7 +456,7 @@ class _RegistersScreenState extends State<RegistersScreen>
                   listSelector: _buildListSelector(),
                   autoRefresh: active.autoRefresh,
 
-                  isActive: _screenActive && _activeTab == 0,
+                  isActive: _activeTab == 0,
                   onAutoRefreshChanged: (v) =>
                       _updateActiveList(active..autoRefresh = v),
                   autoRefreshIntervalMs: active.refreshIntervalMs,
@@ -503,7 +485,7 @@ class _RegistersScreenState extends State<RegistersScreen>
                       _updateActiveList(active..coilType = v),
                   listSelector: _buildListSelector(),
                   autoRefresh: active.coilAutoRefresh,
-                  isActive: _screenActive && _activeTab == 1,
+                  isActive: _activeTab == 1,
                   onAutoRefreshChanged: (v) =>
                       _updateActiveList(active..coilAutoRefresh = v),
                   autoRefreshIntervalMs: active.coilRefreshIntervalMs,

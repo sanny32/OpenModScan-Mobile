@@ -3,6 +3,7 @@ import 'package:modbus_client_tcp/modbus_client_tcp.dart' as modbus_tcp;
 
 import '../models/device_info.dart';
 import '../models/modbus_exception.dart';
+import 'traffic_log.dart';
 
 class ModbusClient {
   static const _maxRegistersPerRead = 125;
@@ -30,8 +31,13 @@ class ModbusClient {
           connectionTimeout: timeout,
           responseTimeout: timeout,
         );
-    if (!await client.connect()) {
-      throw ModbusClientException('Could not connect to ${device.address}.');
+    TrafficLog.instance.setActiveDevice(device.id);
+    try {
+      if (!await client.connect()) {
+        throw ModbusClientException('Could not connect to ${device.address}.');
+      }
+    } finally {
+      TrafficLog.instance.setActiveDevice(null);
     }
     _tcpClient = client;
   }
@@ -72,7 +78,7 @@ class ModbusClient {
       address: address,
       type: modbus.ModbusElementType.holdingRegister,
     );
-    final response = await _requireTcpClient().send(
+    final response = await _send(
       register.getWriteRequest(value, rawValue: true),
     );
     if (response != modbus.ModbusResponseCode.requestSucceed) {
@@ -84,9 +90,7 @@ class ModbusClient {
     _validateWriteAddress(address);
 
     final coil = modbus.ModbusCoil(name: 'Coil $address', address: address);
-    final response = await _requireTcpClient().send(
-      coil.getWriteRequest(value),
-    );
+    final response = await _send(coil.getWriteRequest(value));
     if (response != modbus.ModbusResponseCode.requestSucceed) {
       throw _exceptionForResponse(response);
     }
@@ -108,7 +112,7 @@ class ModbusClient {
         ),
     ];
     final group = modbus.ModbusElementsGroup(registers);
-    final response = await _requireTcpClient().send(group.getReadRequest());
+    final response = await _send(group.getReadRequest());
     if (response != modbus.ModbusResponseCode.requestSucceed) {
       throw _exceptionForResponse(response);
     }
@@ -136,7 +140,7 @@ class ModbusClient {
               ),
     ];
     final group = modbus.ModbusElementsGroup(bits);
-    final response = await _requireTcpClient().send(group.getReadRequest());
+    final response = await _send(group.getReadRequest());
     if (response != modbus.ModbusResponseCode.requestSucceed) {
       throw _exceptionForResponse(response);
     }
@@ -150,6 +154,17 @@ class ModbusClient {
       throw StateError('Modbus client is not connected.');
     }
     return client;
+  }
+
+  /// Sends [request] while tagging the traffic log with this device, so the
+  /// global library logs (TX/RX frames) are attributed to the right device.
+  Future<modbus.ModbusResponseCode> _send(modbus.ModbusRequest request) async {
+    TrafficLog.instance.setActiveDevice(device.id);
+    try {
+      return await _requireTcpClient().send(request);
+    } finally {
+      TrafficLog.instance.setActiveDevice(null);
+    }
   }
 
   int _valueFor(modbus.ModbusUint16Register register) {

@@ -97,6 +97,11 @@ class SettingsController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setMaxLogEntries(int value) async {
+    await settings.setMaxLogEntries(value);
+    notifyListeners();
+  }
+
   Future<void> setScanProtocol(ProtocolType value) async {
     await settings.setScanProtocol(value);
     notifyListeners();

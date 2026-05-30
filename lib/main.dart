@@ -10,9 +10,11 @@ import 'models/app_settings.dart';
 import 'navigation/app_router.dart';
 import 'runtime/fakes/demo_fixtures.dart';
 import 'runtime/fakes/demo_runtime.dart';
+import 'runtime/runtime_ports.dart';
 import 'services/connection_manager.dart';
 import 'services/device_repository.dart';
 import 'services/device_scanner.dart';
+import 'services/traffic_log.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -21,6 +23,9 @@ Future<void> main() async {
   await DeviceRepository.instance.initialize(
     seedDevices: AppFlags.demoData ? demoDevices : const [],
   );
+  if (!AppFlags.demoData) {
+    TrafficLog.instance.install();
+  }
   runApp(const OModScanApp());
 }
 
@@ -33,7 +38,6 @@ class OModScanApp extends StatefulWidget {
 
 class _OModScanAppState extends State<OModScanApp> {
   final _registersReturnDeviceId = ValueNotifier<String?>(null);
-  final _registersScreenActive = ValueNotifier<bool>(false);
 
   late final DevicesController _devicesController;
   late final RegistersController _registersController;
@@ -45,7 +49,9 @@ class _OModScanAppState extends State<OModScanApp> {
   void initState() {
     super.initState();
     final registerRuntime = DemoRegisterRuntime(enabled: AppFlags.demoData);
-    final trafficLogs = DemoTrafficLogSource(enabled: AppFlags.demoData);
+    final TrafficLogSource trafficLogs = AppFlags.demoData
+        ? DemoTrafficLogSource(enabled: true)
+        : TrafficLog.instance;
 
     _devicesController = DevicesController(
       DeviceRepository.instance,
@@ -72,14 +78,12 @@ class _OModScanAppState extends State<OModScanApp> {
       trafficController: _trafficController,
       settingsController: _settingsController,
       registersReturnDeviceId: _registersReturnDeviceId,
-      registersScreenActive: _registersScreenActive,
     );
   }
 
   @override
   void dispose() {
     _registersReturnDeviceId.dispose();
-    _registersScreenActive.dispose();
     _devicesController.dispose();
     _registersController.dispose();
     _trafficController.dispose();

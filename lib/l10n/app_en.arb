@@ -282,6 +282,42 @@
   "logClearTraffic": "Clear traffic",
   "@logClearTraffic": {},
 
+  "trafficMbapHeader": "MBAP header",
+  "@trafficMbapHeader": {},
+
+  "trafficPdu": "PDU",
+  "@trafficPdu": {},
+
+  "trafficDecoded": "Decoded",
+  "@trafficDecoded": {},
+
+  "trafficRawFrame": "Raw frame",
+  "@trafficRawFrame": {},
+
+  "trafficTransactionId": "Transaction ID",
+  "@trafficTransactionId": {},
+
+  "trafficProtocolId": "Protocol ID",
+  "@trafficProtocolId": {},
+
+  "trafficLength": "Length",
+  "@trafficLength": {},
+
+  "trafficUnitId": "Unit ID",
+  "@trafficUnitId": {},
+
+  "trafficFunctionCode": "Function code",
+  "@trafficFunctionCode": {},
+
+  "trafficCopyHex": "Copy hex",
+  "@trafficCopyHex": {},
+
+  "trafficHexCopied": "Frame copied to clipboard",
+  "@trafficHexCopied": {},
+
+  "trafficNoFrame": "No frame data available",
+  "@trafficNoFrame": {},
+
   "editDevice": "Edit Device",
   "@editDevice": {},
 
