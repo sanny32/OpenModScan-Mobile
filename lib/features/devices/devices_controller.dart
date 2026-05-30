@@ -28,29 +28,13 @@ class DevicesController extends ChangeNotifier {
 
   List<DeviceInfo> get devices => _repository.snapshot;
 
-  List<DeviceInfo> get savedDevicesSortedNewestFirst =>
-      _sortByCreatedNewestFirst(devices);
-
-  List<DeviceInfo> visibleHomeDevices([int limit = 3]) {
-    final filtered = filteredDevices;
-    final favorites = filtered.where((d) => d.isFavorite).toList();
-    final sortedFavs = _sortByCreatedNewestFirst(favorites);
-    if (favorites.isEmpty) {
-      return _sortByCreatedNewestFirst(filtered).take(limit).toList();
-    }
-    if (sortedFavs.length >= limit) {
-      return sortedFavs.take(limit).toList();
-    }
-    final sortedNonFavs = _sortByCreatedNewestFirst(
-      filtered.where((d) => !d.isFavorite).toList(),
-    );
-    return [...sortedFavs, ...sortedNonFavs.take(limit - sortedFavs.length)];
-  }
+  /// Saved devices are ordered by the user's manual drag order, which is the
+  /// persisted repository order. The home preview shows the first [limit].
+  List<DeviceInfo> visibleHomeDevices([int limit = 3]) =>
+      filteredDevices.take(limit).toList();
 
   List<DeviceInfo> get filteredDevices =>
       devices.where((device) => _matchesSearch(device, _search)).toList();
-
-  DeviceSortMode get savedDevicesSortMode => _settings.savedDevicesSortMode;
 
   List<DiscoveredDevice> get discoveredDevices =>
       _scanner.discoveredDevices.devices;
@@ -95,20 +79,23 @@ class DevicesController extends ChangeNotifier {
   Future<void> toggleFavorite(DeviceInfo device) =>
       updateDevice(device.copyWith(isFavorite: !device.isFavorite));
 
-  Future<void> setSavedDevicesSortMode(DeviceSortMode value) async {
-    await _settings.setSavedDevicesSortMode(value);
-    notifyListeners();
-  }
+  /// Saved devices matching [query], in the persisted manual order.
+  List<DeviceInfo> savedDevicesForSearch(String query) =>
+      devices.where((device) => _matchesSearch(device, query)).toList();
 
-  List<DeviceInfo> devicesForSearchAndSort(
-    String query,
-    DeviceSortMode sortMode,
-  ) {
-    final filtered = devices.where((device) => _matchesSearch(device, query));
-    return switch (sortMode) {
-      DeviceSortMode.created => _sortByCreatedNewestFirst(filtered),
-      DeviceSortMode.lastConnected => _sortByLastConnectedNewestFirst(filtered),
-    };
+  /// Moves a saved device within the persisted manual order. Indices are into
+  /// the unfiltered saved-device list (manual reordering is only offered when
+  /// no search filter is active, so display indices map 1:1 to storage).
+  ///
+  /// [newIndex] follows the `onReorderItem` convention: it is the destination
+  /// index *after* the dragged item has been removed, so no extra adjustment is
+  /// needed here.
+  Future<void> reorderSavedDevices(int oldIndex, int newIndex) async {
+    final list = List.of(devices);
+    if (oldIndex < 0 || oldIndex >= list.length) return;
+    final moved = list.removeAt(oldIndex);
+    list.insert(newIndex.clamp(0, list.length), moved);
+    await _repository.replaceAll(list);
   }
 
   Future<DeviceInfo> connectDiscoveredDevice(
@@ -185,28 +172,6 @@ class DevicesController extends ChangeNotifier {
     return normalized.isEmpty ||
         device.name.toLowerCase().contains(normalized) ||
         device.address.toLowerCase().contains(normalized);
-  }
-
-  List<DeviceInfo> _sortByCreatedNewestFirst(Iterable<DeviceInfo> devices) {
-    return List.of(devices)..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-  }
-
-  List<DeviceInfo> _sortByLastConnectedNewestFirst(
-    Iterable<DeviceInfo> devices,
-  ) {
-    return List.of(devices)..sort((a, b) {
-      final aConnected = a.lastConnectedAt;
-      final bConnected = b.lastConnectedAt;
-      if (aConnected != null && bConnected != null) {
-        final connectedCompare = bConnected.compareTo(aConnected);
-        if (connectedCompare != 0) return connectedCompare;
-      } else if (aConnected != null) {
-        return -1;
-      } else if (bConnected != null) {
-        return 1;
-      }
-      return b.createdAt.compareTo(a.createdAt);
-    });
   }
 
   DeviceInfo? _findDiscoveredDevice(DiscoveredDevice discovered) {

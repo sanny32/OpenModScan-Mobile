@@ -20,14 +20,12 @@ class SavedDevicesScreen extends StatefulWidget {
 }
 
 class _SavedDevicesScreenState extends State<SavedDevicesScreen> {
-  late DeviceSortMode _sortMode;
   final _searchController = TextEditingController();
   String _search = '';
 
   @override
   void initState() {
     super.initState();
-    _sortMode = widget.controller.savedDevicesSortMode;
     widget.controller.addListener(_rebuild);
     _searchController.addListener(_onSearchChanged);
   }
@@ -47,11 +45,6 @@ class _SavedDevicesScreenState extends State<SavedDevicesScreen> {
       ..removeListener(_onSearchChanged)
       ..dispose();
     super.dispose();
-  }
-
-  Future<void> _setSortMode(DeviceSortMode value) async {
-    setState(() => _sortMode = value);
-    await widget.controller.setSavedDevicesSortMode(value);
   }
 
   Future<void> _deleteDevice(DeviceInfo device) async {
@@ -74,14 +67,41 @@ class _SavedDevicesScreenState extends State<SavedDevicesScreen> {
       );
   }
 
+  Widget _buildDeviceTile(
+    BuildContext context,
+    DeviceInfo device, {
+    Widget? trailing,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Dismissible(
+      key: ValueKey('saved-screen-${device.id}'),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => _deleteDevice(device),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          color: cs.error,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(Icons.delete_outline, color: cs.onError, size: 26),
+      ),
+      child: DeviceCard(
+        device: device,
+        connected: widget.controller.isConnected(device),
+        favorite: device.isFavorite,
+        onTap: () => widget.onOpenDevice(device.id),
+        trailing: trailing,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final l10n = context.l10n;
-    final devices = widget.controller.devicesForSearchAndSort(
-      _search,
-      _sortMode,
-    );
+    final devices = widget.controller.savedDevicesForSearch(_search);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.devicesSavedConnections)),
@@ -89,7 +109,7 @@ class _SavedDevicesScreenState extends State<SavedDevicesScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
@@ -103,101 +123,48 @@ class _SavedDevicesScreenState extends State<SavedDevicesScreen> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: SizedBox(
-                width: double.infinity,
-                child: SegmentedButton<DeviceSortMode>(
-                  segments: [
-                    ButtonSegment(
-                      value: DeviceSortMode.lastConnected,
-                      label: Text(l10n.devicesSortLastConnected),
-                    ),
-                    ButtonSegment(
-                      value: DeviceSortMode.created,
-                      label: Text(l10n.devicesSortCreated),
-                    ),
-                  ],
-                  selected: {_sortMode},
-                  showSelectedIcon: false,
-                  style: _sortSegmentedButtonStyle(context),
-                  onSelectionChanged: (selected) {
-                    _setSortMode(selected.single);
-                  },
-                ),
-              ),
-            ),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.only(bottom: 12),
-                itemCount: devices.length,
-                itemBuilder: (context, index) {
-                  final device = devices[index];
-                  return Dismissible(
-                    key: ValueKey('saved-screen-${device.id}'),
-                    direction: DismissDirection.endToStart,
-                    onDismissed: (_) => _deleteDevice(device),
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: cs.error,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.delete_outline,
-                        color: cs.onError,
-                        size: 26,
-                      ),
+              // Drag-to-reorder maps on-screen indices 1:1 to storage order, so
+              // it is only offered when no search filter narrows the list.
+              child: _search.isEmpty
+                  ? ReorderableListView.builder(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      buildDefaultDragHandles: false,
+                      itemCount: devices.length,
+                      onReorderItem: (oldIndex, newIndex) async {
+                        await widget.controller.reorderSavedDevices(
+                          oldIndex,
+                          newIndex,
+                        );
+                      },
+                      itemBuilder: (context, index) {
+                        final device = devices[index];
+                        return _buildDeviceTile(
+                          context,
+                          device,
+                          trailing: ReorderableDragStartListener(
+                            index: index,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: Icon(
+                                Icons.drag_handle,
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      itemCount: devices.length,
+                      itemBuilder: (context, index) =>
+                          _buildDeviceTile(context, devices[index]),
                     ),
-                    child: DeviceCard(
-                      device: device,
-                      connected: widget.controller.isConnected(device),
-                      favorite: device.isFavorite,
-                      onTap: () => widget.onOpenDevice(device.id),
-                    ),
-                  );
-                },
-              ),
             ),
           ],
         ),
       ),
     );
   }
-}
-
-ButtonStyle _sortSegmentedButtonStyle(BuildContext context) {
-  final cs = Theme.of(context).colorScheme;
-  final tt = Theme.of(context).textTheme;
-  return ButtonStyle(
-    textStyle: WidgetStatePropertyAll(tt.bodyMedium),
-    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    visualDensity: VisualDensity.compact,
-    padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 12)),
-    shape: const WidgetStatePropertyAll(
-      RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(8)),
-      ),
-    ),
-    backgroundColor: WidgetStateProperty.resolveWith((states) {
-      if (states.contains(WidgetState.selected)) return cs.primary;
-      return cs.surfaceContainerHighest;
-    }),
-    foregroundColor: WidgetStateProperty.resolveWith((states) {
-      if (states.contains(WidgetState.selected)) return cs.onPrimary;
-      return cs.onSurface;
-    }),
-    iconColor: WidgetStateProperty.resolveWith((states) {
-      if (states.contains(WidgetState.selected)) return cs.onPrimary;
-      return cs.onSurface;
-    }),
-    side: WidgetStatePropertyAll(
-      BorderSide(color: Theme.of(context).dividerColor),
-    ),
-  );
 }

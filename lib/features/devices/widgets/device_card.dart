@@ -12,6 +12,9 @@ class DeviceCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onToggleFavorite;
 
+  /// Replaces the trailing chevron when provided (e.g. a reorder drag handle).
+  final Widget? trailing;
+
   const DeviceCard({
     super.key,
     required this.device,
@@ -19,6 +22,7 @@ class DeviceCard extends StatelessWidget {
     this.favorite = false,
     required this.onTap,
     this.onToggleFavorite,
+    this.trailing,
   });
 
   @override
@@ -84,7 +88,7 @@ class DeviceCard extends StatelessWidget {
                       : l10n.devicesFavorite,
                   onPressed: onToggleFavorite,
                 ),
-              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+              trailing ?? Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
             ],
           ),
         ),

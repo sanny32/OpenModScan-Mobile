@@ -13,8 +13,6 @@
   "devicesSavedConnections": "Сохранённые подключения",
   "devicesMoreCount": "+ ещё {count}",
   "devicesShowAllCount": "Показать все ({count})",
-  "devicesSortLastConnected": "По подключению",
-  "devicesSortCreated": "По созданию",
   "devicesFavorite": "Добавить в избранное",
   "devicesUnfavorite": "Убрать из избранного",
   "devicesDiscoveredDevices": "Сканер сети",

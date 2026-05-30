@@ -50,7 +50,6 @@ void main() {
     await settings.setShowTypeBadges(true);
     await settings.setWriteEnabled(false);
     await settings.setConfirmBeforeWrite(true);
-    await settings.setSavedDevicesSortMode(DeviceSortMode.created);
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('addressBase'), '1-based');
@@ -60,11 +59,8 @@ void main() {
     expect(prefs.getBool('showTypeBadges'), isTrue);
     expect(prefs.getBool('writeEnabled'), isFalse);
     expect(prefs.getBool('confirmBeforeWrite'), isTrue);
-    expect(prefs.getString('savedDevicesSortMode'), 'created');
 
-    await settings.setSavedDevicesSortMode(DeviceSortMode.lastConnected);
     await settings.load();
-    expect(settings.savedDevicesSortMode, DeviceSortMode.lastConnected);
     expect(settings.writeEnabled, isFalse);
     expect(settings.confirmBeforeWrite, isTrue);
   });
@@ -83,7 +79,6 @@ void main() {
     expect(settings.scanRequestAddress, 0);
     expect(settings.scanConnectTimeout, 300);
     expect(settings.scanConcurrency, 32);
-    expect(settings.savedDevicesSortMode, DeviceSortMode.lastConnected);
     expect(settings.writeEnabled, isTrue);
     expect(settings.confirmBeforeWrite, isFalse);
 
@@ -194,7 +189,6 @@ void main() {
     await source.setScanRequestAddress(42);
     await source.setScanConnectTimeout(450);
     await source.setScanConcurrency(64);
-    await source.setSavedDevicesSortMode(DeviceSortMode.created);
     await source.setTheme('Dark');
     await source.setLanguage('Russian');
 
@@ -224,7 +218,6 @@ void main() {
     expect(target.scanRequestAddress, 42);
     expect(target.scanConnectTimeout, 450);
     expect(target.scanConcurrency, 64);
-    expect(target.savedDevicesSortMode, DeviceSortMode.created);
     expect(target.themeMode, ThemeMode.dark);
     expect(target.locale?.languageCode, 'ru');
   });

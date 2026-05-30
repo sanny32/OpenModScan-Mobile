@@ -49,12 +49,6 @@
     }
   },
 
-  "devicesSortLastConnected": "Last connected",
-  "@devicesSortLastConnected": {},
-
-  "devicesSortCreated": "Created",
-  "@devicesSortCreated": {},
-
   "devicesFavorite": "Add to favorites",
   "@devicesFavorite": {},
 

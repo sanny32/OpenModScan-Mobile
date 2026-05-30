@@ -43,7 +43,6 @@ class AppSettings {
   static const _scanRequestAddressKey = 'scanRequestAddress';
   static const _scanConnectTimeoutKey = 'scanConnectTimeout';
   static const _scanConcurrencyKey = 'scanConcurrency';
-  static const _savedDevicesSortModeKey = 'savedDevicesSortMode';
   static const _scanClearOnStartKey = 'scanClearOnStart';
   static const registerOrders = ['MSRF', 'LSRF'];
   static const byteOrders = ['Direct', 'Swapped'];
@@ -77,7 +76,6 @@ class AppSettings {
   int scanRequestAddress = 0;
   int scanConnectTimeout = 300;
   int scanConcurrency = 32;
-  DeviceSortMode savedDevicesSortMode = DeviceSortMode.lastConnected;
   bool scanClearOnStart = true;
 
   final showLastValuesNotifier = ValueNotifier<bool>(true);
@@ -154,9 +152,6 @@ class AppSettings {
       _store.getInt(_scanConcurrencyKey) ?? 32,
       1,
       256,
-    );
-    savedDevicesSortMode = _deviceSortModeFromValue(
-      _store.getString(_savedDevicesSortModeKey),
     );
     scanClearOnStart = _store.getBool(_scanClearOnStartKey) ?? true;
     themeModeNotifier.value = _themeModeFromValue(
@@ -297,11 +292,6 @@ class AppSettings {
     await _saveEditableValues();
   }
 
-  Future<void> setSavedDevicesSortMode(DeviceSortMode value) async {
-    savedDevicesSortMode = value;
-    await _saveEditableValues();
-  }
-
   Future<void> setScanClearOnStart(bool value) async {
     scanClearOnStart = value;
     await _saveEditableValues();
@@ -334,7 +324,6 @@ class AppSettings {
     scanRequestAddress = 0;
     scanConnectTimeout = 300;
     scanConcurrency = 32;
-    savedDevicesSortMode = DeviceSortMode.lastConnected;
     scanClearOnStart = true;
     await _saveEditableValues();
     await _setThemeMode(ThemeMode.system);
@@ -369,7 +358,6 @@ class AppSettings {
     _scanRequestAddressKey: scanRequestAddress,
     _scanConnectTimeoutKey: scanConnectTimeout,
     _scanConcurrencyKey: scanConcurrency,
-    _savedDevicesSortModeKey: savedDevicesSortMode.name,
     _scanClearOnStartKey: scanClearOnStart,
     _themeModeKey: themeMode.name,
     _localeKey: locale?.languageCode ?? 'system',
@@ -455,9 +443,6 @@ class AppSettings {
       1,
       256,
     );
-    savedDevicesSortMode = _deviceSortModeFromValue(
-      read<String>(_savedDevicesSortModeKey),
-    );
     scanClearOnStart = read<bool>(_scanClearOnStartKey) ?? scanClearOnStart;
     await _saveEditableValues();
     await _setThemeMode(_themeModeFromValue(read<String>(_themeModeKey)));
@@ -491,7 +476,6 @@ class AppSettings {
     await _store.setInt(_scanRequestAddressKey, scanRequestAddress);
     await _store.setInt(_scanConnectTimeoutKey, scanConnectTimeout);
     await _store.setInt(_scanConcurrencyKey, scanConcurrency);
-    await _store.setString(_savedDevicesSortModeKey, savedDevicesSortMode.name);
     await _store.setBool(_scanClearOnStartKey, scanClearOnStart);
   }
 
@@ -561,13 +545,6 @@ class AppSettings {
     return ProtocolType.values.firstWhere(
       (protocol) => protocol.name == value,
       orElse: () => ProtocolType.modbusTcp,
-    );
-  }
-
-  DeviceSortMode _deviceSortModeFromValue(String? value) {
-    return DeviceSortMode.values.firstWhere(
-      (mode) => mode.name == value,
-      orElse: () => DeviceSortMode.lastConnected,
     );
   }
 

@@ -360,10 +360,12 @@ void main() {
     expect(cardsAtLarge, lessThan(cardsAtNormal));
   });
 
-  testWidgets('favorites are preferred on devices preview', (tester) async {
+  testWidgets('devices preview follows manual order, not favorites', (
+    tester,
+  ) async {
     await DeviceRepository.instance.replaceAll([
       DeviceInfo(
-        name: 'Newest',
+        name: 'First',
         host: '192.168.0.10',
         port: 502,
         protocol: ProtocolType.modbusTcp,
@@ -371,7 +373,7 @@ void main() {
         createdAt: DateTime(2026, 5, 24, 12, 5),
       ),
       DeviceInfo(
-        name: 'Favorite Old',
+        name: 'Favorite Second',
         host: '192.168.0.11',
         port: 502,
         protocol: ProtocolType.modbusTcp,
@@ -396,11 +398,12 @@ void main() {
       ),
     );
 
-    expect(find.text('Favorite Old'), findsOneWidget);
-    expect(find.text('Newest'), findsOneWidget);
+    expect(find.text('Favorite Second'), findsOneWidget);
+    expect(find.text('First'), findsOneWidget);
+    // Storage order wins: the favorite does not float above the first device.
     expect(
-      tester.getTopLeft(find.text('Favorite Old')).dy,
-      lessThan(tester.getTopLeft(find.text('Newest')).dy),
+      tester.getTopLeft(find.text('First')).dy,
+      lessThan(tester.getTopLeft(find.text('Favorite Second')).dy),
     );
   });
 
@@ -474,7 +477,7 @@ void main() {
     expect(result?.device.markerColor, DeviceMarkerColor.teal);
   });
 
-  testWidgets('saved devices screen searches and persists sort mode', (
+  testWidgets('saved devices screen lists in manual order and filters', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(393, 400);
@@ -536,27 +539,27 @@ void main() {
     await tester.tap(find.text('Show all (4)'));
     await tester.pumpAndSettle();
 
+    // The list follows the persisted manual (storage) order: 'Created New' was
+    // inserted before 'Recently Connected'.
     expect(
-      tester.getTopLeft(find.text('Recently Connected')).dy,
-      lessThan(tester.getTopLeft(find.text('Created New')).dy),
+      tester.getTopLeft(find.text('Created New')).dy,
+      lessThan(tester.getTopLeft(find.text('Recently Connected')).dy),
     );
+    // Drag handles are offered for manual reordering.
+    expect(find.byIcon(Icons.drag_handle), findsWidgets);
 
     await tester.enterText(find.byType(TextField).last, '10.0.0');
     await tester.pump();
 
     expect(find.text('Created Old'), findsOneWidget);
     expect(find.text('Created New'), findsNothing);
+    // Reordering is suppressed while a search filter is active.
+    expect(find.byIcon(Icons.drag_handle), findsNothing);
 
     await tester.enterText(find.byType(TextField).last, '');
     await tester.pump();
-    await tester.tap(find.text('Created'));
-    await tester.pumpAndSettle();
-
-    expect(AppSettings.instance.savedDevicesSortMode, DeviceSortMode.created);
-    expect(
-      tester.getTopLeft(find.text('Created New')).dy,
-      lessThan(tester.getTopLeft(find.text('Recently Connected')).dy),
-    );
+    expect(find.text('Created New'), findsOneWidget);
+    expect(find.byIcon(Icons.drag_handle), findsWidgets);
   });
 
   testWidgets('completed scan panel shows completion details', (tester) async {
@@ -701,36 +704,19 @@ void main() {
     expect(controller.devices.single.lastConnectedAt, connectedAt);
   });
 
-  test('device sort helpers order by last connection and creation', () async {
-    final neverConnectedNew = DeviceInfo(
-      name: 'Never Connected New',
-      host: '127.0.0.1',
+  test('manual reorder persists order and is honored by manual sort', () async {
+    DeviceInfo make(String name, int createdDay) => DeviceInfo(
+      name: name,
+      host: name.toLowerCase(),
       port: 502,
       protocol: ProtocolType.modbusTcp,
       unitId: 1,
-      createdAt: DateTime(2026, 5, 24, 12, 3),
-    );
-    final connectedOld = DeviceInfo(
-      name: 'Connected Old',
-      host: '127.0.0.2',
-      port: 502,
-      protocol: ProtocolType.modbusTcp,
-      unitId: 1,
-      createdAt: DateTime(2026, 5, 24, 12, 1),
-      lastConnectedAt: DateTime(2026, 5, 24, 13),
-    );
-    final neverConnectedOld = DeviceInfo(
-      name: 'Never Connected Old',
-      host: '127.0.0.3',
-      port: 502,
-      protocol: ProtocolType.modbusTcp,
-      unitId: 1,
-      createdAt: DateTime(2026, 5, 24, 12, 2),
+      createdAt: DateTime(2026, 1, createdDay),
     );
     await DeviceRepository.instance.replaceAll([
-      neverConnectedNew,
-      connectedOld,
-      neverConnectedOld,
+      make('A', 1),
+      make('B', 2),
+      make('C', 3),
     ]);
     final controller = DevicesController(
       DeviceRepository.instance,
@@ -740,17 +726,64 @@ void main() {
     );
     addTearDown(controller.dispose);
 
+    // The saved list mirrors the stored repository order verbatim.
     expect(
-      controller
-          .devicesForSearchAndSort('', DeviceSortMode.lastConnected)
-          .map((device) => device.name),
-      ['Connected Old', 'Never Connected New', 'Never Connected Old'],
+      controller.savedDevicesForSearch('').map((device) => device.name),
+      ['A', 'B', 'C'],
     );
+
+    // Move A (index 0) to the end; onReorderItem reports the post-removal index.
+    await controller.reorderSavedDevices(0, 2);
     expect(
-      controller
-          .devicesForSearchAndSort('', DeviceSortMode.created)
-          .map((device) => device.name),
-      ['Never Connected New', 'Never Connected Old', 'Connected Old'],
+      controller.savedDevicesForSearch('').map((device) => device.name),
+      ['B', 'C', 'A'],
+    );
+
+    // The new order is persisted and survives a reload from the store.
+    final reloaded = await DeviceRepository.instance.load();
+    expect(reloaded.map((device) => device.name), ['B', 'C', 'A']);
+  });
+
+  test('home preview follows manual order, not favorites-first', () async {
+    await DeviceRepository.instance.replaceAll([
+      DeviceInfo(
+        name: 'A',
+        host: 'a',
+        port: 502,
+        protocol: ProtocolType.modbusTcp,
+        unitId: 1,
+        createdAt: DateTime(2026, 1, 1),
+      ),
+      DeviceInfo(
+        name: 'B',
+        host: 'b',
+        port: 502,
+        protocol: ProtocolType.modbusTcp,
+        unitId: 1,
+        isFavorite: true,
+        createdAt: DateTime(2026, 1, 2),
+      ),
+      DeviceInfo(
+        name: 'C',
+        host: 'c',
+        port: 502,
+        protocol: ProtocolType.modbusTcp,
+        unitId: 1,
+        createdAt: DateTime(2026, 1, 3),
+      ),
+    ]);
+    final controller = DevicesController(
+      DeviceRepository.instance,
+      PollingConnectionRuntime(),
+      _ScanPort(ScannerStateView.idle),
+      AppSettings.instance,
+    );
+    addTearDown(controller.dispose);
+
+    // Favorite B does not float to the top; storage order wins in manual mode.
+    expect(
+      controller.visibleHomeDevices(3).map((device) => device.name),
+      ['A', 'B', 'C'],
     );
   });
 

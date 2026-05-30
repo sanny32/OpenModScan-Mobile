@@ -2,8 +2,6 @@ import 'register_list.dart';
 
 enum ProtocolType { modbusTcp, modbusRtuIp }
 
-enum DeviceSortMode { lastConnected, created }
-
 enum DeviceMarkerColor { blue, green, amber, red, purple, teal, gray }
 
 extension ProtocolTypeX on ProtocolType {
