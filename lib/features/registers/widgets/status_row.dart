@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../models/register_entry.dart';
 import '../../../models/status_entry.dart';
 import '../../../theme/app_theme.dart';
+import '../../../widgets/app_switch.dart';
 import '../status_detail_screen.dart';
 
 class StatusRow extends StatelessWidget {
@@ -51,18 +52,14 @@ class StatusRow extends StatelessWidget {
       );
     }
 
-    final statusSwitch = Transform.scale(
-      scale: 0.82,
+    final statusSwitch = AppSwitch(
+      value: entry.value,
+      onChanged: canWrite ? onChanged : null,
       alignment: Alignment.centerRight,
-      child: Switch(
-        value: entry.value,
-        onChanged: canWrite ? onChanged : null,
-        thumbColor: isException ? WidgetStatePropertyAll(exceptionColor) : null,
-        trackColor: isException
-            ? WidgetStatePropertyAll(exceptionColor.withAlpha(77))
-            : null,
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
+      thumbColor: isException ? WidgetStatePropertyAll(exceptionColor) : null,
+      trackColor: isException
+          ? WidgetStatePropertyAll(exceptionColor.withAlpha(77))
+          : null,
     );
 
     return InkWell(

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../../models/register_list.dart';
+import '../../../widgets/app_switch.dart';
 import 'max_count_formatter.dart';
 
 class RegistersRangeControls extends StatelessWidget {
@@ -98,16 +99,9 @@ class RegistersRangeControls extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
-          SizedBox(
-            width: 42,
-            height: 32,
-            child: FittedBox(
-              fit: BoxFit.contain,
-              child: Switch(
-                value: autoRefresh,
-                onChanged: onAutoRefreshChanged,
-              ),
-            ),
+          AppSwitch(
+            value: autoRefresh,
+            onChanged: onAutoRefreshChanged,
           ),
           const SizedBox(width: 2),
           Focus(

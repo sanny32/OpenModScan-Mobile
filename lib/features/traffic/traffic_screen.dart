@@ -3,6 +3,7 @@ import '../../l10n/l10n.dart';
 import '../../models/device_info.dart';
 import '../../models/log_entry.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_switch.dart';
 import '../../widgets/connection_info_bar.dart';
 import '../../widgets/connection_status_chip.dart';
 import '../../widgets/error_feedback.dart';
@@ -192,12 +193,9 @@ class _TrafficScreenState extends State<TrafficScreen> {
                   l10n.labelAutoScroll,
                   style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                 ),
-                Transform.scale(
-                  scale: 0.8,
-                  child: Switch(
-                    value: widget.controller.autoScroll,
-                    onChanged: widget.controller.setAutoScroll,
-                  ),
+                AppSwitch(
+                  value: widget.controller.autoScroll,
+                  onChanged: widget.controller.setAutoScroll,
                 ),
               ],
             ),
@@ -264,12 +262,9 @@ class _TrafficScreenState extends State<TrafficScreen> {
                       l10n.logClearOnDisconnect,
                       style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                     ),
-                    Transform.scale(
-                      scale: 0.75,
-                      child: Switch(
-                        value: widget.controller.clearOnDisconnect,
-                        onChanged: widget.controller.setClearOnDisconnect,
-                      ),
+                    AppSwitch(
+                      value: widget.controller.clearOnDisconnect,
+                      onChanged: widget.controller.setClearOnDisconnect,
                     ),
                   ],
                 ),
