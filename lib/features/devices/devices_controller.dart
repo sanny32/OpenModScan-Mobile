@@ -168,6 +168,8 @@ class DevicesController extends ChangeNotifier {
         requestType: _settings.scanRequestType,
         requestAddress: _settings.scanRequestAddress,
         timeout: Duration(milliseconds: _settings.timeout),
+        connectTimeout: Duration(milliseconds: _settings.scanConnectTimeout),
+        concurrency: _settings.scanConcurrency,
       ),
     );
   }

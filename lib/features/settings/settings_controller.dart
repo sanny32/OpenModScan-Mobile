@@ -132,6 +132,16 @@ class SettingsController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setScanConnectTimeout(int value) async {
+    await settings.setScanConnectTimeout(value);
+    notifyListeners();
+  }
+
+  Future<void> setScanConcurrency(int value) async {
+    await settings.setScanConcurrency(value);
+    notifyListeners();
+  }
+
   Future<void> setScanClearOnStart(bool value) async {
     await settings.setScanClearOnStart(value);
     notifyListeners();

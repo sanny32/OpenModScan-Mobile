@@ -6,14 +6,32 @@ import '../models/device_info.dart';
 import '../models/modbus_scan.dart';
 
 abstract interface class ModbusDiscoveryProbe {
-  Future<bool> probe({
+  /// Opens a single connection to ([host], [port]) and probes each unit id in
+  /// [unitIds] over that connection, returning the unit ids that answered with
+  /// a valid Modbus response.
+  ///
+  /// If the connection cannot be established within [connectTimeout] the
+  /// endpoint is considered dead and an empty list is returned after paying for
+  /// only one connect attempt — the cost no longer scales with the number of
+  /// unit ids.
+  ///
+  /// For Modbus TCP the requests are pipelined over one connection using the
+  /// MBAP transaction id, so a whole unit-id range costs roughly a single
+  /// [responseTimeout] even when most of the units are absent. Each individual
+  /// read is otherwise bounded by [responseTimeout].
+  ///
+  /// [isCancelled] is polled so a long range can be aborted promptly when the
+  /// surrounding scan is stopped.
+  Future<List<int>> probeEndpoint({
     required String host,
     required int port,
     required ProtocolType protocol,
-    required int unitId,
+    required Iterable<int> unitIds,
     required ModbusScanRequestType requestType,
     required int requestAddress,
-    required Duration timeout,
+    required Duration connectTimeout,
+    required Duration responseTimeout,
+    bool Function()? isCancelled,
   });
 }
 
@@ -21,41 +39,231 @@ class SocketModbusDiscoveryProbe implements ModbusDiscoveryProbe {
   const SocketModbusDiscoveryProbe();
 
   @override
-  Future<bool> probe({
+  Future<List<int>> probeEndpoint({
     required String host,
     required int port,
     required ProtocolType protocol,
-    required int unitId,
+    required Iterable<int> unitIds,
     required ModbusScanRequestType requestType,
     required int requestAddress,
-    required Duration timeout,
+    required Duration connectTimeout,
+    required Duration responseTimeout,
+    bool Function()? isCancelled,
+  }) {
+    final pdu = _readRequestPdu(requestType, requestAddress);
+    final ids = unitIds.toList(growable: false);
+    if (ids.isEmpty) return Future.value(const []);
+
+    // Modbus TCP multiplexes with the MBAP transaction id, so requests can be
+    // pipelined. RTU framing has no transaction id, so it must stay strictly
+    // request/response.
+    return protocol == ProtocolType.modbusTcp
+        ? _probeTcpPipelined(
+            host: host,
+            port: port,
+            pdu: pdu,
+            ids: ids,
+            requestType: requestType,
+            connectTimeout: connectTimeout,
+            responseTimeout: responseTimeout,
+            isCancelled: isCancelled,
+          )
+        : _probeRtuSequential(
+            host: host,
+            port: port,
+            pdu: pdu,
+            ids: ids,
+            requestType: requestType,
+            connectTimeout: connectTimeout,
+            responseTimeout: responseTimeout,
+            isCancelled: isCancelled,
+          );
+  }
+
+  /// TCP path: send a request for every (still-)pending unit id over one
+  /// connection, tagging each with `transactionId == unitId`, then drain
+  /// responses until every unit answered or the connection goes idle for
+  /// [responseTimeout]. Absent unit ids cost one shared idle wait instead of
+  /// one timeout each. A serial gateway that closes after a single response is
+  /// handled by reconnecting for whatever is still pending.
+  Future<List<int>> _probeTcpPipelined({
+    required String host,
+    required int port,
+    required Uint8List pdu,
+    required List<int> ids,
+    required ModbusScanRequestType requestType,
+    required Duration connectTimeout,
+    required Duration responseTimeout,
+    bool Function()? isCancelled,
   }) async {
-    Socket? socket;
+    final found = <int>[];
+    final pending = ids.toSet();
+    // Bounds reconnect rounds against a peer that closes after each response.
+    var rounds = ids.length;
+
+    while (pending.isNotEmpty && rounds-- > 0) {
+      if (isCancelled?.call() ?? false) break;
+
+      final socket = await _connect(host, port, connectTimeout);
+      if (socket == null) break; // dead endpoint, or cannot reconnect
+
+      final completer = Completer<bool>(); // true => peer closed the socket
+      final buffer = <int>[];
+      var gotResponseThisRound = false;
+      Timer? idle;
+      Timer? cancelPoll;
+      late final StreamSubscription<Uint8List> sub;
+
+      void finish(bool closed) {
+        if (completer.isCompleted) return;
+        idle?.cancel();
+        cancelPoll?.cancel();
+        completer.complete(closed);
+      }
+
+      void bumpIdle() {
+        idle?.cancel();
+        idle = Timer(responseTimeout, () => finish(false));
+      }
+
+      void onData(Uint8List data) {
+        buffer.addAll(data);
+        // Parse as many complete MBAP frames as the buffer holds.
+        while (buffer.length >= 7) {
+          final length = (buffer[4] << 8) | buffer[5];
+          final total = 6 + length;
+          if (buffer.length < total) break;
+          final frame = buffer.sublist(0, total);
+          buffer.removeRange(0, total);
+          final txn = (frame[0] << 8) | frame[1];
+          if (pending.contains(txn)) {
+            gotResponseThisRound = true;
+            pending.remove(txn);
+            if (_isValidResponse(
+              frame,
+              protocol: ProtocolType.modbusTcp,
+              unitId: txn,
+              requestType: requestType,
+              expectedTransactionId: txn,
+            )) {
+              found.add(txn);
+            }
+          }
+        }
+        if (pending.isEmpty) {
+          finish(false);
+        } else {
+          bumpIdle();
+        }
+      }
+
+      sub = socket.listen(
+        onData,
+        onError: (_) => finish(true),
+        onDone: () => finish(true),
+        cancelOnError: false,
+      );
+
+      for (final unitId in pending) {
+        socket.add(_tcpFrame(unitId, pdu, transactionId: unitId));
+      }
+      unawaited(socket.flush());
+      bumpIdle();
+      cancelPoll = Timer.periodic(const Duration(milliseconds: 50), (_) {
+        if (isCancelled?.call() ?? false) finish(false);
+      });
+
+      final closed = await completer.future;
+      await sub.cancel();
+      socket.destroy();
+
+      // Reconnect only when the peer closed mid-round after answering at least
+      // once (a serial gateway). If the idle timer fired instead, the remaining
+      // units simply aren't there — stop rather than retry them forever.
+      if (!(closed && gotResponseThisRound)) break;
+    }
+
+    found.sort();
+    return found;
+  }
+
+  /// RTU path: one connection, strict request/response. A unit that does not
+  /// answer within [responseTimeout] is recorded as absent and the loop moves
+  /// on over the *same* socket (a timeout is not a socket failure). Only an
+  /// actual socket error/close triggers a bounded reconnect-and-retry.
+  Future<List<int>> _probeRtuSequential({
+    required String host,
+    required int port,
+    required Uint8List pdu,
+    required List<int> ids,
+    required ModbusScanRequestType requestType,
+    required Duration connectTimeout,
+    required Duration responseTimeout,
+    bool Function()? isCancelled,
+  }) async {
+    final found = <int>[];
+    _SocketReader? reader;
+    var reconnectBudget = ids.length;
+
     try {
-      socket = await Socket.connect(host, port, timeout: timeout);
-      final pdu = _readRequestPdu(requestType, requestAddress);
-      final frame = protocol == ProtocolType.modbusTcp
-          ? _tcpFrame(unitId, pdu)
-          : _rtuFrame(unitId, pdu);
-      socket.add(frame);
-      await socket.flush();
-      final response = await _readResponse(
-        socket,
-        protocol: protocol,
-        unitId: unitId,
-        requestType: requestType,
-        timeout: timeout,
-      );
-      return _isValidResponse(
-        response,
-        protocol: protocol,
-        unitId: unitId,
-        requestType: requestType,
-      );
-    } catch (_) {
-      return false;
+      var i = 0;
+      while (i < ids.length) {
+        if (isCancelled?.call() ?? false) break;
+        final unitId = ids[i];
+
+        if (reader == null) {
+          final socket = await _connect(host, port, connectTimeout);
+          if (socket == null) break;
+          reader = _SocketReader(socket);
+        }
+
+        final frame = _rtuFrame(unitId, pdu);
+        List<int> response;
+        try {
+          response = await reader.exchange(
+            frame,
+            protocol: ProtocolType.modbusRtuIp,
+            requestType: requestType,
+            timeout: responseTimeout,
+          );
+        } on TimeoutException {
+          // Unit didn't answer; the socket is still healthy, just move on.
+          i++;
+          continue;
+        } catch (_) {
+          // Socket error / closed by peer: reconnect and retry this same unit.
+          reader.dispose();
+          reader = null;
+          if (reconnectBudget-- <= 0) break;
+          continue;
+        }
+
+        if (_isValidResponse(
+          response,
+          protocol: ProtocolType.modbusRtuIp,
+          unitId: unitId,
+          requestType: requestType,
+        )) {
+          found.add(unitId);
+        }
+        i++;
+      }
     } finally {
-      socket?.destroy();
+      reader?.dispose();
+    }
+
+    return found;
+  }
+
+  Future<Socket?> _connect(
+    String host,
+    int port,
+    Duration connectTimeout,
+  ) async {
+    try {
+      return await Socket.connect(host, port, timeout: connectTimeout);
+    } catch (_) {
+      return null;
     }
   }
 
@@ -68,10 +276,10 @@ class SocketModbusDiscoveryProbe implements ModbusDiscoveryProbe {
     return data;
   }
 
-  Uint8List _tcpFrame(int unitId, Uint8List pdu) {
+  Uint8List _tcpFrame(int unitId, Uint8List pdu, {int transactionId = 1}) {
     final frame = Uint8List(7 + pdu.length);
     ByteData.view(frame.buffer)
-      ..setUint16(0, 1)
+      ..setUint16(0, transactionId)
       ..setUint16(2, 0)
       ..setUint16(4, pdu.length + 1)
       ..setUint8(6, unitId);
@@ -89,79 +297,12 @@ class SocketModbusDiscoveryProbe implements ModbusDiscoveryProbe {
     return frame;
   }
 
-  Future<List<int>> _readResponse(
-    Socket socket, {
-    required ProtocolType protocol,
-    required int unitId,
-    required ModbusScanRequestType requestType,
-    required Duration timeout,
-  }) {
-    final completer = Completer<List<int>>();
-    final buffer = <int>[];
-    late final StreamSubscription<Uint8List> subscription;
-    Timer? timer;
-
-    void complete(List<int> value) {
-      if (completer.isCompleted) return;
-      timer?.cancel();
-      subscription.cancel();
-      completer.complete(value);
-    }
-
-    void fail(Object error) {
-      if (completer.isCompleted) return;
-      timer?.cancel();
-      subscription.cancel();
-      completer.completeError(error);
-    }
-
-    subscription = socket.listen(
-      (data) {
-        buffer.addAll(data);
-        if (_hasFullResponse(
-          buffer,
-          protocol: protocol,
-          requestType: requestType,
-        )) {
-          complete(List<int>.of(buffer));
-        }
-      },
-      onError: fail,
-      onDone: () {
-        if (!completer.isCompleted) fail(const SocketException('closed'));
-      },
-      cancelOnError: true,
-    );
-    timer = Timer(timeout, () => fail(TimeoutException('Modbus response')));
-    return completer.future;
-  }
-
-  bool _hasFullResponse(
-    List<int> buffer, {
-    required ProtocolType protocol,
-    required ModbusScanRequestType requestType,
-  }) {
-    final dataBytes = requestType.isBitRead ? 1 : 2;
-    if (protocol == ProtocolType.modbusTcp) {
-      if (buffer.length < 7) return false;
-      final length = ByteData.view(
-        Uint8List.fromList(buffer).buffer,
-      ).getUint16(4);
-      return buffer.length >= 6 + length;
-    }
-    if (buffer.length < 2) return false;
-    final code = buffer[1];
-    final expected = code == requestType.functionCode + 0x80
-        ? 5
-        : 5 + dataBytes;
-    return buffer.length >= expected;
-  }
-
   bool _isValidResponse(
     List<int> response, {
     required ProtocolType protocol,
     required int unitId,
     required ModbusScanRequestType requestType,
+    int expectedTransactionId = 1,
   }) {
     if (protocol == ProtocolType.modbusTcp) {
       if (response.length < 9) return false;
@@ -169,7 +310,7 @@ class SocketModbusDiscoveryProbe implements ModbusDiscoveryProbe {
       final length = view.getUint16(4);
       final totalLength = 6 + length;
       if (response.length < totalLength ||
-          view.getUint16(0) != 1 ||
+          view.getUint16(0) != expectedTransactionId ||
           view.getUint16(2) != 0 ||
           response[6] != unitId) {
         return false;
@@ -212,5 +353,120 @@ class SocketModbusDiscoveryProbe implements ModbusDiscoveryProbe {
       }
     }
     return Uint8List.fromList([crc & 0xff, (crc >> 8) & 0xff]);
+  }
+}
+
+/// Wraps a [Socket] with a single long-lived subscription so multiple Modbus
+/// RTU requests can be issued over one connection without losing bytes or
+/// recreating listeners between unit ids.
+class _SocketReader {
+  final Socket socket;
+  final List<int> _buffer = <int>[];
+  late final StreamSubscription<Uint8List> _subscription;
+
+  Completer<List<int>>? _pending;
+  ProtocolType _protocol = ProtocolType.modbusTcp;
+  ModbusScanRequestType _requestType = ModbusScanRequestType.holdingRegisters;
+  bool _closed = false;
+  Object? _error;
+
+  _SocketReader(this.socket) {
+    _subscription = socket.listen(
+      _onData,
+      onError: _onError,
+      onDone: _onDone,
+      cancelOnError: false,
+    );
+  }
+
+  /// Sends [frame] and resolves when a full Modbus response for [requestType]
+  /// has arrived, or rejects on timeout / socket failure.
+  ///
+  /// The pending read is registered and the buffer cleared *before* the frame
+  /// is written, and no `await` sits between the two, so a fast device whose
+  /// reply lands while [Socket.flush] is still settling is matched against this
+  /// read instead of being discarded by a later buffer clear.
+  Future<List<int>> exchange(
+    List<int> frame, {
+    required ProtocolType protocol,
+    required ModbusScanRequestType requestType,
+    required Duration timeout,
+  }) {
+    if (_error != null) return Future.error(_error!);
+    if (_closed) return Future.error(const SocketException('closed'));
+
+    _buffer.clear();
+    _protocol = protocol;
+    _requestType = requestType;
+    final completer = Completer<List<int>>();
+    _pending = completer;
+
+    socket.add(frame);
+    unawaited(socket.flush());
+
+    return completer.future.timeout(timeout, onTimeout: () {
+      _pending = null;
+      throw TimeoutException('Modbus response');
+    });
+  }
+
+  void _onData(Uint8List data) {
+    _buffer.addAll(data);
+    _tryComplete();
+  }
+
+  void _tryComplete() {
+    final pending = _pending;
+    if (pending == null || pending.isCompleted) return;
+    if (_hasFullResponse(
+      _buffer,
+      protocol: _protocol,
+      requestType: _requestType,
+    )) {
+      _pending = null;
+      pending.complete(List<int>.of(_buffer));
+    }
+  }
+
+  void _onError(Object error) {
+    _error = error;
+    final pending = _pending;
+    _pending = null;
+    if (pending != null && !pending.isCompleted) pending.completeError(error);
+  }
+
+  void _onDone() {
+    _closed = true;
+    final pending = _pending;
+    _pending = null;
+    if (pending != null && !pending.isCompleted) {
+      pending.completeError(const SocketException('closed'));
+    }
+  }
+
+  bool _hasFullResponse(
+    List<int> buffer, {
+    required ProtocolType protocol,
+    required ModbusScanRequestType requestType,
+  }) {
+    final dataBytes = requestType.isBitRead ? 1 : 2;
+    if (protocol == ProtocolType.modbusTcp) {
+      if (buffer.length < 7) return false;
+      final length = ByteData.view(
+        Uint8List.fromList(buffer).buffer,
+      ).getUint16(4);
+      return buffer.length >= 6 + length;
+    }
+    if (buffer.length < 2) return false;
+    final code = buffer[1];
+    final expected = code == requestType.functionCode + 0x80
+        ? 5
+        : 5 + dataBytes;
+    return buffer.length >= expected;
+  }
+
+  void dispose() {
+    _subscription.cancel();
+    socket.destroy();
   }
 }

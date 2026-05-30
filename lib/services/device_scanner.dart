@@ -43,6 +43,12 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
   ProtocolType? _scanProtocol;
   bool _cancelled = false;
   int _scanGeneration = 0;
+  DateTime? _lastProgressNotify;
+
+  /// Minimum gap between progress-only UI notifications. Without this a /24
+  /// scan fires thousands of rebuilds that starve the event loop driving the
+  /// sockets. Device discoveries and state changes still notify immediately.
+  static const _progressNotifyInterval = Duration(milliseconds: 100);
 
   @override
   ScannerStateView get state => _state;
@@ -71,6 +77,7 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
 
     final generation = ++_scanGeneration;
     _cancelled = false;
+    _lastProgressNotify = null;
     _scanned = 0;
     _total = 0;
     _scanCidr = null;
@@ -86,11 +93,11 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
     notifyListeners();
 
     var next = 0;
+    // Each job is one endpoint (host, port): a single connection probes every
+    // unit id, so dead addresses cost one connect instead of one per unit id.
     final jobs = [
       for (final host in hosts)
-        for (final port in ports)
-          for (final unitId in unitIds)
-            _ScanJob(host: host, port: port, unitId: unitId),
+        for (final port in ports) _ScanJob(host: host, port: port),
     ];
 
     Future<void> worker() async {
@@ -99,25 +106,31 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
         if (index >= jobs.length) return;
         final job = jobs[index];
         final found = await probe
-            .probe(
+            .probeEndpoint(
               host: job.host,
               port: job.port,
               protocol: request.protocol,
-              unitId: job.unitId,
+              unitIds: unitIds,
               requestType: request.requestType,
               requestAddress: request.requestAddress,
-              timeout: request.timeout,
+              connectTimeout: request.connectTimeout,
+              responseTimeout: request.timeout,
+              isCancelled: () => _cancelled || generation != _scanGeneration,
             )
-            .catchError((_) => false);
+            .catchError((_) => const <int>[]);
 
         if (generation != _scanGeneration) return;
-        if (!_cancelled && found) {
-          discoveredDevices.add(
-            request.discoveredDevice(job.host, job.port, job.unitId),
-          );
+        if (!_cancelled) {
+          for (final unitId in found) {
+            discoveredDevices.add(
+              request.discoveredDevice(job.host, job.port, unitId),
+            );
+          }
         }
-        _scanned++;
-        notifyListeners();
+        // The whole endpoint is accounted for at once: its unit ids were either
+        // probed or skipped because the endpoint was unreachable.
+        _scanned += unitIds.length;
+        _notifyThrottled();
       }
     }
 
@@ -153,6 +166,17 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
     _scanProtocol = null;
     _state = ScannerStateView.idle;
     discoveredDevices.clear();
+    notifyListeners();
+  }
+
+  /// Emits a progress notification at most once per [_progressNotifyInterval].
+  void _notifyThrottled() {
+    final now = DateTime.now();
+    final last = _lastProgressNotify;
+    if (last != null && now.difference(last) < _progressNotifyInterval) {
+      return;
+    }
+    _lastProgressNotify = now;
     notifyListeners();
   }
 
@@ -199,11 +223,6 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
 class _ScanJob {
   final String host;
   final int port;
-  final int unitId;
 
-  const _ScanJob({
-    required this.host,
-    required this.port,
-    required this.unitId,
-  });
+  const _ScanJob({required this.host, required this.port});
 }

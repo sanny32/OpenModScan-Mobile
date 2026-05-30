@@ -34,7 +34,7 @@ void main() {
       ),
     );
 
-    expect(probe.calls, isEmpty);
+    expect(probe.endpointCalls, isEmpty);
     expect(scanner.totalCount, 0);
     expect(scanner.discoveredDevices.devices, isEmpty);
   });
@@ -99,6 +99,66 @@ void main() {
     expect(scanner.discoveredDevices.devices.map((d) => d.unitId), [1, 2]);
   });
 
+  test('a single endpoint connection probes the whole unit id range', () async {
+    final probe = _FakeProbe(
+      found: {const _ProbeKey('192.168.1.1', 502, 5)},
+    );
+    final scanner = DeviceScanner(
+      probe: probe,
+      scanHostsProvider: (_) async => ['192.168.1.1'],
+    );
+
+    await scanner.startScan(
+      const DeviceScanRequest(unitIdStart: 1, unitIdEnd: 10, concurrency: 1),
+    );
+
+    // One endpoint => one probeEndpoint call covering all 10 unit ids.
+    expect(probe.endpointCalls, hasLength(1));
+    expect(probe.endpointCalls.single.unitIds, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(scanner.discoveredDevices.devices.map((d) => d.unitId), [5]);
+    expect(scanner.scannedCount, scanner.totalCount);
+  });
+
+  test('unreachable endpoint is probed once for the whole range', () async {
+    final probe = _FakeProbe(unreachable: {'192.168.1.9'});
+    final scanner = DeviceScanner(
+      probe: probe,
+      scanHostsProvider: (_) async => ['192.168.1.9'],
+    );
+
+    await scanner.startScan(
+      const DeviceScanRequest(unitIdStart: 1, unitIdEnd: 50, concurrency: 1),
+    );
+
+    // Dead host pays for a single endpoint probe, not one per unit id.
+    expect(probe.endpointCalls, hasLength(1));
+    expect(scanner.discoveredDevices.devices, isEmpty);
+    expect(scanner.scannedCount, scanner.totalCount);
+    expect(scanner.totalCount, 50);
+  });
+
+  test('request carries connect timeout and concurrency to the probe', () async {
+    final probe = _FakeProbe();
+    final scanner = DeviceScanner(
+      probe: probe,
+      scanHostsProvider: (_) async => ['192.168.1.1'],
+    );
+
+    await scanner.startScan(
+      const DeviceScanRequest(
+        unitIdStart: 1,
+        unitIdEnd: 1,
+        timeout: Duration(milliseconds: 750),
+        connectTimeout: Duration(milliseconds: 250),
+        concurrency: 4,
+      ),
+    );
+
+    final call = probe.endpointCalls.single;
+    expect(call.connectTimeout, const Duration(milliseconds: 250));
+    expect(call.responseTimeout, const Duration(milliseconds: 750));
+  });
+
   test('different protocols are not treated as duplicates', () async {
     final probe = _FakeProbe(found: {const _ProbeKey('192.168.1.1', 502, 1)});
     final scanner = DeviceScanner(
@@ -145,28 +205,81 @@ void main() {
 
     expect(scanner.state, ScannerStateView.idle);
     expect(scanner.discoveredDevices.devices, isEmpty);
-    expect(scanner.scannedCount, 1);
+    // One endpoint (host) accounts for its whole unit id range at once.
+    expect(scanner.scannedCount, 2);
+  });
+
+  test('cancellation flag is forwarded to the probe', () async {
+    final probe = _CancellationProbe();
+    final scanner = DeviceScanner(
+      probe: probe,
+      scanHostsProvider: (_) async => ['192.168.1.1'],
+    );
+
+    final scan = scanner.startScan(
+      const DeviceScanRequest(unitIdStart: 1, unitIdEnd: 5, concurrency: 1),
+    );
+    await probe.started.future;
+    expect(probe.isCancelled!(), isFalse);
+    scanner.stopScan();
+    expect(probe.isCancelled!(), isTrue);
+    probe.release();
+    await scan;
+
+    expect(scanner.discoveredDevices.devices, isEmpty);
+  });
+}
+
+class _EndpointCall {
+  final String host;
+  final int port;
+  final List<int> unitIds;
+  final Duration connectTimeout;
+  final Duration responseTimeout;
+
+  const _EndpointCall({
+    required this.host,
+    required this.port,
+    required this.unitIds,
+    required this.connectTimeout,
+    required this.responseTimeout,
   });
 }
 
 class _FakeProbe implements ModbusDiscoveryProbe {
   final Set<_ProbeKey> found;
-  final List<_ProbeCall> calls = [];
+  final Set<String> unreachable;
+  final List<_EndpointCall> endpointCalls = [];
 
-  _FakeProbe({this.found = const {}});
+  _FakeProbe({this.found = const {}, this.unreachable = const {}});
 
   @override
-  Future<bool> probe({
+  Future<List<int>> probeEndpoint({
     required String host,
     required int port,
     required ProtocolType protocol,
-    required int unitId,
+    required Iterable<int> unitIds,
     required ModbusScanRequestType requestType,
     required int requestAddress,
-    required Duration timeout,
+    required Duration connectTimeout,
+    required Duration responseTimeout,
+    bool Function()? isCancelled,
   }) async {
-    calls.add(_ProbeCall(host: host, port: port, unitId: unitId));
-    return found.contains(_ProbeKey(host, port, unitId));
+    final ids = unitIds.toList();
+    endpointCalls.add(
+      _EndpointCall(
+        host: host,
+        port: port,
+        unitIds: ids,
+        connectTimeout: connectTimeout,
+        responseTimeout: responseTimeout,
+      ),
+    );
+    if (unreachable.contains(host)) return const [];
+    return [
+      for (final unitId in ids)
+        if (found.contains(_ProbeKey(host, port, unitId))) unitId,
+    ];
   }
 }
 
@@ -177,31 +290,47 @@ class _BlockingProbe implements ModbusDiscoveryProbe {
   void release() => _release.complete();
 
   @override
-  Future<bool> probe({
+  Future<List<int>> probeEndpoint({
     required String host,
     required int port,
     required ProtocolType protocol,
-    required int unitId,
+    required Iterable<int> unitIds,
     required ModbusScanRequestType requestType,
     required int requestAddress,
-    required Duration timeout,
+    required Duration connectTimeout,
+    required Duration responseTimeout,
+    bool Function()? isCancelled,
   }) async {
     if (!firstCall.isCompleted) firstCall.complete();
     await _release.future;
-    return true;
+    return unitIds.toList();
   }
 }
 
-class _ProbeCall {
-  final String host;
-  final int port;
-  final int unitId;
+class _CancellationProbe implements ModbusDiscoveryProbe {
+  final started = Completer<void>();
+  final _release = Completer<void>();
+  bool Function()? isCancelled;
 
-  const _ProbeCall({
-    required this.host,
-    required this.port,
-    required this.unitId,
-  });
+  void release() => _release.complete();
+
+  @override
+  Future<List<int>> probeEndpoint({
+    required String host,
+    required int port,
+    required ProtocolType protocol,
+    required Iterable<int> unitIds,
+    required ModbusScanRequestType requestType,
+    required int requestAddress,
+    required Duration connectTimeout,
+    required Duration responseTimeout,
+    bool Function()? isCancelled,
+  }) async {
+    this.isCancelled = isCancelled;
+    if (!started.isCompleted) started.complete();
+    await _release.future;
+    return const [];
+  }
 }
 
 class _ProbeKey {

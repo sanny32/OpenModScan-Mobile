@@ -562,6 +562,12 @@
   "settingsScanRequestInputRegisters": "Read Input Registers",
   "@settingsScanRequestInputRegisters": {},
 
+  "settingsScanConnectTimeout": "Connect timeout",
+  "@settingsScanConnectTimeout": {},
+
+  "settingsScanConcurrency": "Concurrent probes",
+  "@settingsScanConcurrency": {},
+
   "settingsScanClearOnStart": "Clear results on new scan",
   "@settingsScanClearOnStart": {},
 

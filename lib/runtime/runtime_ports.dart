@@ -107,7 +107,14 @@ class DeviceScanRequest {
   final int unitIdEnd;
   final ModbusScanRequestType requestType;
   final int requestAddress;
+
+  /// Per-unit-id response timeout once an endpoint is connected.
   final Duration timeout;
+
+  /// Bound for the initial TCP connect to an endpoint. Kept short so dead
+  /// addresses are skipped quickly without waiting out the full [timeout].
+  final Duration connectTimeout;
+
   final int concurrency;
 
   const DeviceScanRequest({
@@ -120,7 +127,8 @@ class DeviceScanRequest {
     this.requestType = ModbusScanRequestType.holdingRegisters,
     this.requestAddress = 0,
     this.timeout = const Duration(milliseconds: 500),
-    this.concurrency = 20,
+    this.connectTimeout = const Duration(milliseconds: 300),
+    this.concurrency = 32,
   });
 
   Iterable<int> get ports sync* {

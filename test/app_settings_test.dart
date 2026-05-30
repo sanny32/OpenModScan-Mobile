@@ -81,6 +81,8 @@ void main() {
     expect(settings.scanUnitIdEnd, 10);
     expect(settings.scanRequestType, ModbusScanRequestType.holdingRegisters);
     expect(settings.scanRequestAddress, 0);
+    expect(settings.scanConnectTimeout, 300);
+    expect(settings.scanConcurrency, 32);
     expect(settings.savedDevicesSortMode, DeviceSortMode.lastConnected);
     expect(settings.writeEnabled, isTrue);
     expect(settings.confirmBeforeWrite, isFalse);
@@ -91,6 +93,8 @@ void main() {
     await settings.setScanUnitIdRange(12, 3);
     await settings.setScanRequestType(ModbusScanRequestType.inputRegisters);
     await settings.setScanRequestAddress(42);
+    await settings.setScanConnectTimeout(20); // below min → clamped to 50
+    await settings.setScanConcurrency(999); // above max → clamped to 256
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('scanProtocol'), 'modbusRtuIp');
@@ -101,6 +105,12 @@ void main() {
     expect(prefs.getInt('scanUnitIdEnd'), 12);
     expect(prefs.getString('scanRequestType'), 'inputRegisters');
     expect(prefs.getInt('scanRequestAddress'), 42);
+    expect(prefs.getInt('scanConnectTimeout'), 50);
+    expect(prefs.getInt('scanConcurrency'), 256);
+
+    await settings.load();
+    expect(settings.scanConnectTimeout, 50);
+    expect(settings.scanConcurrency, 256);
 
     await settings.resetToDefaults();
     expect(settings.scanProtocol, ProtocolType.modbusTcp);
@@ -108,6 +118,8 @@ void main() {
     expect(settings.scanPortEnd, 502);
     expect(settings.scanUnitIdStart, 1);
     expect(settings.scanUnitIdEnd, 10);
+    expect(settings.scanConnectTimeout, 300);
+    expect(settings.scanConcurrency, 32);
     expect(settings.writeEnabled, isTrue);
     expect(settings.confirmBeforeWrite, isFalse);
   });
@@ -180,6 +192,8 @@ void main() {
     await source.setScanUnitIdRange(2, 8);
     await source.setScanRequestType(ModbusScanRequestType.coils);
     await source.setScanRequestAddress(42);
+    await source.setScanConnectTimeout(450);
+    await source.setScanConcurrency(64);
     await source.setSavedDevicesSortMode(DeviceSortMode.created);
     await source.setTheme('Dark');
     await source.setLanguage('Russian');
@@ -208,6 +222,8 @@ void main() {
     expect(target.scanUnitIdEnd, 8);
     expect(target.scanRequestType, ModbusScanRequestType.coils);
     expect(target.scanRequestAddress, 42);
+    expect(target.scanConnectTimeout, 450);
+    expect(target.scanConcurrency, 64);
     expect(target.savedDevicesSortMode, DeviceSortMode.created);
     expect(target.themeMode, ThemeMode.dark);
     expect(target.locale?.languageCode, 'ru');

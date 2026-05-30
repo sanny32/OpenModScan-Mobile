@@ -471,7 +471,13 @@ class _ScanningCard extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>();
     final l10n = context.l10n;
-    final pct = total == 0 ? 0 : (progress * 100).clamp(0, 100).round();
+    // While scanning, never round up to a full 100%: a single slow endpoint
+    // can hold the count at 99.x% for seconds, and showing 100% looks finished.
+    final pct = total == 0
+        ? 0
+        : completed
+        ? 100
+        : (progress * 100).clamp(0, 99).floor();
     final accent = completed
         ? (appColors?.liveColor ?? Colors.green)
         : cs.primary;
@@ -566,7 +572,11 @@ class _ScanningCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(99),
                     child: LinearProgressIndicator(
                       minHeight: 8,
-                      value: total == 0 ? null : progress,
+                      value: total == 0
+                          ? null
+                          : completed
+                          ? 1.0
+                          : progress.clamp(0.0, 0.99).toDouble(),
                       color: accent,
                       backgroundColor: cs.surfaceContainerHighest,
                     ),

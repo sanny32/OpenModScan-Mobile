@@ -165,6 +165,8 @@
   "settingsScanRequestDiscreteInputs": "Read Discrete Inputs",
   "settingsScanRequestHoldingRegisters": "Read Holding Registers",
   "settingsScanRequestInputRegisters": "Read Input Registers",
+  "settingsScanConnectTimeout": "Таймаут подключения",
+  "settingsScanConcurrency": "Параллельных проверок",
   "settingsScanClearOnStart": "Очищать результаты при новом сканировании",
   "settingsRangeStart": "Начало",
   "settingsRangeEnd": "Конец",
