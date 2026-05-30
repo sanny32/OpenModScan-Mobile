@@ -13,7 +13,7 @@ class TrafficDetailScreen extends StatelessWidget {
 
   const TrafficDetailScreen({super.key, required this.entry});
 
-  Uint8List get _frame => entry.frame ?? parseHexBytes(entry.data.split('\n').first);
+  Uint8List get _frame => frameForEntry(entry);
 
   @override
   Widget build(BuildContext context) {

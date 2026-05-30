@@ -84,6 +84,13 @@ String trafficDetailText(Uint8List frame, LogDirection direction) =>
         .map((f) => '${f.label}: ${f.value}')
         .join('    ');
 
+/// Resolves the raw frame bytes for a log [entry]: the captured [LogEntry.frame]
+/// when present, otherwise the hex parsed from the first line of its data.
+/// Returns an empty list for entries without a decodable frame (e.g. errors),
+/// which the UI uses to decide whether a detail screen can be opened.
+Uint8List frameForEntry(LogEntry entry) =>
+    entry.frame ?? parseHexBytes(entry.data.split('\n').first);
+
 /// Formats bytes as space-separated, upper-case, two-digit hex, e.g.
 /// `00 01 00 00 00 06 01 03`.
 String formatHexBytes(Iterable<int> bytes) =>

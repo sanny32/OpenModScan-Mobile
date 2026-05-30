@@ -167,4 +167,37 @@ void main() {
 
     expect(find.byType(TrafficDetailScreen), findsOneWidget);
   });
+
+  testWidgets('error rows without a frame are not tappable', (tester) async {
+    final device = DeviceInfo(
+      id: 'dev-a',
+      name: 'Device A',
+      host: '127.0.0.1',
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+    );
+    final repository = FakeDeviceRepository([device]);
+    final controller = TrafficController(
+      repository,
+      _FakeConnections(),
+      _FakeLogs([
+        const LogEntry(
+          time: '07:41:13.743',
+          function: 'Error',
+          data: 'Connection to 192.168.0.104:502 failed!',
+          type: LogEntryType.error,
+        ),
+      ]),
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(_host(TrafficScreen(controller: controller)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Error'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TrafficDetailScreen), findsNothing);
+  });
 }

@@ -3,6 +3,7 @@ import '../../l10n/l10n.dart';
 import '../../models/device_info.dart';
 import '../../models/log_entry.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/modbus_traffic_format.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/connection_info_bar.dart';
 import '../../widgets/connection_status_chip.dart';
@@ -235,15 +236,23 @@ class _TrafficScreenState extends State<TrafficScreen> {
               itemCount: entries.length,
               separatorBuilder: (_, _) =>
                   Divider(height: 1, color: dividerColor),
-              itemBuilder: (context, i) => InkWell(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => TrafficDetailScreen(entry: entries[i]),
+              itemBuilder: (context, i) {
+                final entry = entries[i];
+                // Entries without a decodable frame (e.g. errors) have no
+                // breakdown to show, so they are not tappable.
+                if (frameForEntry(entry).isEmpty) {
+                  return _LogRow(entry: entry);
+                }
+                return InkWell(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => TrafficDetailScreen(entry: entry),
+                    ),
                   ),
-                ),
-                child: _LogRow(entry: entries[i]),
-              ),
+                  child: _LogRow(entry: entry),
+                );
+              },
             ),
           ),
           Container(
