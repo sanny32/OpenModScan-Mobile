@@ -253,29 +253,29 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                   const SizedBox(height: 6),
                   _field(_unitCtrl, type: TextInputType.number),
                   const SizedBox(height: 16),
+                  // Labels and fields live in separate rows so the two inputs
+                  // stay aligned even when a label wraps to a different number
+                  // of lines (e.g. "Задержка переподключения"). Bottom-aligning
+                  // the labels keeps a short one sitting right above its field.
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(child: _label(context, l10n.labelTimeout)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _label(context, l10n.labelReconnectDelay),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
                     children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _label(context, l10n.labelTimeout),
-                            const SizedBox(height: 6),
-                            _fieldSuffix(_timeoutCtrl, 'ms', context),
-                          ],
-                        ),
+                        child: _fieldSuffix(_timeoutCtrl, 'ms', context),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _label(context, l10n.labelReconnectDelay),
-                            const SizedBox(height: 6),
-                            _fieldSuffix(_reconnectCtrl, 'ms', context),
-                          ],
-                        ),
+                        child: _fieldSuffix(_reconnectCtrl, 'ms', context),
                       ),
                     ],
                   ),
