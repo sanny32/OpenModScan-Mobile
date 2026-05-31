@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:omodscan_mobile/features/devices/device_form_sheet.dart';
 import 'package:omodscan_mobile/features/devices/devices_controller.dart';
 import 'package:omodscan_mobile/features/devices/devices_screen.dart';
+import 'package:omodscan_mobile/features/devices/saved_devices_screen.dart';
 import 'package:omodscan_mobile/features/devices/widgets/device_card.dart';
 import 'package:omodscan_mobile/l10n/l10n.dart';
 import 'package:omodscan_mobile/models/app_settings.dart';
@@ -360,9 +361,7 @@ void main() {
     expect(cardsAtLarge, lessThan(cardsAtNormal));
   });
 
-  testWidgets('devices preview follows manual order, not favorites', (
-    tester,
-  ) async {
+  testWidgets('devices preview follows stored manual order', (tester) async {
     await DeviceRepository.instance.replaceAll([
       DeviceInfo(
         name: 'First',
@@ -373,13 +372,12 @@ void main() {
         createdAt: DateTime(2026, 5, 24, 12, 5),
       ),
       DeviceInfo(
-        name: 'Favorite Second',
+        name: 'Second',
         host: '192.168.0.11',
         port: 502,
         protocol: ProtocolType.modbusTcp,
         unitId: 1,
         createdAt: DateTime(2026, 5, 24, 12, 1),
-        isFavorite: true,
       ),
     ]);
     final controller = DevicesController(
@@ -398,13 +396,44 @@ void main() {
       ),
     );
 
-    expect(find.text('Favorite Second'), findsOneWidget);
     expect(find.text('First'), findsOneWidget);
-    // Storage order wins: the favorite does not float above the first device.
+    expect(find.text('Second'), findsOneWidget);
+    // Home preview mirrors the stored order: 'First' was inserted before 'Second'.
     expect(
       tester.getTopLeft(find.text('First')).dy,
-      lessThan(tester.getTopLeft(find.text('Favorite Second')).dy),
+      lessThan(tester.getTopLeft(find.text('Second')).dy),
     );
+  });
+
+  testWidgets('home reorder action opens the full saved list', (tester) async {
+    DeviceInfo make(String name) => DeviceInfo(
+      name: name,
+      host: name.toLowerCase(),
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+    );
+    await DeviceRepository.instance.replaceAll([make('Alpha'), make('Beta')]);
+    final controller = DevicesController(
+      DeviceRepository.instance,
+      PollingConnectionRuntime(),
+      _ScanPort(ScannerStateView.idle),
+      AppSettings.instance,
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: DevicesScreen(controller: controller, onOpenDevice: (_) {}),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.swap_vert));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SavedDevicesScreen), findsOneWidget);
   });
 
   testWidgets('device card uses selected marker color for memory icon', (
@@ -744,33 +773,19 @@ void main() {
     expect(reloaded.map((device) => device.name), ['B', 'C', 'A']);
   });
 
-  test('home preview follows manual order, not favorites-first', () async {
+  test('home preview returns the stored order prefix', () async {
+    DeviceInfo make(String name, int day) => DeviceInfo(
+      name: name,
+      host: name.toLowerCase(),
+      port: 502,
+      protocol: ProtocolType.modbusTcp,
+      unitId: 1,
+      createdAt: DateTime(2026, 1, day),
+    );
     await DeviceRepository.instance.replaceAll([
-      DeviceInfo(
-        name: 'A',
-        host: 'a',
-        port: 502,
-        protocol: ProtocolType.modbusTcp,
-        unitId: 1,
-        createdAt: DateTime(2026, 1, 1),
-      ),
-      DeviceInfo(
-        name: 'B',
-        host: 'b',
-        port: 502,
-        protocol: ProtocolType.modbusTcp,
-        unitId: 1,
-        isFavorite: true,
-        createdAt: DateTime(2026, 1, 2),
-      ),
-      DeviceInfo(
-        name: 'C',
-        host: 'c',
-        port: 502,
-        protocol: ProtocolType.modbusTcp,
-        unitId: 1,
-        createdAt: DateTime(2026, 1, 3),
-      ),
+      make('A', 1),
+      make('B', 2),
+      make('C', 3),
     ]);
     final controller = DevicesController(
       DeviceRepository.instance,
@@ -780,10 +795,14 @@ void main() {
     );
     addTearDown(controller.dispose);
 
-    // Favorite B does not float to the top; storage order wins in manual mode.
+    // The preview is the storage order, not a created/connection sort.
     expect(
       controller.visibleHomeDevices(3).map((device) => device.name),
       ['A', 'B', 'C'],
+    );
+    expect(
+      controller.visibleHomeDevices(2).map((device) => device.name),
+      ['A', 'B'],
     );
   });
 

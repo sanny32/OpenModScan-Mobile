@@ -90,7 +90,6 @@ class _SavedDevicesScreenState extends State<SavedDevicesScreen> {
       child: DeviceCard(
         device: device,
         connected: widget.controller.isConnected(device),
-        favorite: device.isFavorite,
         onTap: () => widget.onOpenDevice(device.id),
         trailing: trailing,
       ),

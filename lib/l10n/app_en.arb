@@ -42,18 +42,15 @@
     }
   },
 
+  "devicesReorder": "Reorder",
+  "@devicesReorder": {},
+
   "devicesShowAllCount": "Show all ({count})",
   "@devicesShowAllCount": {
     "placeholders": {
       "count": {"type": "int"}
     }
   },
-
-  "devicesFavorite": "Add to favorites",
-  "@devicesFavorite": {},
-
-  "devicesUnfavorite": "Remove from favorites",
-  "@devicesUnfavorite": {},
 
   "devicesDiscoveredDevices": "Network scanner",
   "@devicesDiscoveredDevices": {},

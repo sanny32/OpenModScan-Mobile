@@ -23,7 +23,6 @@ void main() {
       unitId: 1,
       createdAt: DateTime(2026, 5, 24, 12),
       lastConnectedAt: DateTime(2026, 5, 24, 13),
-      isFavorite: true,
       markerColor: DeviceMarkerColor.purple,
       registerLists: [
         RegisterList(
@@ -43,7 +42,6 @@ void main() {
     expect(loaded.single.id, 'device-a');
     expect(loaded.single.createdAt, DateTime(2026, 5, 24, 12));
     expect(loaded.single.lastConnectedAt, DateTime(2026, 5, 24, 13));
-    expect(loaded.single.isFavorite, isTrue);
     expect(loaded.single.markerColor, DeviceMarkerColor.purple);
     expect(loaded.single.registerLists.single.id, 'list-a');
     expect(loaded.single.registerLists.single.refreshIntervalMs, 250);
@@ -91,7 +89,6 @@ void main() {
 
     final loaded = await const SharedPreferencesDeviceStore().load();
 
-    expect(loaded.map((device) => device.isFavorite), [false, false]);
     expect(loaded.map((device) => device.markerColor), [
       DeviceMarkerColor.blue,
       DeviceMarkerColor.blue,

@@ -76,9 +76,6 @@ class DevicesController extends ChangeNotifier {
 
   Future<void> addDevice(DeviceInfo device) => _repository.add(device);
 
-  Future<void> toggleFavorite(DeviceInfo device) =>
-      updateDevice(device.copyWith(isFavorite: !device.isFavorite));
-
   /// Saved devices matching [query], in the persisted manual order.
   List<DeviceInfo> savedDevicesForSearch(String query) =>
       devices.where((device) => _matchesSearch(device, query)).toList();

@@ -8,9 +8,7 @@ import '../device_marker_color_palette.dart';
 class DeviceCard extends StatelessWidget {
   final DeviceInfo device;
   final bool connected;
-  final bool favorite;
   final VoidCallback onTap;
-  final VoidCallback? onToggleFavorite;
 
   /// Replaces the trailing chevron when provided (e.g. a reorder drag handle).
   final Widget? trailing;
@@ -19,9 +17,7 @@ class DeviceCard extends StatelessWidget {
     super.key,
     required this.device,
     required this.connected,
-    this.favorite = false,
     required this.onTap,
-    this.onToggleFavorite,
     this.trailing,
   });
 
@@ -77,17 +73,6 @@ class DeviceCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              if (onToggleFavorite != null)
-                IconButton(
-                  icon: Icon(
-                    favorite ? Icons.star : Icons.star_border,
-                    color: favorite ? cs.primary : cs.onSurfaceVariant,
-                  ),
-                  tooltip: favorite
-                      ? l10n.devicesUnfavorite
-                      : l10n.devicesFavorite,
-                  onPressed: onToggleFavorite,
-                ),
               trailing ?? Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
             ],
           ),

@@ -31,7 +31,6 @@ class DeviceInfo {
   final String notes;
   final DateTime createdAt;
   final DateTime? lastConnectedAt;
-  final bool isFavorite;
   final DeviceMarkerColor markerColor;
   final List<RegisterList> registerLists;
 
@@ -47,7 +46,6 @@ class DeviceInfo {
     this.notes = '',
     DateTime? createdAt,
     this.lastConnectedAt,
-    this.isFavorite = false,
     this.markerColor = DeviceMarkerColor.blue,
     List<RegisterList>? registerLists,
   }) : id = id ?? _nextId(),
@@ -70,7 +68,6 @@ class DeviceInfo {
     DateTime? createdAt,
     DateTime? lastConnectedAt,
     bool clearLastConnectedAt = false,
-    bool? isFavorite,
     DeviceMarkerColor? markerColor,
     List<RegisterList>? registerLists,
   }) {
@@ -88,7 +85,6 @@ class DeviceInfo {
       lastConnectedAt: clearLastConnectedAt
           ? null
           : lastConnectedAt ?? this.lastConnectedAt,
-      isFavorite: isFavorite ?? this.isFavorite,
       markerColor: markerColor ?? this.markerColor,
       registerLists: registerLists ?? List.of(this.registerLists),
     );
@@ -113,7 +109,6 @@ class DeviceInfo {
     'notes': notes,
     'createdAt': createdAt.toIso8601String(),
     'lastConnectedAt': lastConnectedAt?.toIso8601String(),
-    'isFavorite': isFavorite,
     'markerColor': markerColor.name,
     'registerLists': registerLists.map((l) => l.toJson()).toList(),
   };
@@ -136,7 +131,6 @@ class DeviceInfo {
     notes: (json['notes'] as String?) ?? '',
     createdAt: _dateTimeFromJson(json['createdAt']) ?? fallbackCreatedAt,
     lastConnectedAt: _dateTimeFromJson(json['lastConnectedAt']),
-    isFavorite: (json['isFavorite'] as bool?) ?? false,
     markerColor: _markerColorFromJson(json['markerColor']),
     registerLists: (json['registerLists'] as List<dynamic>? ?? [])
         .map((e) => RegisterList.fromJson(e as Map<String, dynamic>))

@@ -175,9 +175,6 @@ class _DevicesScreenState extends State<DevicesScreen> {
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
     final discovered = widget.controller.discoveredDevices;
-    final visibleSavedDevices = widget.controller.visibleHomeDevices();
-    final hiddenSavedDeviceCount =
-        widget.controller.devices.length - visibleSavedDevices.length;
     final canClearDiscovered =
         widget.controller.hasDiscoveredDevices &&
         widget.controller.scannerState != ScannerStateView.scanning;
@@ -209,21 +206,49 @@ class _DevicesScreenState extends State<DevicesScreen> {
       child: DeviceCard(
         device: d,
         connected: widget.controller.isConnected(d),
-        favorite: d.isFavorite,
         onTap: () => widget.onOpenDevice(d.id),
       ),
     );
 
-    final savedChildren = <Widget>[
-      DevicesSectionHeader(title: l10n.devicesSavedConnections),
-      ...visibleSavedDevices.map(buildDismissible),
-      if (hiddenSavedDeviceCount > 0)
-        _SavedDevicesFooter(
-          hiddenCount: hiddenSavedDeviceCount,
-          totalCount: widget.controller.devices.length,
-          onShowAll: _openSavedDevices,
+    // Reordering lives on the dedicated full-screen list (opened by the header
+    // action), where the whole list is visible and indices map 1:1 to storage.
+    // The home preview is only a height-constrained prefix, so it stays a plain
+    // list to avoid nesting a reorderable scrollable inside the split layout.
+    final savedHeaderAction = !hasSavedDevices
+        ? null
+        : IconButton(
+            icon: const Icon(Icons.swap_vert, size: 22),
+            tooltip: l10n.devicesReorder,
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: _openSavedDevices,
+          );
+
+    // Builds the saved-devices section showing the first [limit] devices (a
+    // prefix of the stored order) plus a "show all" footer when some are
+    // hidden. Used by both layouts; each passes the limit that fits its space.
+    List<Widget> buildSavedChildren(int limit) {
+      final total = widget.controller.devices.length;
+      final visible = widget.controller.visibleHomeDevices(limit);
+      final hidden = total - visible.length;
+      return [
+        DevicesSectionHeader(
+          title: l10n.devicesSavedConnections,
+          // Offer the reorder shortcut only when no "show all" footer is shown
+          // (the footer already opens the same full list), so there are never
+          // two entries to it at once.
+          trailing: hidden > 0 ? null : savedHeaderAction,
         ),
-    ];
+        ...visible.map(buildDismissible),
+        if (hidden > 0)
+          _SavedDevicesFooter(
+            hiddenCount: hidden,
+            totalCount: total,
+            onShowAll: _openSavedDevices,
+          ),
+      ];
+    }
 
     final discoveredChildren = <Widget>[
       DevicesSectionHeader(
@@ -287,6 +312,15 @@ class _DevicesScreenState extends State<DevicesScreen> {
                     ? LayoutBuilder(
                         builder: (context, constraints) {
                           final maxSavedHeight = constraints.maxHeight * 2 / 3;
+                          // Show only as many cards as fit (with the footer) in
+                          // the saved section's share, so the footer is never
+                          // clipped into the discovered section below.
+                          final savedLimit = _savedFitCount(
+                            available: maxSavedHeight,
+                            headerHeight: savedHeaderHeight,
+                            cardHeight: savedCardHeight,
+                            count: widget.controller.filteredDevices.length,
+                          );
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -297,7 +331,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                                 child: ListView(
                                   shrinkWrap: true,
                                   padding: EdgeInsets.zero,
-                                  children: savedChildren,
+                                  children: buildSavedChildren(savedLimit),
                                 ),
                               ),
                               DevicesSectionHeader(
@@ -339,51 +373,16 @@ class _DevicesScreenState extends State<DevicesScreen> {
                       )
                     : LayoutBuilder(
                         builder: (context, constraints) {
-                          // _SavedDevicesFooter is a fixed 52pt box + 8pt
-                          // margin = 60pt (text is clipped to the box, so it
-                          // does not grow with text scale). The card and header
-                          // heights are measured from the theme above.
-                          final headerH = savedHeaderHeight;
-                          final cardH = savedCardHeight;
-                          const footerH = 60.0;
-                          final total = widget.controller.devices.length;
-                          final filtered =
-                              widget.controller.filteredDevices.length;
-                          int savedLimit;
-                          if (filtered == 0) {
-                            savedLimit = 0;
-                          } else {
-                            final fitsAll = ((constraints.maxHeight - headerH) /
-                                    cardH)
-                                .floor();
-                            if (fitsAll >= filtered) {
-                              savedLimit = filtered;
-                            } else {
-                              savedLimit = ((constraints.maxHeight -
-                                          headerH -
-                                          footerH) /
-                                      cardH)
-                                  .floor()
-                                  .clamp(1, filtered);
-                            }
-                          }
-                          final nsVisible = widget.controller.visibleHomeDevices(
-                            savedLimit,
+                          final savedLimit = _savedFitCount(
+                            available: constraints.maxHeight,
+                            headerHeight: savedHeaderHeight,
+                            cardHeight: savedCardHeight,
+                            count: widget.controller.filteredDevices.length,
                           );
-                          final nsHidden = total - nsVisible.length;
                           return ListView(
                             padding: const EdgeInsets.only(bottom: 8),
                             children: [
-                              DevicesSectionHeader(
-                                title: l10n.devicesSavedConnections,
-                              ),
-                              ...nsVisible.map(buildDismissible),
-                              if (nsHidden > 0)
-                                _SavedDevicesFooter(
-                                  hiddenCount: nsHidden,
-                                  totalCount: total,
-                                  onShowAll: _openSavedDevices,
-                                ),
+                              ...buildSavedChildren(savedLimit),
                               if (hasDiscoveredDevices) ...discoveredChildren,
                             ],
                           );
@@ -422,6 +421,25 @@ double _measuredSavedCardHeight(TextTheme tt, TextScaler scaler) {
 /// Full height of a [DevicesSectionHeader]: 22pt vertical padding + one line.
 double _measuredSavedHeaderHeight(TextTheme tt, TextScaler scaler) {
   return 22 + measuredLineHeight(tt.labelLarge, scaler);
+}
+
+/// How many saved-device cards fit in [available] height under the section
+/// header, reserving room for the "show all" footer ([footerHeight]) whenever
+/// not all [count] devices fit. Returns at least 1 when any device matches.
+int _savedFitCount({
+  required double available,
+  required double headerHeight,
+  required double cardHeight,
+  required int count,
+  double footerHeight = 60.0,
+}) {
+  if (count == 0) return 0;
+  final fitsAll = ((available - headerHeight) / cardHeight).floor();
+  if (fitsAll >= count) return count;
+  return ((available - headerHeight - footerHeight) / cardHeight)
+      .floor()
+      .clamp(1, count)
+      .toInt();
 }
 
 class _ScanNetworkDock extends StatelessWidget {
@@ -490,9 +508,21 @@ class _SavedDevicesFooter extends StatelessWidget {
             height: 52,
             child: Row(
               children: [
-                Text(l10n.devicesMoreCount(hiddenCount), style: style),
-                const Spacer(),
-                Text(l10n.devicesShowAllCount(totalCount), style: style),
+                Expanded(
+                  child: Text(
+                    l10n.devicesMoreCount(hiddenCount),
+                    style: style,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    l10n.devicesShowAllCount(totalCount),
+                    style: style,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                  ),
+                ),
                 const SizedBox(width: 4),
                 Icon(Icons.chevron_right, color: cs.primary, size: 18),
               ],
