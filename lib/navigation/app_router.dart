@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/devices/device_screen.dart';
+import '../features/devices/device_write_screen.dart';
 import '../features/devices/devices_controller.dart';
 import '../features/devices/devices_screen.dart';
 import '../features/registers/registers_controller.dart';
@@ -18,6 +19,7 @@ import 'navigation_targets.dart';
 class AppRoutes {
   static const devices = '/devices';
   static const deviceDetail = '/devices/detail';
+  static const deviceWrite = '/devices/detail/write';
   static const registers = '/registers';
   static const traffic = '/traffic';
   static const settings = '/settings';
@@ -81,7 +83,20 @@ GoRouter createAppRouter({
                       onOpenRegisters: (target) =>
                           openRegisters(context, target),
                       onOpenTraffic: (target) => openTraffic(context, target),
+                      onOpenWrite: () => context.push(
+                        AppRoutes.deviceWrite,
+                        extra: state.extra! as String,
+                      ),
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'write',
+                        builder: (context, state) => DeviceWriteScreen(
+                          deviceId: state.extra! as String,
+                          controller: devicesController,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

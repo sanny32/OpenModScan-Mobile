@@ -540,6 +540,8 @@ class _TestConnectionRuntime implements ConnectionRuntime {
   int? lastDiscreteInputCount;
   int? lastWriteHoldingAddress;
   int? lastWriteHoldingValue;
+  int? lastWriteHoldingStartAddress;
+  List<int>? lastWriteHoldingValues;
   int? lastWriteCoilAddress;
   bool? lastWriteCoilValue;
 
@@ -611,6 +613,17 @@ class _TestConnectionRuntime implements ConnectionRuntime {
   }) async {
     lastWriteHoldingAddress = address;
     lastWriteHoldingValue = value;
+  }
+
+  @override
+  Future<bool> writeHoldingRegisters(
+    DeviceInfo device, {
+    required int startAddress,
+    required List<int> values,
+  }) async {
+    lastWriteHoldingStartAddress = startAddress;
+    lastWriteHoldingValues = List.of(values);
+    return false;
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:modbus_client/modbus_client.dart' as modbus;
 import 'package:modbus_client_tcp/modbus_client_tcp.dart' as modbus_tcp;
 
@@ -83,6 +85,48 @@ class ModbusClient {
     );
     if (response != modbus.ModbusResponseCode.requestSucceed) {
       throw _exceptionForResponse(response);
+    }
+  }
+
+  Future<bool> writeHoldingRegisters(int startAddress, List<int> values) async {
+    _validateReadRange(startAddress, values.length);
+    for (final value in values) {
+      if (value < 0 || value > 0xffff) {
+        throw RangeError.range(value, 0, 0xffff, 'value');
+      }
+    }
+    if (values.length == 1) {
+      await writeHoldingRegister(startAddress, values.single);
+      return false;
+    }
+
+    final bytes = Uint8List(values.length * 2);
+    final data = ByteData.view(bytes.buffer);
+    for (var i = 0; i < values.length; i++) {
+      data.setUint16(i * 2, values[i], Endian.big);
+    }
+
+    final register = modbus.ModbusBytesRegister(
+      name: 'Registers $startAddress',
+      address: startAddress,
+      byteCount: bytes.length,
+      type: modbus.ModbusElementType.holdingRegister,
+    );
+
+    try {
+      final response = await _send(register.getWriteRequest(bytes));
+      if (response != modbus.ModbusResponseCode.requestSucceed) {
+        throw _exceptionForResponse(response);
+      }
+      return false;
+    } on ModbusClientException catch (error) {
+      if (error.exceptionCode != ModbusExceptionCode.illegalFunction) {
+        rethrow;
+      }
+      for (var i = 0; i < values.length; i++) {
+        await writeHoldingRegister(startAddress + i, values[i]);
+      }
+      return true;
     }
   }
 

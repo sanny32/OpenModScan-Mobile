@@ -22,6 +22,7 @@ class DeviceScreen extends StatefulWidget {
   final DevicesController controller;
   final ValueChanged<RegistersRouteArgs> onOpenRegisters;
   final ValueChanged<TrafficRouteArgs> onOpenTraffic;
+  final VoidCallback? onOpenWrite;
 
   const DeviceScreen({
     super.key,
@@ -29,6 +30,7 @@ class DeviceScreen extends StatefulWidget {
     required this.controller,
     required this.onOpenRegisters,
     required this.onOpenTraffic,
+    this.onOpenWrite,
   });
 
   @override
@@ -202,7 +204,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                     subtitle: l10n.writeValueSubtitle,
                     color: appColors.writeActionColor,
                     enabled: _connected,
-                    onTap: () {},
+                    onTap: widget.onOpenWrite ?? () {},
                   ),
                 ),
               ],

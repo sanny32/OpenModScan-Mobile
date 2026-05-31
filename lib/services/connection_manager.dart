@@ -89,6 +89,13 @@ class ConnectionManager implements ConnectionRuntime {
   }) => _clientFor(device).writeHoldingRegister(address, value);
 
   @override
+  Future<bool> writeHoldingRegisters(
+    DeviceInfo device, {
+    required int startAddress,
+    required List<int> values,
+  }) => _clientFor(device).writeHoldingRegisters(startAddress, values);
+
+  @override
   Future<void> writeCoil(
     DeviceInfo device, {
     required int address,

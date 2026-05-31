@@ -47,6 +47,16 @@ abstract interface class ConnectionRuntime {
     required int value,
   });
 
+  /// Writes consecutive Holding registers.
+  ///
+  /// Returns `true` when the runtime had to fall back from a multiple-register
+  /// write to sequential single-register writes.
+  Future<bool> writeHoldingRegisters(
+    DeviceInfo device, {
+    required int startAddress,
+    required List<int> values,
+  });
+
   Future<void> writeCoil(
     DeviceInfo device, {
     required int address,

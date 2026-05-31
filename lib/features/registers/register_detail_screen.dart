@@ -5,7 +5,9 @@ import '../../models/app_settings.dart';
 import '../../models/register_entry.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/modbus_format.dart';
+import '../../widgets/data_layout.dart';
 import '../../widgets/error_feedback.dart';
+import '../../widgets/section_card.dart';
 import '../../widgets/type_badge.dart';
 import 'register_runtime_value.dart';
 
@@ -331,66 +333,13 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     }
   }
 
-  Future<void> _showDataLayoutSheet() async {
-    final l10n = context.l10n;
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setInnerState) {
-          void selectRegisterOrder(String value) {
-            setState(() {
-              _registerOrder = value;
-            });
-            setInnerState(() {});
-          }
-
-          void selectByteOrder(String value) {
-            setState(() {
-              _byteOrder = value;
-            });
-            setInnerState(() {});
-          }
-
-          return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Data layout',
-                    style: tt.titleMedium?.copyWith(
-                      color: cs.onSurface,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _LayoutChoiceSection(
-                    label: l10n.labelRegisterOrder,
-                    icon: Icons.swap_vert_rounded,
-                    options: AppSettings.registerOrders,
-                    value: _registerOrder,
-                    onSelected: selectRegisterOrder,
-                  ),
-                  const SizedBox(height: 14),
-                  _LayoutChoiceSection(
-                    label: l10n.labelByteOrder,
-                    icon: Icons.swap_horiz_rounded,
-                    options: AppSettings.byteOrders,
-                    value: _byteOrder,
-                    onSelected: selectByteOrder,
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+  Future<void> _showDataLayoutSheet() {
+    return showDataLayoutSheet(
+      context,
+      registerOrder: _registerOrder,
+      byteOrder: _byteOrder,
+      onRegisterOrder: (value) => setState(() => _registerOrder = value),
+      onByteOrder: (value) => setState(() => _byteOrder = value),
     );
   }
 
@@ -433,7 +382,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _OutlinedCard(
+            OutlinedCard(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -571,7 +520,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            _SectionHeader(l10n.colComment.toUpperCase()),
+            SectionHeader(l10n.colComment.toUpperCase()),
             const SizedBox(height: 7),
             _CommentCard(
               comment: _commentCtrl.text.isEmpty ? null : _commentCtrl.text,
@@ -586,7 +535,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                 onTap: _showDataLayoutSheet,
               ),
               const SizedBox(height: 7),
-              _OutlinedCard(
+              OutlinedCard(
                 padding: EdgeInsets.zero,
                 clip: true,
                 child: Column(
@@ -658,156 +607,15 @@ class _InterpretationsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
     return Row(
       children: [
-        Expanded(child: _SectionHeader(title)),
-        Material(
-          color: cs.surface.withValues(alpha: 0),
-          borderRadius: BorderRadius.circular(6),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(6),
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 4, 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.tune_rounded,
-                    size: 15,
-                    color: cs.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    '$registerOrder · $byteOrder',
-                    style: tt.bodySmall?.copyWith(
-                      color: cs.onSurfaceVariant,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 18,
-                    color: cs.onSurfaceVariant,
-                  ),
-                ],
-              ),
-            ),
-          ),
+        Expanded(child: SectionHeader(title)),
+        DataLayoutChip(
+          registerOrder: registerOrder,
+          byteOrder: byteOrder,
+          onTap: onTap,
         ),
       ],
-    );
-  }
-}
-
-class _LayoutChoiceSection extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final List<String> options;
-  final String value;
-  final ValueChanged<String> onSelected;
-
-  const _LayoutChoiceSection({
-    required this.label,
-    required this.icon,
-    required this.options,
-    required this.value,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 18, color: cs.onSurfaceVariant),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        SegmentedButton<String>(
-          segments: options
-              .map(
-                (option) =>
-                    ButtonSegment<String>(value: option, label: Text(option)),
-              )
-              .toList(),
-          selected: {value},
-          onSelectionChanged: (selection) => onSelected(selection.first),
-          showSelectedIcon: false,
-          style: ButtonStyle(
-            visualDensity: VisualDensity.compact,
-            backgroundColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.selected)) {
-                return cs.primary;
-              }
-              return cs.surface;
-            }),
-            foregroundColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.selected)) {
-                return cs.onPrimary;
-              }
-              return cs.onSurface;
-            }),
-            side: WidgetStatePropertyAll(
-              BorderSide(color: cs.outline.withValues(alpha: 0.55)),
-            ),
-            textStyle: WidgetStatePropertyAll(
-              tt.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _OutlinedCard extends StatelessWidget {
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-  final bool clip;
-
-  const _OutlinedCard({
-    required this.child,
-    this.padding = const EdgeInsets.all(16),
-    this.clip = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      width: double.infinity,
-      clipBehavior: clip ? Clip.antiAlias : Clip.none,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: cs.outline.withValues(alpha: isDark ? 0.7 : 0.28),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withValues(alpha: isDark ? 0.16 : 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: child,
     );
   }
 }
@@ -954,26 +762,6 @@ class _TypeNameText extends StatelessWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader(this.title);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 1),
-      child: Text(
-        title.toUpperCase(),
-        style: Theme.of(context).textTheme.titleSmall!.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          fontSize: 13,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}
-
 class _Interpretation {
   final String typeName;
   final String value;
@@ -991,7 +779,7 @@ class _CommentCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final hasComment = comment != null && comment!.isNotEmpty;
-    return _OutlinedCard(
+    return OutlinedCard(
       padding: EdgeInsets.zero,
       child: InkWell(
         borderRadius: BorderRadius.circular(10),

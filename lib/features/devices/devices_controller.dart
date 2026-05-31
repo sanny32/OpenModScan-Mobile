@@ -3,9 +3,36 @@ import 'package:flutter/foundation.dart';
 import '../../models/app_settings.dart';
 import '../../models/device_info.dart';
 import '../../models/discovered_device.dart';
+import '../../models/register_address_type.dart';
 import '../../models/register_list.dart';
 import '../../runtime/runtime_ports.dart';
 import '../../services/device_repository.dart';
+import '../../utils/modbus_format.dart';
+
+class RegisterWriteResult {
+  final int address;
+  final String typeName;
+  final List<int> writtenWords;
+  final List<int> readBackWords;
+  final String displayValue;
+  final bool usedFallback;
+
+  const RegisterWriteResult({
+    required this.address,
+    required this.typeName,
+    required this.writtenWords,
+    required this.readBackWords,
+    required this.displayValue,
+    required this.usedFallback,
+  });
+}
+
+class CoilWriteResult {
+  final int address;
+  final bool value;
+
+  const CoilWriteResult({required this.address, required this.value});
+}
 
 class DevicesController extends ChangeNotifier {
   final DeviceRepositoryPort _repository;
@@ -116,6 +143,107 @@ class DevicesController extends ChangeNotifier {
   }
 
   Future<void> updateDevice(DeviceInfo device) => _repository.update(device);
+
+  Future<RegisterWriteResult> writeRegisterValue(
+    DeviceInfo device, {
+    required int address,
+    required String typeName,
+    required String value,
+    required String registerOrder,
+    required String byteOrder,
+  }) async {
+    if (!_settings.writeEnabled) {
+      throw StateError('Writes are disabled.');
+    }
+    if (!_connectionRuntime.isConnected(device)) {
+      throw StateError('${device.name} is not connected.');
+    }
+
+    final words = encodeRegisterValue(
+      typeName,
+      value,
+      registerOrder: registerOrder,
+      byteOrder: byteOrder,
+    );
+    final modbusAddress = RegisterAddressType.holdingRegisters.toModbusAddress(
+      address,
+      addressBase: _settings.addressBaseStart,
+    );
+
+    final usedFallback = await _connectionRuntime.writeHoldingRegisters(
+      device,
+      startAddress: modbusAddress,
+      values: words,
+    );
+
+    var readBackWords = words;
+    try {
+      final readBack = await _connectionRuntime.readHoldingRegisters(
+        device,
+        startAddress: modbusAddress,
+        count: words.length,
+      );
+      if (readBack.length == words.length) {
+        readBackWords = readBack;
+      }
+    } catch (_) {
+      // The write succeeded; keep the written words if read-back fails.
+    }
+
+    final rawMap = {
+      for (var i = 0; i < readBackWords.length; i++)
+        address + i: readBackWords[i],
+    };
+    return RegisterWriteResult(
+      address: address,
+      typeName: typeName,
+      writtenWords: words,
+      readBackWords: readBackWords,
+      displayValue: computeDisplayValue(
+        address,
+        typeName,
+        rawMap,
+        registerOrder: registerOrder,
+        byteOrder: byteOrder,
+      ),
+      usedFallback: usedFallback,
+    );
+  }
+
+  Future<CoilWriteResult> writeCoilValue(
+    DeviceInfo device, {
+    required int address,
+    required bool value,
+  }) async {
+    if (!_settings.writeEnabled) {
+      throw StateError('Writes are disabled.');
+    }
+    if (!_connectionRuntime.isConnected(device)) {
+      throw StateError('${device.name} is not connected.');
+    }
+
+    final modbusAddress = RegisterAddressType.coils.toModbusAddress(
+      address,
+      addressBase: _settings.addressBaseStart,
+    );
+    await _connectionRuntime.writeCoil(
+      device,
+      address: modbusAddress,
+      value: value,
+    );
+    var readBackValue = value;
+    try {
+      final readBack = await _connectionRuntime.readCoils(
+        device,
+        startAddress: modbusAddress,
+        count: 1,
+      );
+      if (readBack.isNotEmpty) readBackValue = readBack.first;
+    } catch (_) {
+      // The write succeeded; keep the written value if read-back fails.
+    }
+    return CoilWriteResult(address: address, value: readBackValue);
+  }
 
   Future<int?> removeDevice(String deviceId) async {
     final index = devices.indexWhere((device) => device.id == deviceId);

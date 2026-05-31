@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import '../models/app_settings.dart';
+import '../models/register_entry.dart';
 
 String formatModbusTime(DateTime value) =>
     '${value.hour.toString().padLeft(2, '0')}:'
@@ -101,4 +102,124 @@ String computeDisplayValue(
     default:
       return (rawValues[address] ?? 0).toString();
   }
+}
+
+/// Encodes a typed user value into raw uint16 words in address order.
+///
+/// This is the inverse of [computeDisplayValue] for the register formats the UI
+/// supports. The returned words are ready to write to consecutive Holding
+/// registers, honoring the selected register and byte order.
+List<int> encodeRegisterValue(
+  String typeName,
+  String input, {
+  String? registerOrder,
+  String? byteOrder,
+}) {
+  final regOrder = registerOrder ?? AppSettings.instance.registerOrder;
+  final byteOrd = byteOrder ?? AppSettings.instance.byteOrder;
+  final wordCount = registerWordCount(typeName);
+
+  int applyByteSwap(int v) =>
+      byteOrd == 'Swapped' ? ((v & 0xFF) << 8) | ((v >> 8) & 0xFF) : v;
+
+  List<int> orderWords(List<int> mostSignificantFirst) {
+    final ordered = regOrder == 'MSRF'
+        ? mostSignificantFirst
+        : mostSignificantFirst.reversed.toList();
+    return ordered.map(applyByteSwap).toList();
+  }
+
+  switch (typeName) {
+    case 'UInt16':
+      return [applyByteSwap(_parseUnsigned(input, 16).toInt())];
+    case 'Int16':
+      return [applyByteSwap(_signedToUnsignedWords(input, 16, 1).single)];
+    case 'Hex':
+      return [applyByteSwap(_parseHexWord(input))];
+    case 'Binary':
+      return [applyByteSwap(_parseBinaryWord(input))];
+    case 'UInt32':
+      return orderWords(_unsignedWords(_parseUnsigned(input, 32), wordCount));
+    case 'Int32':
+      return orderWords(_signedToUnsignedWords(input, 32, wordCount));
+    case 'UInt64':
+      return orderWords(_unsignedWords(_parseUnsigned(input, 64), wordCount));
+    case 'Int64':
+      return orderWords(_signedToUnsignedWords(input, 64, wordCount));
+    case 'Float32':
+      return orderWords(_floatWords(input, 4));
+    case 'Float64':
+      return orderWords(_floatWords(input, 8));
+    default:
+      throw FormatException('Unsupported register type: $typeName');
+  }
+}
+
+BigInt _parseInteger(String input) {
+  final trimmed = input.trim();
+  if (!RegExp(r'^[+-]?\d+$').hasMatch(trimmed)) {
+    throw const FormatException('Enter a whole number.');
+  }
+  return BigInt.parse(trimmed);
+}
+
+BigInt _parseUnsigned(String input, int bits) {
+  final value = _parseInteger(input);
+  final max = (BigInt.one << bits) - BigInt.one;
+  if (value < BigInt.zero || value > max) {
+    throw FormatException('Value must be in range 0 – $max.');
+  }
+  return value;
+}
+
+List<int> _signedToUnsignedWords(String input, int bits, int wordCount) {
+  final value = _parseInteger(input);
+  final min = -(BigInt.one << (bits - 1));
+  final max = (BigInt.one << (bits - 1)) - BigInt.one;
+  if (value < min || value > max) {
+    throw FormatException('Value must be in range $min – $max.');
+  }
+  final unsigned = value < BigInt.zero ? value + (BigInt.one << bits) : value;
+  return _unsignedWords(unsigned, wordCount);
+}
+
+List<int> _unsignedWords(BigInt value, int wordCount) => [
+  for (var i = wordCount - 1; i >= 0; i--)
+    ((value >> (i * 16)) & BigInt.from(0xffff)).toInt(),
+];
+
+int _parseHexWord(String input) {
+  final normalized = input.trim().replaceFirst(
+    RegExp(r'^0x', caseSensitive: false),
+    '',
+  );
+  if (!RegExp(r'^[0-9a-fA-F]{1,4}$').hasMatch(normalized)) {
+    throw const FormatException('Enter 1-4 hex digits.');
+  }
+  return int.parse(normalized, radix: 16);
+}
+
+int _parseBinaryWord(String input) {
+  final normalized = input.replaceAll(RegExp(r'\s+'), '');
+  if (!RegExp(r'^[01]{16}$').hasMatch(normalized)) {
+    throw const FormatException('Enter exactly 16 binary digits.');
+  }
+  return int.parse(normalized, radix: 2);
+}
+
+List<int> _floatWords(String input, int byteCount) {
+  final value = double.tryParse(input.trim());
+  if (value == null || value.isNaN || value.isInfinite) {
+    throw const FormatException('Enter a finite number.');
+  }
+  final bd = ByteData(byteCount);
+  if (byteCount == 4) {
+    bd.setFloat32(0, value, Endian.big);
+  } else {
+    bd.setFloat64(0, value, Endian.big);
+  }
+  return [
+    for (var offset = 0; offset < byteCount; offset += 2)
+      bd.getUint16(offset, Endian.big),
+  ];
 }

@@ -176,7 +176,7 @@
   "writeValue": "Write Value",
   "@writeValue": {},
 
-  "writeValueSubtitle": "Write single/multiple\nregisters",
+  "writeValueSubtitle": "Write register/coil",
   "@writeValueSubtitle": {},
 
   "lastValues": "Last Values",
@@ -474,6 +474,49 @@
       "value": {"type": "String"}
     }
   },
+  "writeModeRegister": "Register",
+  "@writeModeRegister": {},
+  "writeModeCoil": "Coil",
+  "@writeModeCoil": {},
+  "writeDataType": "Data type",
+  "@writeDataType": {},
+  "writeRawWords": "Raw words",
+  "@writeRawWords": {},
+  "writeConfirmTitle": "Confirm write",
+  "@writeConfirmTitle": {},
+  "writeRegisterConfirm": "Write {type} at {address} to {value}?",
+  "@writeRegisterConfirm": {
+    "placeholders": {
+      "type": {},
+      "address": {"type": "int"},
+      "value": {}
+    }
+  },
+  "writeCoilConfirmDetailed": "Write Coil {address} to {value}?",
+  "@writeCoilConfirmDetailed": {
+    "placeholders": {
+      "address": {"type": "int"},
+      "value": {}
+    }
+  },
+  "writeSuccess": "Write complete",
+  "@writeSuccess": {},
+  "writeResult": "Result",
+  "@writeResult": {},
+  "writeActualValue": "Actual value",
+  "@writeActualValue": {},
+  "writeFallbackUsed": "Used FC06 fallback",
+  "@writeFallbackUsed": {},
+  "writeDisabled": "Writes are disabled in Settings",
+  "@writeDisabled": {},
+  "writeAddressRange": "Address is out of range",
+  "@writeAddressRange": {},
+  "writeInvalidValue": "Invalid value",
+  "@writeInvalidValue": {},
+  "writeOn": "ON",
+  "@writeOn": {},
+  "writeOff": "OFF",
+  "@writeOff": {},
 
   "sectionRegisterLists": "Register Lists",
   "@sectionRegisterLists": {},

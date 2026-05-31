@@ -185,6 +185,9 @@ class PollingConnectionRuntime implements ConnectionRuntime {
   var coilReadCount = 0;
   int? lastWriteHoldingAddress;
   int? lastWriteHoldingValue;
+  int? lastWriteHoldingStartAddress;
+  List<int>? lastWriteHoldingValues;
+  var writeHoldingRegistersFallback = false;
   int? lastWriteCoilAddress;
   bool? lastWriteCoilValue;
 
@@ -246,6 +249,17 @@ class PollingConnectionRuntime implements ConnectionRuntime {
   }) async {
     lastWriteHoldingAddress = address;
     lastWriteHoldingValue = value;
+  }
+
+  @override
+  Future<bool> writeHoldingRegisters(
+    DeviceInfo device, {
+    required int startAddress,
+    required List<int> values,
+  }) async {
+    lastWriteHoldingStartAddress = startAddress;
+    lastWriteHoldingValues = List.of(values);
+    return writeHoldingRegistersFallback;
   }
 
   @override
