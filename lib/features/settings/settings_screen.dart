@@ -14,7 +14,6 @@ enum _SettingsSection {
   readWrite,
   log,
   appearance,
-  other,
 }
 
 class SettingsScreen extends StatefulWidget {
@@ -81,6 +80,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 8),
+            Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  _navTile(
+                    icon: Icons.backup_outlined,
+                    label: l10n.settingsBackupRestore,
+                    value: '',
+                    onTap: _showBackupRestoreSheet,
+                  ),
+                  _divider(),
+                  _navTile(
+                    icon: Icons.settings_backup_restore,
+                    label: l10n.settingsResetDefaults,
+                    value: '',
+                    destructive: true,
+                    onTap: _confirmReset,
+                  ),
+                  _divider(),
+                  _navTile(
+                    icon: Icons.info_outline,
+                    label: l10n.aboutTitle,
+                    value: '',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AboutScreen()),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -133,7 +164,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _SettingsSection.readWrite => Icons.tune,
       _SettingsSection.log => Icons.receipt_long_outlined,
       _SettingsSection.appearance => Icons.palette_outlined,
-      _SettingsSection.other => Icons.more_horiz,
     };
   }
 
@@ -144,7 +174,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _SettingsSection.readWrite => l10n.settingsSectionReadWrite,
       _SettingsSection.log => l10n.settingsSectionLog,
       _SettingsSection.appearance => l10n.settingsSectionAppearance,
-      _SettingsSection.other => l10n.settingsSectionOther,
     };
   }
 
@@ -159,7 +188,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _SettingsSection.log => l10n.settingsSummaryEntries(_s.maxLogEntries),
       _SettingsSection.appearance =>
         '${_themeOptionLabel(l10n, _s.theme)} · ${_languageOptionLabel(l10n, _s.language)}',
-      _SettingsSection.other => l10n.settingsSummaryResetAndAbout,
     };
   }
 
@@ -536,31 +564,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
       ],
-      _SettingsSection.other => [
-        _navTile(
-          icon: Icons.backup_outlined,
-          label: l10n.settingsBackupRestore,
-          value: '',
-          onTap: _showBackupRestoreSheet,
-        ),
-        _divider(),
-        _navTile(
-          icon: Icons.settings_backup_restore,
-          label: l10n.settingsResetDefaults,
-          value: '',
-          onTap: _confirmReset,
-        ),
-        _divider(),
-        _navTile(
-          icon: Icons.info_outline,
-          label: l10n.aboutTitle,
-          value: '',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AboutScreen()),
-          ),
-        ),
-      ],
     };
   }
 
@@ -576,11 +579,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String label,
     required String value,
     VoidCallback? onTap,
+    bool destructive = false,
   }) {
     final cs = Theme.of(context).colorScheme;
+    final accent = destructive ? cs.error : cs.primary;
     return ListTile(
-      leading: Icon(icon, color: cs.primary),
-      title: Text(label),
+      leading: Icon(icon, color: accent),
+      title: Text(
+        label,
+        style: destructive ? TextStyle(color: cs.error) : null,
+      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

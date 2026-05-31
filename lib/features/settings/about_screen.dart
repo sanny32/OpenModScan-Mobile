@@ -13,10 +13,10 @@ class AboutScreen extends StatefulWidget {
 }
 
 class _AboutScreenState extends State<AboutScreen> {
-  static const _websiteUrl = 'https://openmodscan.com';
-  static const _emailUrl = 'mailto:support@openmodscan.com';
-  static const _docsUrl = 'https://docs.openmodscan.com';
-  static const _issuesUrl = 'https://github.com/openmodscan/mobile/issues';
+  static const _websiteUrl = 'https://github.com/sanny32/OpenModScan-Mobile';
+  static const _emailUrl = 'mailto:mail@ananev.org';
+  static const _issuesUrl =
+      'https://github.com/sanny32/OpenModScan-Mobile/issues';
 
   late final Future<DateTime?> _packageBuildDate = const BuildInfoService()
       .packageBuildDate();
@@ -132,28 +132,11 @@ class _AboutScreenState extends State<AboutScreen> {
                 _divider(context),
                 _linkTile(
                   context,
-                  Icons.article_outlined,
-                  l10n.aboutDocumentation,
-                  _docsUrl,
-                ),
-                _divider(context),
-                _linkTile(
-                  context,
                   Icons.chat_bubble_outline,
                   l10n.aboutReportIssue,
                   _issuesUrl,
                 ),
               ],
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // Copyright
-          Center(
-            child: Text(
-              l10n.aboutCopyright,
-              textAlign: TextAlign.center,
-              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
             ),
           ),
           const SizedBox(height: 24),

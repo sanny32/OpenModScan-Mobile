@@ -73,7 +73,9 @@ void main() {
     expect(find.text('Modbus TCP · /24 · port 502'), findsOneWidget);
     expect(find.text('0-based · MSRF · Direct'), findsOneWidget);
     expect(find.text('1000 entries'), findsOneWidget);
-    expect(find.text('Reset & About'), findsOneWidget);
+    expect(find.text('Backup & Restore'), findsOneWidget);
+    expect(find.text('Reset to defaults'), findsOneWidget);
+    expect(find.text('About'), findsOneWidget);
   });
 
   testWidgets('Choice settings update and persist from settings screen', (
@@ -165,7 +167,6 @@ void main() {
     await AppSettings.instance.setSaveLogToFile(true);
 
     await _pumpSettings(tester);
-    await _openSettingsSection(tester, 'Other');
     await _tapSetting(tester, 'Reset to defaults');
     await tester.tap(find.text('Reset to defaults').last);
     await tester.pumpAndSettle();
