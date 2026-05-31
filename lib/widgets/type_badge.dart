@@ -8,7 +8,7 @@ Color typeColor(BuildContext context, String type) {
     case 'UInt16':
     case 'UInt32':
     case 'UInt64':
-      return cs.primary;
+      return appColors.typeColor;
     case 'Int16':
     case 'Int32':
     case 'Int64':
