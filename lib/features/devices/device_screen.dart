@@ -174,34 +174,39 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 : Text(_connected ? l10n.disconnect : l10n.connect),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _ActionCard(
-                  icon: Icons.download_outlined,
-                  title: l10n.readRegisters,
-                  subtitle: l10n.readRegistersSubtitle,
-                  color: cs.primary,
-                  enabled: _connected,
-                  onTap: () {
-                    widget.onOpenRegisters(
-                      RegistersRouteArgs(deviceId: _device.id),
-                    );
-                  },
+          // IntrinsicHeight + stretch keeps both cards the same height even when
+          // their subtitles wrap to a different number of lines.
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _ActionCard(
+                    icon: Icons.download_outlined,
+                    title: l10n.readRegisters,
+                    subtitle: l10n.readRegistersSubtitle,
+                    color: cs.primary,
+                    enabled: _connected,
+                    onTap: () {
+                      widget.onOpenRegisters(
+                        RegistersRouteArgs(deviceId: _device.id),
+                      );
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _ActionCard(
-                  icon: Icons.upload_outlined,
-                  title: l10n.writeValue,
-                  subtitle: l10n.writeValueSubtitle,
-                  color: appColors.writeActionColor,
-                  enabled: _connected,
-                  onTap: () {},
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _ActionCard(
+                    icon: Icons.upload_outlined,
+                    title: l10n.writeValue,
+                    subtitle: l10n.writeValueSubtitle,
+                    color: appColors.writeActionColor,
+                    enabled: _connected,
+                    onTap: () {},
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 20),
           Text(l10n.sectionRegisterLists, style: tt.titleMedium),
@@ -431,6 +436,7 @@ class _ActionCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, color: effectiveColor, size: 38),
               const SizedBox(height: 8),
