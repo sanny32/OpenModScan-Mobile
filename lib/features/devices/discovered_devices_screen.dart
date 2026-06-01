@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
 import '../../models/discovered_device.dart';
+import '../../theme/app_dimens.dart';
 import 'devices_controller.dart';
 import 'widgets/scan_panel.dart';
 
@@ -51,7 +52,12 @@ class _DiscoveredDevicesScreenState extends State<DiscoveredDevicesScreen> {
       appBar: AppBar(title: Text(l10n.devicesDiscoveredTitle)),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screenGutter,
+            8,
+            AppSpacing.screenGutter,
+            16,
+          ),
           children: [
             Card(
               margin: EdgeInsets.zero,

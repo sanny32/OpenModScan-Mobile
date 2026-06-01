@@ -6,6 +6,7 @@ import '../../models/app_settings.dart';
 import '../../models/device_info.dart';
 import '../../models/register_address_type.dart';
 import '../../models/register_entry.dart';
+import '../../theme/app_dimens.dart';
 import '../../utils/modbus_format.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/connection_info_bar.dart';
@@ -265,6 +266,20 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
     _addressCtrl.text = _minAddress.toString();
   }
 
+  // External field label sitting above the input, matching the Edit Device
+  // form (rather than a floating in-field label).
+  Widget _fieldLabel(String text) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(left: 2, bottom: 6),
+      child: Text(
+        text,
+        style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+      ),
+    );
+  }
+
   Future<void> _showDataLayoutSheet() {
     return showDataLayoutSheet(
       context,
@@ -292,21 +307,33 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
     return Scaffold(
       backgroundColor: cs.surfaceContainerHighest,
       appBar: AppBar(
-        toolbarHeight: 56,
-        title: Text(
-          l10n.writeValue,
-          style: tt.titleLarge?.copyWith(
-            color: cs.onSurface,
-            fontWeight: FontWeight.w800,
-          ),
+        toolbarHeight: 70,
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _device.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+              style: tt.titleMedium,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              l10n.writeValue,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: AnimatedPadding(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
         padding: EdgeInsets.only(
-          left: 8,
-          right: 8,
+          left: AppSpacing.screenGutter,
+          right: AppSpacing.screenGutter,
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         child: SafeArea(
@@ -338,9 +365,14 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(8, 6, 8, 24),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          6,
+          AppSpacing.screenGutter,
+          24,
+        ),
         children: [
-          ConnectionInfoBar(device: _device, showDeviceName: true),
+          ConnectionInfoBar(device: _device),
           if (!AppSettings.instance.writeEnabled) ...[
             const SizedBox(height: 14),
             _StatusBanner(
@@ -388,9 +420,15 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (isRegister) ...[
+                  _fieldLabel(l10n.writeDataType),
                   DropdownButtonFormField<String>(
                     initialValue: _typeName,
-                    decoration: InputDecoration(labelText: l10n.writeDataType),
+                    decoration: const InputDecoration(
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 14,
+                      ),
+                    ),
                     dropdownColor: cs.surface,
                     items: [
                       for (final type in kRegisterTypes)
@@ -407,49 +445,84 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
                   ),
                   const SizedBox(height: 12),
                 ],
+                _fieldLabel(l10n.colAddress),
                 TextField(
                   controller: _addressCtrl,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: l10n.colAddress,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
+                    ),
                     errorText: _addressError,
                   ),
                 ),
                 if (isRegister) ...[
                   const SizedBox(height: 12),
+                  _fieldLabel(l10n.colValue),
                   TextField(
                     controller: _valueCtrl,
                     keyboardType: _valueKeyboardType,
                     decoration: InputDecoration(
-                      labelText: l10n.colValue,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 14,
+                      ),
                       errorText: _valueError,
                     ),
                   ),
+                  const SizedBox(height: 6),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 2),
+                    child: Text(
+                      l10n.writeValueHelper,
+                      style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                    ),
+                  ),
                   const SizedBox(height: 14),
-                  Divider(height: 1, color: cs.outline.withValues(alpha: 0.5)),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Text(
-                        '${l10n.writeRawWords}:',
-                        style: tt.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          words == null ? '—' : _formatWords(words),
-                          textAlign: TextAlign.right,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: AppRadii.mdAll,
+                      border: Border.all(color: cs.outline),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.writeRawWords,
                           style: tt.bodyMedium?.copyWith(
-                            color: cs.onSurface,
-                            fontWeight: FontWeight.w700,
-                            fontFeatures: const [FontFeature.tabularFigures()],
+                            color: cs.onSurfaceVariant,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: cs.surfaceContainerHighest,
+                            borderRadius: AppRadii.smAll,
+                          ),
+                          child: Text(
+                            words == null ? '—' : _formatWords(words),
+                            style: tt.bodyMedium?.copyWith(
+                              color: cs.onSurface,
+                              fontWeight: FontWeight.w700,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ] else ...[
                   const SizedBox(height: 18),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../l10n/l10n.dart';
+import '../../theme/app_dimens.dart';
 import '../../models/app_settings.dart';
 import '../../models/device_info.dart';
 import '../../models/modbus_scan.dart';
@@ -60,11 +61,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.only(bottom: 8),
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenGutter,
+                12,
+                AppSpacing.screenGutter,
+                8,
+              ),
               child: Text(l10n.settingsTitle, style: tt.headlineMedium),
             ),
             Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
+              margin: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenGutter,
+              ),
               child: Column(
                 children: [
                   for (final section in _SettingsSection.values) ...[
@@ -76,7 +84,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 8),
             Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
+              margin: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenGutter,
+              ),
               child: Column(
                 children: [
                   _navTile(
@@ -123,7 +133,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.only(top: 16, bottom: 8),
           children: [
             Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
+              margin: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenGutter,
+              ),
               child: Column(children: _sectionChildren(l10n, section)),
             ),
           ],

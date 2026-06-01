@@ -4,13 +4,8 @@ import '../models/device_info.dart';
 
 class ConnectionInfoBar extends StatelessWidget {
   final DeviceInfo device;
-  final bool showDeviceName;
 
-  const ConnectionInfoBar({
-    super.key,
-    required this.device,
-    this.showDeviceName = false,
-  });
+  const ConnectionInfoBar({super.key, required this.device});
 
   @override
   Widget build(BuildContext context) {
@@ -18,59 +13,32 @@ class ConnectionInfoBar extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
 
-    Widget detailsRow() {
-      return Row(
-        children: [
-          Flexible(child: _InfoText(device.address, style: tt.bodyMedium)),
-          const SizedBox(width: 10),
-          _vDivider(cs.onSurfaceVariant),
-          const SizedBox(width: 10),
-          _InfoText(device.protocolName, style: tt.bodyMedium),
-          const SizedBox(width: 10),
-          _vDivider(cs.onSurfaceVariant),
-          const SizedBox(width: 10),
-          _InfoText(l10n.unitId(device.unitId), style: tt.bodyMedium),
-        ],
-      );
-    }
-
     return Container(
       color: cs.surfaceContainer,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: showDeviceName
-          ? Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        children: [
+          Icon(Icons.dns_outlined, size: 16, color: cs.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.dns_outlined,
-                      size: 16,
-                      color: cs.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _InfoText(
-                        device.name,
-                        style: tt.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+                Flexible(
+                  child: _InfoText(device.address, style: tt.bodyMedium),
                 ),
-                const SizedBox(height: 4),
-                detailsRow(),
-              ],
-            )
-          : Row(
-              children: [
-                Icon(Icons.dns_outlined, size: 16, color: cs.onSurfaceVariant),
-                const SizedBox(width: 6),
-                Expanded(child: detailsRow()),
+                const SizedBox(width: 10),
+                _vDivider(cs.onSurfaceVariant),
+                const SizedBox(width: 10),
+                _InfoText(device.protocolName, style: tt.bodyMedium),
+                const SizedBox(width: 10),
+                _vDivider(cs.onSurfaceVariant),
+                const SizedBox(width: 10),
+                _InfoText(l10n.unitId(device.unitId), style: tt.bodyMedium),
               ],
             ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../../models/device_info.dart';
+import '../../../theme/app_dimens.dart';
 import '../../../theme/app_theme.dart';
 import '../device_marker_color_palette.dart';
 
@@ -29,7 +30,10 @@ class DeviceCard extends StatelessWidget {
     final l10n = context.l10n;
     final markerColor = device.markerColor.resolve(cs);
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.screenGutter,
+        vertical: 4,
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),

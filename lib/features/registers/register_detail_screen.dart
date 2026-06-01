@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/l10n.dart';
 import '../../models/app_settings.dart';
 import '../../models/register_entry.dart';
+import '../../theme/app_dimens.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/modbus_format.dart';
 import '../../utils/value_input.dart';
@@ -390,7 +391,12 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(8, 6, 8, 92),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          6,
+          AppSpacing.screenGutter,
+          92,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

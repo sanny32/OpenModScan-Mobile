@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
+import '../../theme/app_dimens.dart';
 import '../../utils/modbus_format.dart';
 import '../../widgets/error_feedback.dart';
 
@@ -117,7 +118,12 @@ class _StatusDetailScreenState extends State<StatusDetailScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(8, 6, 8, 92),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          6,
+          AppSpacing.screenGutter,
+          92,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

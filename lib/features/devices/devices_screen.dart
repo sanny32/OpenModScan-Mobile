@@ -6,6 +6,7 @@ import '../../l10n/l10n.dart';
 import '../../models/device_info.dart';
 import '../../models/discovered_device.dart';
 import '../../runtime/runtime_ports.dart';
+import '../../theme/app_dimens.dart';
 import '../../widgets/error_feedback.dart';
 import 'device_form_sheet.dart';
 import 'discovered_devices_screen.dart';
@@ -196,7 +197,10 @@ class _DevicesScreenState extends State<DevicesScreen> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        margin: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.screenGutter,
+          vertical: 4,
+        ),
         decoration: BoxDecoration(
           color: cs.error,
           borderRadius: BorderRadius.circular(12),
@@ -293,7 +297,12 @@ class _DevicesScreenState extends State<DevicesScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenGutter,
+                  8,
+                  AppSpacing.screenGutter,
+                  0,
+                ),
                 child: TextField(
                   onChanged: widget.controller.setSearch,
                   decoration: InputDecoration(
@@ -339,10 +348,9 @@ class _DevicesScreenState extends State<DevicesScreen> {
                                 trailing: !canClearDiscovered
                                     ? null
                                     : TextButton(
-                                        onPressed:
-                                            widget
-                                                .controller
-                                                .clearDiscoveredDevices,
+                                        onPressed: widget
+                                            .controller
+                                            .clearDiscoveredDevices,
                                         style: TextButton.styleFrom(
                                           padding: EdgeInsets.zero,
                                           minimumSize: Size.zero,
@@ -454,12 +462,14 @@ class _ScanNetworkDock extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.screenGutter,
+        8,
+        AppSpacing.screenGutter,
+        12,
+      ),
       child: OutlinedButton.icon(
-        icon: Icon(
-          scanning ? Icons.travel_explore : Icons.sensors,
-          size: 24,
-        ),
+        icon: Icon(scanning ? Icons.travel_explore : Icons.sensors, size: 24),
         label: Text(
           scanning ? l10n.devicesScanningTitle : l10n.devicesScanNetwork,
         ),
@@ -503,7 +513,9 @@ class _SavedDevicesFooter extends StatelessWidget {
         onTap: onShowAll,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.screenGutter,
+          ),
           child: SizedBox(
             height: 52,
             child: Row(

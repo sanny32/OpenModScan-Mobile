@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
 import '../../models/device_info.dart';
+import '../../theme/app_dimens.dart';
 import 'devices_controller.dart';
 import 'widgets/device_card.dart';
 
@@ -80,7 +81,10 @@ class _SavedDevicesScreenState extends State<SavedDevicesScreen> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        margin: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.screenGutter,
+          vertical: 4,
+        ),
         decoration: BoxDecoration(
           color: cs.error,
           borderRadius: BorderRadius.circular(12),
@@ -108,7 +112,12 @@ class _SavedDevicesScreenState extends State<SavedDevicesScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenGutter,
+                8,
+                AppSpacing.screenGutter,
+                4,
+              ),
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
@@ -144,7 +153,9 @@ class _SavedDevicesScreenState extends State<SavedDevicesScreen> {
                           trailing: ReorderableDragStartListener(
                             index: index,
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
                               child: Icon(
                                 Icons.drag_handle,
                                 color: cs.onSurfaceVariant,

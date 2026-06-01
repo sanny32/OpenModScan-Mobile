@@ -480,8 +480,11 @@
   "@writeModeCoil": {},
   "writeDataType": "Data type",
   "@writeDataType": {},
-  "writeRawWords": "Raw words",
+  "writeRawWords": "Raw registers",
   "@writeRawWords": {},
+
+  "writeValueHelper": "The value to write to the specified register.",
+  "@writeValueHelper": {},
   "writeConfirmTitle": "Confirm write",
   "@writeConfirmTitle": {},
   "writeRegisterConfirm": "Write {type} at {address} to {value}?",

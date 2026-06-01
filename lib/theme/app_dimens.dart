@@ -23,3 +23,16 @@ abstract final class AppRadii {
   static const BorderRadius xlAll = BorderRadius.all(Radius.circular(xl));
   static const BorderRadius fullAll = BorderRadius.all(Radius.circular(full));
 }
+
+/// Spacing tokens — a single step scale for paddings and gaps.
+abstract final class AppSpacing {
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
+  static const double xl = 24;
+
+  /// Horizontal inset of page content from the screen edge. Shared by every
+  /// scrollable body and card margin so screens line up at the same gutter.
+  static const double screenGutter = lg;
+}

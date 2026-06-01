@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../l10n/l10n.dart';
 import '../../models/log_entry.dart';
+import '../../theme/app_dimens.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/modbus_traffic_format.dart';
 import '../../widgets/section_card.dart';
@@ -70,7 +71,12 @@ class TrafficDetailScreen extends StatelessWidget {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenGutter,
+                12,
+                AppSpacing.screenGutter,
+                12,
+              ),
               children: [
                 _DirectionChip(
                   label: entry.direction == null
@@ -182,7 +188,7 @@ class _DirectionChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: AppRadii.smAll,
           border: Border.all(color: color.withValues(alpha: 0.5)),
         ),
         child: Row(
