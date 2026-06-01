@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../l10n/l10n.dart';
 import '../../models/app_settings.dart';
 import '../../models/register_entry.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/modbus_format.dart';
+import '../../utils/value_input.dart';
 import '../../widgets/data_layout.dart';
 import '../../widgets/error_feedback.dart';
 import '../../widgets/section_card.dart';
@@ -47,7 +47,8 @@ class RegisterDetailScreen extends StatefulWidget {
   final RegisterEntry entry;
   final bool canWrite;
   final void Function(String typeName, String? comment)? onSaved;
-  final Future<String?> Function(String newValue)? onValueWritten;
+  final Future<String?> Function(String newValue, String typeName)?
+  onValueWritten;
   final Listenable? valuesListenable;
   final RegisterRuntimeValue? Function(int address)? liveValueAt;
 
@@ -102,10 +103,15 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     final runtime = liveValueAt(_entry.address);
     if (runtime == null) return;
     final rawWords = Map<int, int>.from(_entry.rawWords);
+    final previousRawWords = Map<int, int>.from(_entry.previousRawWords);
     for (var j = 0; j <= 3; j++) {
       final word = liveValueAt(_entry.address + j);
       final parsed = word == null ? null : int.tryParse(word.value);
       if (parsed != null) rawWords[_entry.address + j] = parsed;
+      final parsedPrev = word?.previous == null
+          ? null
+          : int.tryParse(word!.previous!);
+      if (parsedPrev != null) previousRawWords[_entry.address + j] = parsedPrev;
     }
     setState(() {
       _entry = _entry.copyWith(
@@ -117,11 +123,21 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
             : formatModbusTime(runtime.readAt!),
         date: runtime.readAt == null ? null : formatModbusDate(runtime.readAt!),
         rawWords: rawWords,
+        previousRawWords: previousRawWords,
       );
     });
   }
 
   String _displayPreviousValue(String raw) {
+    if (_entry.previousRawWords.isNotEmpty) {
+      return computeDisplayValue(
+        _entry.address,
+        _selectedType,
+        _entry.previousRawWords,
+        registerOrder: _registerOrder,
+        byteOrder: _byteOrder,
+      );
+    }
     final rawInt = int.tryParse(raw);
     if (rawInt == null) return raw;
     return computeDisplayValue(
@@ -189,7 +205,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final ctrl = TextEditingController(text: _entry.value);
+    final ctrl = TextEditingController(text: _displayValueForType(_selectedType));
     String? error;
     var writing = false;
 
@@ -218,28 +234,20 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
               Row(
                 children: [
                   Text(
-                    '${l10n.colValue}: ',
+                    '${l10n.writeDataType}: ',
                     style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
                   ),
                   Text(
-                    _entry.value,
+                    _selectedType,
                     style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
                   ),
-                  if (_entry.previousValue != null) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      '← ${_entry.previousValue}',
-                      style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
-                    ),
-                  ],
                 ],
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: ctrl,
                 autofocus: true,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                keyboardType: valueKeyboardTypeFor(_selectedType),
                 decoration: InputDecoration(
                   labelText: l10n.labelNewValue,
                   errorText: error,
@@ -290,6 +298,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
 
   void _applyWrittenValue(String newValue) {
     final now = DateTime.now();
+    final previousRawWords = Map<int, int>.from(_entry.rawWords);
     final rawWords = Map<int, int>.from(_entry.rawWords);
     final intValue = int.tryParse(newValue);
     if (intValue != null) rawWords[_entry.address] = intValue;
@@ -300,6 +309,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
       timestamp: formatModbusTime(now),
       date: formatModbusDate(now),
       rawWords: rawWords,
+      previousRawWords: previousRawWords,
     );
   }
 
@@ -311,14 +321,23 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     void Function(String?) setError,
     void Function(bool) setWriting,
   ) async {
-    final raw = int.tryParse(ctrl.text);
-    if (raw == null || raw < 0 || raw > 65535) {
-      setInnerState(() => setError(l10n.writeValueRange));
+    try {
+      encodeRegisterValue(
+        _selectedType,
+        ctrl.text,
+        registerOrder: _registerOrder,
+        byteOrder: _byteOrder,
+      );
+    } catch (_) {
+      setInnerState(() => setError(l10n.writeInvalidValue));
       return;
     }
     setInnerState(() => setWriting(true));
     try {
-      final newValue = await widget.onValueWritten?.call(ctrl.text);
+      final newValue = await widget.onValueWritten?.call(
+        ctrl.text,
+        _selectedType,
+      );
       // Always reflect the value read back after the write (the live listener,
       // if any, applies the same value idempotently).
       if (newValue != null && mounted) {

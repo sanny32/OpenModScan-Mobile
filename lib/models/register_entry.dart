@@ -40,6 +40,9 @@ class RegisterEntry {
   final String? date;
   // Raw uint16 values for this and neighbouring registers (needed for multi-word types).
   final Map<int, int> rawWords;
+  // Previous raw uint16 values for this and neighbouring registers, so the
+  // previous value of multi-word types can be reconstructed correctly.
+  final Map<int, int> previousRawWords;
 
   const RegisterEntry({
     required this.address,
@@ -52,6 +55,7 @@ class RegisterEntry {
     this.timestamp,
     this.date,
     this.rawWords = const {},
+    this.previousRawWords = const {},
   });
 
   RegisterEntry copyWith({
@@ -65,6 +69,7 @@ class RegisterEntry {
     String? timestamp,
     String? date,
     Map<int, int>? rawWords,
+    Map<int, int>? previousRawWords,
   }) => RegisterEntry(
     address: address ?? this.address,
     value: value ?? this.value,
@@ -76,5 +81,6 @@ class RegisterEntry {
     timestamp: timestamp ?? this.timestamp,
     date: date ?? this.date,
     rawWords: rawWords ?? this.rawWords,
+    previousRawWords: previousRawWords ?? this.previousRawWords,
   );
 }

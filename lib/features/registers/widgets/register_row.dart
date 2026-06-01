@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../../models/app_settings.dart';
 import '../../../models/register_entry.dart';
 import '../../../theme/app_theme.dart';
 import '../../../utils/modbus_format.dart';
+import '../../../utils/value_input.dart';
 import '../../../widgets/error_feedback.dart';
 import '../../../widgets/type_badge.dart';
 import '../register_detail_screen.dart';
@@ -19,7 +19,8 @@ class RegisterRow extends StatelessWidget {
   final VoidCallback? onGroupExpansionToggled;
   final void Function(int address, String typeName, String? comment)?
   onEntryChanged;
-  final Future<String?> Function(int address, String value)? onValueWritten;
+  final Future<String?> Function(int address, String value, String typeName)?
+  onValueWritten;
   final Listenable? valuesListenable;
   final RegisterRuntimeValue? Function(int address)? liveValueAt;
 
@@ -57,7 +58,7 @@ class RegisterRow extends StatelessWidget {
                       onEntryChanged!(entry.address, type, comment)
                 : null,
             onValueWritten: onValueWritten != null
-                ? (v) => onValueWritten!(entry.address, v)
+                ? (v, type) => onValueWritten!(entry.address, v, type)
                 : null,
             valuesListenable: valuesListenable,
             liveValueAt: liveValueAt,
@@ -227,25 +228,31 @@ class _RawRegisterWordRow extends StatelessWidget {
 Future<void> _showWriteRegisterDialog(
   BuildContext context,
   RegisterEntry entry,
-  Future<String?> Function(int address, String value)? onValueWritten,
+  Future<String?> Function(int address, String value, String typeName)?
+  onValueWritten,
 ) async {
   final l10n = context.l10n;
   final cs = Theme.of(context).colorScheme;
   final tt = Theme.of(context).textTheme;
-  final appColors = Theme.of(context).extension<AppColors>()!;
-  final ctrl = TextEditingController(text: entry.value);
+  final ctrl = TextEditingController(text: entry.displayValue ?? entry.value);
   String? error;
   var writing = false;
 
   Future<void> doWrite(BuildContext ctx, StateSetter setInnerState) async {
-    final raw = int.tryParse(ctrl.text);
-    if (raw == null || raw < 0 || raw > 65535) {
-      setInnerState(() => error = l10n.writeValueRange);
+    try {
+      encodeRegisterValue(
+        entry.typeName,
+        ctrl.text,
+        registerOrder: AppSettings.instance.registerOrder,
+        byteOrder: AppSettings.instance.byteOrder,
+      );
+    } catch (_) {
+      setInnerState(() => error = l10n.writeInvalidValue);
       return;
     }
     setInnerState(() => writing = true);
     try {
-      await onValueWritten?.call(entry.address, ctrl.text);
+      await onValueWritten?.call(entry.address, ctrl.text, entry.typeName);
       if (ctx.mounted) Navigator.pop(ctx);
     } catch (writeError) {
       if (ctx.mounted) {
@@ -280,30 +287,20 @@ Future<void> _showWriteRegisterDialog(
             Row(
               children: [
                 Text(
-                  '${l10n.colValue}: ',
+                  '${l10n.writeDataType}: ',
                   style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
                 ),
                 Text(
-                  entry.value,
+                  entry.typeName,
                   style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
                 ),
-                if (entry.previousValue != null) ...[
-                  const SizedBox(width: 8),
-                  Text(
-                    '← ${entry.previousValue}',
-                    style: tt.bodySmall!.copyWith(
-                      color: appColors.previousValueColor,
-                    ),
-                  ),
-                ],
               ],
             ),
             const SizedBox(height: 16),
             TextField(
               controller: ctrl,
               autofocus: true,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              keyboardType: valueKeyboardTypeFor(entry.typeName),
               decoration: InputDecoration(
                 labelText: l10n.labelNewValue,
                 errorText: error,
@@ -348,6 +345,13 @@ Color _valueColor(BuildContext context, RegisterValueState state) {
 String _formatPreviousValue(RegisterEntry entry) {
   final raw = entry.previousValue;
   if (raw == null) return '';
+  if (entry.previousRawWords.isNotEmpty) {
+    return computeDisplayValue(
+      entry.address,
+      entry.typeName,
+      entry.previousRawWords,
+    );
+  }
   final rawInt = int.tryParse(raw);
   if (rawInt == null) return raw;
   return computeDisplayValue(entry.address, entry.typeName, {

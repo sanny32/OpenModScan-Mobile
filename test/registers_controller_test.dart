@@ -373,7 +373,7 @@ void main() {
       ),
     );
 
-    await controller.writeValue(40001, '42');
+    await controller.writeValue(40001, '42', 'UInt16');
 
     expect(connections.lastWriteHoldingAddress, 1);
     expect(connections.lastWriteHoldingValue, 42);
@@ -381,7 +381,7 @@ void main() {
     expect(controller.runtimeValues[40001]?.previous, isNull);
     expect(controller.runtimeValues[40001]?.readAt, isNotNull);
 
-    await controller.writeValue(40001, '43');
+    await controller.writeValue(40001, '43', 'UInt16');
     expect(controller.runtimeValues[40001]?.value, '43');
     expect(controller.runtimeValues[40001]?.previous, '42');
 
@@ -468,7 +468,7 @@ void main() {
     );
 
     await AppSettings.instance.setWriteEnabled(false);
-    await controller.writeValue(40001, '42');
+    await controller.writeValue(40001, '42', 'UInt16');
     await controller.writeStatusValue(
       statusType: '0xxxx',
       address: 0,
@@ -512,12 +512,12 @@ void main() {
     );
 
     // 0-based (default): display 40001 maps to modbus offset 1.
-    await controller.writeValue(40001, '7');
+    await controller.writeValue(40001, '7', 'UInt16');
     expect(connections.lastWriteHoldingAddress, 1);
 
     // 1-based: the injected setting shifts the same display address to 0.
     await AppSettings.instance.setAddressBase(AppSettings.addressBases[1]);
-    await controller.writeValue(40001, '7');
+    await controller.writeValue(40001, '7', 'UInt16');
     expect(connections.lastWriteHoldingAddress, 0);
 
     controller.dispose();

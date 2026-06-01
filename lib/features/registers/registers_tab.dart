@@ -34,7 +34,8 @@ class _RegistersTab extends StatefulWidget {
   onRead;
   final void Function(int address, String typeName, String? comment)
   onEntryChanged;
-  final Future<String?> Function(int address, String value) onValueWritten;
+  final Future<String?> Function(int address, String value, String typeName)
+  onValueWritten;
   final Listenable valuesListenable;
   final RegisterRuntimeValue? Function(int address) liveValueAt;
 
@@ -224,11 +225,15 @@ class _RegistersTabState extends State<_RegistersTab> {
     };
     // Build raw uint16 map for visible + 3 extra addresses (needed for 64-bit types).
     final rawInts = <int, int>{};
+    final previousRawInts = <int, int>{};
     for (var i = 0; i < count + 3; i++) {
       final addr = startAddr + i;
       final runtime = widget.runtimeValues[addr];
       final mock = mockByAddress[addr];
       rawInts[addr] = int.tryParse(runtime?.value ?? mock?.value ?? '') ?? 0;
+      final prev = runtime?.previous ?? mock?.previousValue;
+      final prevInt = prev == null ? null : int.tryParse(prev);
+      if (prevInt != null) previousRawInts[addr] = prevInt;
     }
     final visibleRegisters = List.generate(count, (i) {
       final addr = startAddr + i;
@@ -261,6 +266,11 @@ class _RegistersTabState extends State<_RegistersTab> {
         rawWords: {
           for (var j = 0; j <= 3; j++)
             if (rawInts.containsKey(addr + j)) addr + j: rawInts[addr + j]!,
+        },
+        previousRawWords: {
+          for (var j = 0; j <= 3; j++)
+            if (previousRawInts.containsKey(addr + j))
+              addr + j: previousRawInts[addr + j]!,
         },
       );
     });

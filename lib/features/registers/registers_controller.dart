@@ -9,6 +9,7 @@ import '../../models/status_entry.dart';
 import '../../navigation/navigation_targets.dart';
 import '../../runtime/runtime_ports.dart';
 import '../../services/device_repository.dart';
+import '../../utils/modbus_format.dart';
 import 'register_runtime_value.dart';
 
 class RegistersController extends ChangeNotifier {
@@ -200,15 +201,22 @@ class RegistersController extends ChangeNotifier {
     );
   }
 
-  Future<String?> writeValue(int address, String value) async {
+  Future<String?> writeValue(int address, String value, String typeName) async {
     final device = selectedDevice;
     if (device == null) return null;
     if (!_settings.writeEnabled) return null;
     if (!_connectionRuntime.isConnected(device)) {
       throw StateError('${device.name} is not connected.');
     }
-    final raw = int.tryParse(value);
-    if (raw == null || raw < 0 || raw > 0xffff) {
+    final List<int> words;
+    try {
+      words = encodeRegisterValue(
+        typeName,
+        value,
+        registerOrder: _settings.registerOrder,
+        byteOrder: _settings.byteOrder,
+      );
+    } catch (_) {
       throw ArgumentError.value(value, 'value');
     }
     final modbusAddress = RegisterAddressType.holdingRegisters.toModbusAddress(
@@ -216,11 +224,19 @@ class RegistersController extends ChangeNotifier {
       addressBase: _settings.addressBaseStart,
     );
     final previous = _runtimeValues[address]?.value;
-    await _connectionRuntime.writeHoldingRegister(
-      device,
-      address: modbusAddress,
-      value: raw,
-    );
+    if (words.length == 1) {
+      await _connectionRuntime.writeHoldingRegister(
+        device,
+        address: modbusAddress,
+        value: words.first,
+      );
+    } else {
+      await _connectionRuntime.writeHoldingRegisters(
+        device,
+        startAddress: modbusAddress,
+        values: words,
+      );
+    }
     // Read the value back from the device so the UI reflects its actual state
     // after the write, regardless of the auto-refresh setting.
     var newValue = value;
@@ -228,9 +244,19 @@ class RegistersController extends ChangeNotifier {
       final readBack = await _connectionRuntime.readHoldingRegisters(
         device,
         startAddress: modbusAddress,
-        count: 1,
+        count: words.length,
       );
-      if (readBack.isNotEmpty) newValue = readBack.first.toString();
+      if (readBack.length == words.length) {
+        newValue = computeDisplayValue(
+          address,
+          typeName,
+          {
+            for (var i = 0; i < readBack.length; i++) address + i: readBack[i],
+          },
+          registerOrder: _settings.registerOrder,
+          byteOrder: _settings.byteOrder,
+        );
+      }
     } catch (_) {
       // The write succeeded; keep the written value if the read-back fails.
     }
