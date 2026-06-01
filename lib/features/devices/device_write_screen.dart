@@ -300,10 +300,46 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
           ),
         ),
       ),
+      bottomNavigationBar: AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.only(
+          left: 8,
+          right: 8,
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: FilledButton.icon(
+              onPressed: _formValid ? _submit : null,
+              icon: _writing
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.upload_outlined),
+              label: Text(l10n.btnWrite),
+              style: FilledButton.styleFrom(
+                backgroundColor: cs.primary,
+                foregroundColor: cs.onPrimary,
+                minimumSize: const Size(double.infinity, 52),
+                textStyle: tt.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(8, 6, 8, 24),
         children: [
-          ConnectionInfoBar(device: _device),
+          ConnectionInfoBar(device: _device, showDeviceName: true),
           if (!AppSettings.instance.writeEnabled) ...[
             const SizedBox(height: 14),
             _StatusBanner(
@@ -395,10 +431,7 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Divider(
-                    height: 1,
-                    color: cs.outline.withValues(alpha: 0.5),
-                  ),
+                  Divider(height: 1, color: cs.outline.withValues(alpha: 0.5)),
                   const SizedBox(height: 10),
                   Row(
                     children: [
@@ -444,28 +477,8 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 18),
-          FilledButton.icon(
-            onPressed: _formValid ? _submit : null,
-            icon: _writing
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.upload_outlined),
-            label: Text(l10n.btnWrite),
-            style: FilledButton.styleFrom(
-              backgroundColor: cs.primary,
-              foregroundColor: cs.onPrimary,
-              minimumSize: const Size(double.infinity, 52),
-              textStyle: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
           if (!_connected) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 18),
             Text(
               '${_device.name} is not connected.',
               style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
