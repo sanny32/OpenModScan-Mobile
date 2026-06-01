@@ -35,6 +35,13 @@ GoRouter createAppRouter({
   required SettingsController settingsController,
   required ValueNotifier<String?> registersReturnDeviceId,
 }) {
+  final branchNavigatorKeys = [
+    GlobalKey<NavigatorState>(debugLabel: 'devicesBranch'),
+    GlobalKey<NavigatorState>(debugLabel: 'registersBranch'),
+    GlobalKey<NavigatorState>(debugLabel: 'trafficBranch'),
+    GlobalKey<NavigatorState>(debugLabel: 'settingsBranch'),
+  ];
+
   Future<void> openRegisters(
     BuildContext context,
     RegistersRouteArgs target,
@@ -63,9 +70,11 @@ GoRouter createAppRouter({
         builder: (context, state, navigationShell) => _ShellScaffold(
           navigationShell: navigationShell,
           registersReturnDeviceId: registersReturnDeviceId,
+          branchNavigatorKeys: branchNavigatorKeys,
         ),
         branches: [
           StatefulShellBranch(
+            navigatorKey: branchNavigatorKeys[0],
             routes: [
               GoRoute(
                 path: AppRoutes.devices,
@@ -103,6 +112,7 @@ GoRouter createAppRouter({
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: branchNavigatorKeys[1],
             routes: [
               GoRoute(
                 path: AppRoutes.registers,
@@ -115,6 +125,7 @@ GoRouter createAppRouter({
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: branchNavigatorKeys[2],
             routes: [
               GoRoute(
                 path: AppRoutes.traffic,
@@ -124,6 +135,7 @@ GoRouter createAppRouter({
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: branchNavigatorKeys[3],
             routes: [
               GoRoute(
                 path: AppRoutes.settings,
@@ -141,21 +153,26 @@ GoRouter createAppRouter({
 class _ShellScaffold extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
   final ValueNotifier<String?> registersReturnDeviceId;
+  final List<GlobalKey<NavigatorState>> branchNavigatorKeys;
 
   const _ShellScaffold({
     required this.navigationShell,
     required this.registersReturnDeviceId,
+    required this.branchNavigatorKeys,
   });
 
   void _onTap(int index) {
+    final isActiveTab = index == navigationShell.currentIndex;
     // Clear the "return to device" affordance whenever the user picks a tab
     // manually; cross-tab flows set it again as needed.
     registersReturnDeviceId.value = null;
+    if (isActiveTab) {
+      branchNavigatorKeys[index].currentState?.popUntil(
+        (route) => route.isFirst,
+      );
+    }
     // Re-tapping the active tab pops that branch back to its root.
-    navigationShell.goBranch(
-      index,
-      initialLocation: index == navigationShell.currentIndex,
-    );
+    navigationShell.goBranch(index, initialLocation: isActiveTab);
   }
 
   Future<void> _handlePop() async {

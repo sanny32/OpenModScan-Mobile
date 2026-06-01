@@ -1,16 +1,29 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:omodscan_mobile/features/devices/device_screen.dart';
 import 'package:omodscan_mobile/features/devices/devices_controller.dart';
+import 'package:omodscan_mobile/features/registers/register_detail_screen.dart';
+import 'package:omodscan_mobile/features/registers/registers_controller.dart';
+import 'package:omodscan_mobile/features/settings/settings_controller.dart';
+import 'package:omodscan_mobile/features/traffic/traffic_controller.dart';
+import 'package:omodscan_mobile/features/traffic/traffic_detail_screen.dart';
 import 'package:omodscan_mobile/l10n/l10n.dart';
 import 'package:omodscan_mobile/main.dart';
 import 'package:omodscan_mobile/models/app_settings.dart';
 import 'package:omodscan_mobile/models/device_info.dart';
+import 'package:omodscan_mobile/models/log_entry.dart';
+import 'package:omodscan_mobile/models/register_list.dart';
+import 'package:omodscan_mobile/navigation/app_router.dart';
+import 'package:omodscan_mobile/runtime/fakes/demo_runtime.dart';
 import 'package:omodscan_mobile/runtime/runtime_ports.dart';
 import 'package:omodscan_mobile/runtime/fakes/demo_fixtures.dart';
 import 'package:omodscan_mobile/services/discovered_device_list.dart';
 import 'package:omodscan_mobile/services/device_repository.dart';
 import 'package:omodscan_mobile/theme/app_theme.dart';
+import 'package:omodscan_mobile/utils/modbus_traffic_format.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers.dart';
@@ -61,6 +74,79 @@ void main() {
 
     expect(find.byType(DeviceScreen), findsNothing);
     expect(find.text('PLC #1'), findsOneWidget);
+  });
+
+  testWidgets('Tapping active Registers tab returns from register detail', (
+    WidgetTester tester,
+  ) async {
+    final routerBundle = _buildRouterBundle([
+      DeviceInfo(
+        id: 'register-detail-device',
+        name: 'Register Detail PLC',
+        host: '127.0.0.10',
+        port: 502,
+        protocol: ProtocolType.modbusTcp,
+        unitId: 1,
+        registerLists: [
+          RegisterList(
+            id: 'register-detail-list',
+            name: 'List 1',
+            count: 1,
+            autoRefresh: false,
+          ),
+        ],
+      ),
+    ]);
+    addTearDown(routerBundle.dispose);
+
+    await tester.pumpWidget(_routerHost(routerBundle.router));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.grid_on_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('40000'));
+    await tester.pumpAndSettle();
+    expect(find.byType(RegisterDetailScreen), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.grid_on));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(RegisterDetailScreen), findsNothing);
+    expect(find.text('40000'), findsOneWidget);
+  });
+
+  testWidgets('Tapping active Traffic tab returns from traffic detail', (
+    WidgetTester tester,
+  ) async {
+    final routerBundle = _buildRouterBundle(
+      [
+        DeviceInfo(
+          id: 'traffic-detail-device',
+          name: 'Traffic Detail PLC',
+          host: '127.0.0.11',
+          port: 502,
+          protocol: ProtocolType.modbusTcp,
+          unitId: 1,
+        ),
+      ],
+      trafficEntries: [_readTrafficResponse()],
+    );
+    addTearDown(routerBundle.dispose);
+
+    await tester.pumpWidget(_routerHost(routerBundle.router));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.list_alt_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('03 Read Holding Registers').first);
+    await tester.pumpAndSettle();
+    expect(find.byType(TrafficDetailScreen), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.list_alt));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TrafficDetailScreen), findsNothing);
+    expect(find.text('03 Read Holding Registers'), findsWidgets);
   });
 
   testWidgets('System back from another tab returns to the devices tab', (
@@ -271,6 +357,114 @@ void main() {
 
     expect(find.text('Name already exists'), findsNothing);
   });
+}
+
+Widget _routerHost(GoRouter router) => MaterialApp.router(
+  theme: AppTheme.lightTheme,
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  routerConfig: router,
+);
+
+_RouterBundle _buildRouterBundle(
+  List<DeviceInfo> devices, {
+  List<LogEntry> trafficEntries = const [],
+}) {
+  final repository = FakeDeviceRepository(devices);
+  final connections = PollingConnectionRuntime();
+  final registersReturnDeviceId = ValueNotifier<String?>(null);
+  final devicesController = DevicesController(
+    repository,
+    connections,
+    _IdleScanner(),
+    AppSettings.instance,
+  );
+  final registersController = RegistersController(
+    repository,
+    connections,
+    const DemoRegisterRuntime(enabled: false),
+    AppSettings.instance,
+  );
+  final trafficController = TrafficController(
+    repository,
+    connections,
+    _FakeTrafficLogs(trafficEntries),
+  );
+  final settingsController = SettingsController(AppSettings.instance);
+  final router = createAppRouter(
+    devicesController: devicesController,
+    registersController: registersController,
+    trafficController: trafficController,
+    settingsController: settingsController,
+    registersReturnDeviceId: registersReturnDeviceId,
+  );
+  return _RouterBundle(
+    router: router,
+    registersReturnDeviceId: registersReturnDeviceId,
+    devicesController: devicesController,
+    registersController: registersController,
+    trafficController: trafficController,
+    settingsController: settingsController,
+  );
+}
+
+LogEntry _readTrafficResponse() => buildTrafficLogEntry(
+  frame: Uint8List.fromList(const [
+    0x00,
+    0x07,
+    0x00,
+    0x00,
+    0x00,
+    0x07,
+    0x01,
+    0x03,
+    0x04,
+    0x00,
+    0x7B,
+    0x00,
+    0x2D,
+  ]),
+  direction: LogDirection.rx,
+  time: DateTime(2026, 5, 30, 7, 11, 19, 868),
+);
+
+class _RouterBundle {
+  final GoRouter router;
+  final ValueNotifier<String?> registersReturnDeviceId;
+  final DevicesController devicesController;
+  final RegistersController registersController;
+  final TrafficController trafficController;
+  final SettingsController settingsController;
+
+  const _RouterBundle({
+    required this.router,
+    required this.registersReturnDeviceId,
+    required this.devicesController,
+    required this.registersController,
+    required this.trafficController,
+    required this.settingsController,
+  });
+
+  void dispose() {
+    router.dispose();
+    registersReturnDeviceId.dispose();
+    devicesController.dispose();
+    registersController.dispose();
+    trafficController.dispose();
+    settingsController.dispose();
+  }
+}
+
+class _FakeTrafficLogs extends ChangeNotifier implements TrafficLogSource {
+  final List<LogEntry> entries;
+
+  _FakeTrafficLogs(this.entries);
+
+  @override
+  List<LogEntry> entriesFor(String? deviceId) => entries;
+
+  @override
+  void clear(String? deviceId) {}
 }
 
 class _IdleScanner extends ChangeNotifier implements DeviceScannerPort {
