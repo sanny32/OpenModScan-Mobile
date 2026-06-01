@@ -245,7 +245,6 @@ class RegistersController extends ChangeNotifier {
       address,
       addressBase: _settings.addressBaseStart,
     );
-    final previous = _runtimeValues[address]?.value;
     if (words.length == 1) {
       await _connectionRuntime.writeHoldingRegister(
         device,
@@ -261,7 +260,7 @@ class RegistersController extends ChangeNotifier {
     }
     // Read the value back from the device so the UI reflects its actual state
     // after the write, regardless of the auto-refresh setting.
-    var newValue = value;
+    var readBackWords = words;
     try {
       final readBack = await _connectionRuntime.readHoldingRegisters(
         device,
@@ -269,22 +268,32 @@ class RegistersController extends ChangeNotifier {
         count: words.length,
       );
       if (readBack.length == words.length) {
-        newValue = computeDisplayValue(
-          address,
-          typeName,
-          {for (var i = 0; i < readBack.length; i++) address + i: readBack[i]},
-          registerOrder: _settings.registerOrder,
-          byteOrder: _settings.byteOrder,
-        );
+        readBackWords = readBack;
       }
     } catch (_) {
-      // The write succeeded; keep the written value if the read-back fails.
+      // The write succeeded; keep the written words if the read-back fails.
     }
-    _runtimeValues[address] = (
-      value: newValue,
-      previous: previous,
-      readAt: DateTime.now(),
+    final rawMap = {
+      for (var i = 0; i < readBackWords.length; i++)
+        address + i: readBackWords[i],
+    };
+    final newValue = computeDisplayValue(
+      address,
+      typeName,
+      rawMap,
+      registerOrder: _settings.registerOrder,
+      byteOrder: _settings.byteOrder,
     );
+    final readAt = DateTime.now();
+    for (var i = 0; i < readBackWords.length; i++) {
+      final wordAddress = address + i;
+      final previous = _runtimeValues[wordAddress]?.value;
+      _runtimeValues[wordAddress] = (
+        value: readBackWords[i].toString(),
+        previous: previous,
+        readAt: readAt,
+      );
+    }
     notifyListeners();
     return newValue;
   }

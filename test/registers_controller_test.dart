@@ -8,6 +8,7 @@ import 'package:omodscan_mobile/navigation/navigation_targets.dart';
 import 'package:omodscan_mobile/runtime/fakes/demo_runtime.dart';
 import 'package:omodscan_mobile/runtime/runtime_ports.dart';
 import 'package:omodscan_mobile/services/device_repository.dart';
+import 'package:omodscan_mobile/utils/modbus_format.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -432,6 +433,125 @@ void main() {
     controller.dispose();
   });
 
+  test(
+    'typed single-word writes store read-back word in runtime values',
+    () async {
+      final cases = <({String typeName, String input})>[
+        (typeName: 'Int16', input: '-2'),
+        (typeName: 'Hex', input: '0x1234'),
+        (typeName: 'Binary', input: '0001 0010 0011 0100'),
+      ];
+
+      for (final entry in cases) {
+        final harness = await _writeHarness('single-${entry.typeName}');
+        final expectedWords = encodeRegisterValue(entry.typeName, entry.input);
+        harness.connections.holdingValues = expectedWords;
+
+        final displayValue = await harness.controller.writeValue(
+          40001,
+          entry.input,
+          entry.typeName,
+        );
+
+        expect(
+          harness.connections.lastWriteHoldingAddress,
+          1,
+          reason: entry.typeName,
+        );
+        expect(
+          harness.connections.lastWriteHoldingValue,
+          expectedWords.single,
+          reason: entry.typeName,
+        );
+        expect(
+          harness.connections.lastHoldingStartAddress,
+          1,
+          reason: entry.typeName,
+        );
+        expect(harness.connections.lastHoldingCount, 1, reason: entry.typeName);
+        expect(
+          displayValue,
+          computeDisplayValue(40001, entry.typeName, {
+            40001: expectedWords.single,
+          }),
+          reason: entry.typeName,
+        );
+        expect(
+          harness.controller.runtimeValues[40001]?.value,
+          '${expectedWords.single}',
+          reason: entry.typeName,
+        );
+
+        harness.controller.dispose();
+      }
+    },
+  );
+
+  test(
+    'typed multi-word writes store read-back words at every runtime address',
+    () async {
+      final cases = <({String typeName, String input})>[
+        (typeName: 'UInt32', input: '65538'),
+        (typeName: 'Int32', input: '-2'),
+        (typeName: 'Float32', input: '3.14'),
+        (typeName: 'UInt64', input: '4294967298'),
+        (typeName: 'Int64', input: '-2'),
+        (typeName: 'Float64', input: '3.14'),
+      ];
+
+      for (final entry in cases) {
+        final harness = await _writeHarness('multi-${entry.typeName}');
+        final expectedWords = encodeRegisterValue(entry.typeName, entry.input);
+        harness.connections.holdingValues = expectedWords;
+        final rawMap = {
+          for (var i = 0; i < expectedWords.length; i++)
+            40001 + i: expectedWords[i],
+        };
+
+        final displayValue = await harness.controller.writeValue(
+          40001,
+          entry.input,
+          entry.typeName,
+        );
+
+        expect(
+          harness.connections.lastWriteHoldingStartAddress,
+          1,
+          reason: entry.typeName,
+        );
+        expect(
+          harness.connections.lastWriteHoldingValues,
+          expectedWords,
+          reason: entry.typeName,
+        );
+        expect(
+          harness.connections.lastHoldingStartAddress,
+          1,
+          reason: entry.typeName,
+        );
+        expect(
+          harness.connections.lastHoldingCount,
+          expectedWords.length,
+          reason: entry.typeName,
+        );
+        expect(
+          displayValue,
+          computeDisplayValue(40001, entry.typeName, rawMap),
+          reason: entry.typeName,
+        );
+        for (var i = 0; i < expectedWords.length; i++) {
+          expect(
+            harness.controller.runtimeValues[40001 + i]?.value,
+            '${expectedWords[i]}',
+            reason: '${entry.typeName} word $i',
+          );
+        }
+
+        harness.controller.dispose();
+      }
+    },
+  );
+
   test('writes coil through connected runtime', () async {
     final repository = DeviceRepository.instance;
     final device = DeviceInfo(
@@ -566,6 +686,41 @@ void main() {
 
     controller.dispose();
   });
+}
+
+typedef _WriteHarness = ({
+  RegistersController controller,
+  _TestConnectionRuntime connections,
+});
+
+Future<_WriteHarness> _writeHarness(String idSuffix) async {
+  final repository = DeviceRepository.instance;
+  final device = DeviceInfo(
+    id: 'device-write-$idSuffix',
+    name: 'PLC Write $idSuffix',
+    host: '127.0.0.23',
+    port: 502,
+    protocol: ProtocolType.modbusTcp,
+    unitId: 1,
+    registerLists: [RegisterList(id: 'list-write-$idSuffix', name: 'List 1')],
+  );
+  await repository.replaceAll([device]);
+
+  final connections = _TestConnectionRuntime();
+  await connections.connect(device);
+  final controller = RegistersController(
+    repository,
+    connections,
+    const DemoRegisterRuntime(enabled: false),
+    AppSettings.instance,
+  );
+  await controller.selectTarget(
+    RegistersRouteArgs(
+      deviceId: 'device-write-$idSuffix',
+      registerListId: 'list-write-$idSuffix',
+    ),
+  );
+  return (controller: controller, connections: connections);
 }
 
 class _TestConnectionRuntime implements ConnectionRuntime {
