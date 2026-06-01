@@ -134,6 +134,7 @@ class RegisterRow extends StatelessWidget {
                   child: Text(
                     entry.comment ?? '',
                     style: tt.bodyMedium!.copyWith(color: cs.onSurface),
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),

@@ -79,6 +79,7 @@ class StatusRow extends StatelessWidget {
               child: Text(
                 entry.comment,
                 style: tt.bodyMedium,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
