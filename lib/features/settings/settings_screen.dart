@@ -4,17 +4,12 @@ import '../../models/app_settings.dart';
 import '../../models/device_info.dart';
 import '../../models/modbus_scan.dart';
 import '../../services/backup_service.dart';
+import '../../widgets/app_switch.dart';
 import 'settings_controller.dart';
 import 'about_screen.dart';
 import 'widgets/setting_value_sheets.dart';
 
-enum _SettingsSection {
-  connection,
-  networkScanner,
-  readWrite,
-  log,
-  appearance,
-}
+enum _SettingsSection { connection, networkScanner, readWrite, log, appearance }
 
 class SettingsScreen extends StatefulWidget {
   final SettingsController controller;
@@ -250,11 +245,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _divider(),
         _navTile(
           icon: Icons.warning_amber_outlined,
-          label: 'Read failure attempts',
+          label: l10n.settingsReadFailureAttempts,
           value: '${_s.readFailureAttempts}',
           onTap: () => showSettingChoiceSheet(
             context,
-            title: 'Read failure attempts',
+            title: l10n.settingsReadFailureAttempts,
             options: AppSettings.readFailureAttemptOptions
                 .map((value) => '$value')
                 .toList(),
@@ -437,11 +432,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _divider(),
         _navTile(
           icon: Icons.pin_outlined,
-          label: 'AddressBase',
+          label: l10n.settingsAddressBase,
           value: _s.addressBase,
           onTap: () => showSettingChoiceSheet(
             context,
-            title: 'AddressBase',
+            title: l10n.settingsAddressBase,
             options: AppSettings.addressBases,
             selected: _s.addressBase,
             onSelected: widget.controller.setAddressBase,
@@ -608,11 +603,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
-    return SwitchListTile(
-      secondary: Icon(icon, color: Theme.of(context).colorScheme.primary),
+    return ListTile(
+      leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
       title: Text(label),
-      value: value,
-      onChanged: onChanged,
+      trailing: AppSwitch(value: value, onChanged: onChanged),
+      onTap: () => onChanged(!value),
     );
   }
 
@@ -726,10 +721,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final result = await widget.controller.exportBackup(
       dialogTitle: l10n.settingsBackupExport,
     );
-    _showBackupResult(
-      result,
-      successMessage: l10n.settingsBackupExportSuccess,
-    );
+    _showBackupResult(result, successMessage: l10n.settingsBackupExportSuccess);
   }
 
   void _confirmImportBackup() {
@@ -761,10 +753,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final result = await widget.controller.importBackup(
       dialogTitle: l10n.settingsBackupImport,
     );
-    _showBackupResult(
-      result,
-      successMessage: l10n.settingsBackupImportSuccess,
-    );
+    _showBackupResult(result, successMessage: l10n.settingsBackupImportSuccess);
   }
 
   void _showBackupResult(
@@ -776,6 +765,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final message = result == BackupResult.success
         ? successMessage
         : l10n.settingsBackupFailure;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

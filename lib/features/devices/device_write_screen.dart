@@ -12,6 +12,7 @@ import '../../widgets/connection_info_bar.dart';
 import '../../widgets/data_layout.dart';
 import '../../widgets/error_feedback.dart';
 import '../../widgets/section_card.dart';
+import '../../widgets/segmented_button_style.dart';
 import 'devices_controller.dart';
 
 enum _WriteMode { register, coil }
@@ -350,7 +351,7 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
           ],
           const SizedBox(height: 16),
           SegmentedButton<_WriteMode>(
-            style: _modeSegmentedButtonStyle(context),
+            style: appSegmentedButtonStyle(context),
             segments: [
               ButtonSegment(
                 value: _WriteMode.register,
@@ -389,10 +390,7 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
                 if (isRegister) ...[
                   DropdownButtonFormField<String>(
                     initialValue: _typeName,
-                    decoration: _inputDecoration(
-                      context,
-                      labelText: l10n.writeDataType,
-                    ),
+                    decoration: InputDecoration(labelText: l10n.writeDataType),
                     dropdownColor: cs.surface,
                     items: [
                       for (final type in kRegisterTypes)
@@ -413,8 +411,7 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
                   controller: _addressCtrl,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: _inputDecoration(
-                    context,
+                  decoration: InputDecoration(
                     labelText: l10n.colAddress,
                     errorText: _addressError,
                   ),
@@ -424,8 +421,7 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
                   TextField(
                     controller: _valueCtrl,
                     keyboardType: _valueKeyboardType,
-                    decoration: _inputDecoration(
-                      context,
+                    decoration: InputDecoration(
                       labelText: l10n.colValue,
                       errorText: _valueError,
                     ),
@@ -480,7 +476,7 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
           if (!_connected) ...[
             const SizedBox(height: 18),
             Text(
-              '${_device.name} is not connected.',
+              l10n.deviceNotConnected(_device.name),
               style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
             ),
           ],
@@ -580,64 +576,3 @@ class _ResultSection extends StatelessWidget {
 String _formatWords(List<int> words) => words
     .map((word) => '0x${word.toRadixString(16).toUpperCase().padLeft(4, '0')}')
     .join(', ');
-
-InputDecoration _inputDecoration(
-  BuildContext context, {
-  required String labelText,
-  String? helperText,
-  String? errorText,
-}) {
-  final cs = Theme.of(context).colorScheme;
-  return InputDecoration(
-    labelText: labelText,
-    helperText: helperText,
-    errorText: errorText,
-    floatingLabelBehavior: FloatingLabelBehavior.auto,
-    filled: true,
-    fillColor: cs.surfaceContainerHighest,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(color: cs.outline.withAlpha(0)),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(color: cs.primary, width: 1.4),
-    ),
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(color: cs.error),
-    ),
-    focusedErrorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(color: cs.error, width: 1.4),
-    ),
-  );
-}
-
-ButtonStyle _modeSegmentedButtonStyle(BuildContext context) {
-  final cs = Theme.of(context).colorScheme;
-  final tt = Theme.of(context).textTheme;
-  return ButtonStyle(
-    backgroundColor: WidgetStateProperty.resolveWith((states) {
-      if (states.contains(WidgetState.selected)) return cs.primary;
-      return cs.surface;
-    }),
-    foregroundColor: WidgetStateProperty.resolveWith((states) {
-      if (states.contains(WidgetState.selected)) return cs.onPrimary;
-      return cs.onSurface;
-    }),
-    iconColor: WidgetStateProperty.resolveWith((states) {
-      if (states.contains(WidgetState.selected)) return cs.onPrimary;
-      return cs.onSurfaceVariant;
-    }),
-    side: WidgetStatePropertyAll(BorderSide(color: cs.outline)),
-    shape: WidgetStatePropertyAll(
-      RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-    ),
-    textStyle: WidgetStatePropertyAll(
-      tt.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-    ),
-    visualDensity: VisualDensity.compact,
-  );
-}

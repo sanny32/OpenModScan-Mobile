@@ -304,7 +304,6 @@ Future<void> _showWriteRegisterDialog(
               decoration: InputDecoration(
                 labelText: l10n.labelNewValue,
                 errorText: error,
-                border: const OutlineInputBorder(),
                 isDense: true,
               ),
               onChanged: (_) {

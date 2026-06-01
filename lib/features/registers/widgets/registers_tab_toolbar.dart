@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
-import 'register_segmented_button_style.dart';
+import '../../../widgets/segmented_button_style.dart';
 
 class RegistersTabToolbar extends StatelessWidget {
   final Widget? leading;
@@ -41,7 +41,7 @@ class RegistersTabToolbar extends StatelessWidget {
             selected: {selectedSegment},
             onSelectionChanged: (selection) =>
                 onSegmentChanged(selection.first),
-            style: registerSegmentedButtonStyle(context),
+            style: appSegmentedButtonStyle(context),
           ),
           const Spacer(),
           ElevatedButton.icon(

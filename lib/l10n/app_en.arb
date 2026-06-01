@@ -725,6 +725,22 @@
   "settingsSummaryResetAndAbout": "Reset & About",
   "@settingsSummaryResetAndAbout": {},
 
+  "labelCurrentValue": "Current value",
+  "@labelCurrentValue": {},
+
+  "settingsReadFailureAttempts": "Read failure attempts",
+  "@settingsReadFailureAttempts": {},
+
+  "settingsAddressBase": "AddressBase",
+  "@settingsAddressBase": {},
+
+  "deviceNotConnected": "{name} is not connected.",
+  "@deviceNotConnected": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
   "settingsValueMs": "{value} ms",
   "@settingsValueMs": {
     "placeholders": {

@@ -205,7 +205,9 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
     final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final ctrl = TextEditingController(text: _displayValueForType(_selectedType));
+    final ctrl = TextEditingController(
+      text: _displayValueForType(_selectedType),
+    );
     String? error;
     var writing = false;
 
@@ -251,7 +253,6 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                 decoration: InputDecoration(
                   labelText: l10n.labelNewValue,
                   errorText: error,
-                  border: const OutlineInputBorder(),
                   isDense: true,
                 ),
                 onChanged: (_) {
@@ -387,14 +388,6 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
             fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            iconSize: 24,
-            onPressed: () {},
-          ),
-          const SizedBox(width: 2),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(8, 6, 8, 92),
@@ -409,14 +402,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'CURRENT VALUE',
-                        style: tt.titleSmall!.copyWith(
-                          color: cs.onSurfaceVariant,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
+                      SectionHeader(l10n.labelCurrentValue),
                       const Spacer(),
                       if (entry.timestamp != null)
                         Row(
@@ -665,7 +651,7 @@ class _InterpretationRow extends StatelessWidget {
         Material(
           color: selected
               ? cs.primary.withValues(alpha: 0.08)
-              : cs.surface.withValues(alpha: 0),
+              : Colors.transparent,
           child: InkWell(
             onTap: onTap,
             child: SizedBox(
@@ -858,10 +844,7 @@ class _CommentDialogState extends State<_CommentDialog> {
         controller: widget.ctrl,
         autofocus: true,
         maxLines: null,
-        decoration: InputDecoration(
-          hintText: l10n.commentHint,
-          border: const OutlineInputBorder(),
-        ),
+        decoration: InputDecoration(hintText: l10n.commentHint),
       ),
       actions: [
         TextButton(

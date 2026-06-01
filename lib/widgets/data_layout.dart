@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
+import '../theme/app_dimens.dart';
 import 'segmented_button_style.dart';
 
 /// Tappable "MSRF · Direct ▾" chip shown in a section header. Opens the data
@@ -24,10 +25,10 @@ class DataLayoutChip extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
 
     return Material(
-      color: cs.surface.withValues(alpha: 0),
-      borderRadius: BorderRadius.circular(6),
+      color: Colors.transparent,
+      borderRadius: AppRadii.smAll,
       child: InkWell(
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: AppRadii.smAll,
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(8, 4, 4, 4),

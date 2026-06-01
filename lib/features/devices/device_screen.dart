@@ -520,10 +520,7 @@ class _NotesDialogState extends State<_NotesDialog> {
         controller: _ctrl,
         autofocus: true,
         maxLines: null,
-        decoration: InputDecoration(
-          hintText: l10n.notesHint,
-          border: const OutlineInputBorder(),
-        ),
+        decoration: InputDecoration(hintText: l10n.notesHint),
       ),
       actions: [
         TextButton(

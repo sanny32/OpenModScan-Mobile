@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_dimens.dart';
+
 ButtonStyle appSegmentedButtonStyle(BuildContext context) {
   final cs = Theme.of(context).colorScheme;
   final tt = Theme.of(context).textTheme;
@@ -9,9 +11,7 @@ ButtonStyle appSegmentedButtonStyle(BuildContext context) {
     visualDensity: VisualDensity.compact,
     padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 12)),
     shape: const WidgetStatePropertyAll(
-      RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(6)),
-      ),
+      RoundedRectangleBorder(borderRadius: AppRadii.mdAll),
     ),
     backgroundColor: WidgetStateProperty.resolveWith((states) {
       if (states.contains(WidgetState.selected)) return cs.primary;

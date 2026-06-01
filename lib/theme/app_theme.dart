@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_dimens.dart';
+
 /// App-specific semantic colours — adapt to light/dark theme.
 @immutable
 class AppColors extends ThemeExtension<AppColors> {
@@ -174,6 +176,32 @@ class AppTheme {
     labelSmall: TextStyle(fontSize: 11),
   );
 
+  // Single filled-input look shared by every TextField/Dropdown: no resting
+  // border, primary focus ring, error ring. Per-theme colours are passed in.
+  static InputDecorationTheme _inputDecorationTheme({
+    required Color fillColor,
+    required Color hintColor,
+    required Color primary,
+    required Color error,
+  }) {
+    OutlineInputBorder border(Color color, double width) => OutlineInputBorder(
+      borderRadius: AppRadii.mdAll,
+      borderSide: width == 0
+          ? BorderSide.none
+          : BorderSide(color: color, width: width),
+    );
+    return InputDecorationTheme(
+      filled: true,
+      fillColor: fillColor,
+      hintStyle: TextStyle(color: hintColor),
+      border: border(primary, 0),
+      enabledBorder: border(primary, 0),
+      focusedBorder: border(primary, 1.4),
+      errorBorder: border(error, 1),
+      focusedErrorBorder: border(error, 1.4),
+    );
+  }
+
   static final SwitchThemeData _switchTheme = SwitchThemeData(
     thumbColor: WidgetStateProperty.resolveWith(
       (s) => s.contains(WidgetState.selected) ? _primary : Colors.grey,
@@ -199,11 +227,15 @@ class AppTheme {
       onSurfaceVariant: Colors.grey,
       outline: Color(0xFF3A3A3A),
     ),
-    cardTheme: const CardThemeData(
-      color: Color(0xFF1E1E1E),
-      elevation: 0,
+    cardTheme: CardThemeData(
+      // Matches OutlinedCard: surface fill, hairline border, faint shadow, r12.
+      color: const Color(0xFF1E1E1E),
+      elevation: 1,
+      shadowColor: Colors.black.withValues(alpha: 0.16),
+      surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderRadius: AppRadii.lgAll,
+        side: BorderSide(color: const Color(0xFF3A3A3A).withValues(alpha: 0.7)),
       ),
       margin: EdgeInsets.zero,
     ),
@@ -228,14 +260,11 @@ class AppTheme {
       thickness: 1,
       space: 1,
     ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
+    inputDecorationTheme: _inputDecorationTheme(
       fillColor: const Color(0xFF252525),
-      hintStyle: const TextStyle(color: Colors.grey),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide.none,
-      ),
+      hintColor: Colors.grey,
+      primary: _primary,
+      error: const Color(0xFFEF5350),
     ),
     switchTheme: _switchTheme,
     extensions: const [AppColors.dark],
@@ -255,11 +284,17 @@ class AppTheme {
       onSurfaceVariant: Color(0xFF757575),
       outline: Color(0xFFE0E0E0),
     ),
-    cardTheme: const CardThemeData(
+    cardTheme: CardThemeData(
+      // Matches OutlinedCard: surface fill, hairline border, faint shadow, r12.
       color: Colors.white,
-      elevation: 0,
+      elevation: 1,
+      shadowColor: Colors.black.withValues(alpha: 0.03),
+      surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderRadius: AppRadii.lgAll,
+        side: BorderSide(
+          color: const Color(0xFFE0E0E0).withValues(alpha: 0.28),
+        ),
       ),
       margin: EdgeInsets.zero,
     ),
@@ -290,14 +325,11 @@ class AppTheme {
       thickness: 1,
       space: 1,
     ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
+    inputDecorationTheme: _inputDecorationTheme(
       fillColor: const Color(0xFFF0F0F5),
-      hintStyle: const TextStyle(color: Color(0xFF757575)),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide.none,
-      ),
+      hintColor: const Color(0xFF757575),
+      primary: _primary,
+      error: const Color(0xFFD32F2F),
     ),
     switchTheme: _switchTheme,
     extensions: const [AppColors.light],

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_dimens.dart';
+
 /// Uppercase section label used above cards (e.g. "CURRENT VALUE").
 class SectionHeader extends StatelessWidget {
   final String title;
@@ -46,7 +48,7 @@ class OutlinedCard extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: cs.surface,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: AppRadii.lgAll,
         border: Border.all(
           color: cs.outline.withValues(alpha: isDark ? 0.7 : 0.28),
         ),

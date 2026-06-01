@@ -5,6 +5,7 @@ import '../../l10n/l10n.dart';
 import '../../models/log_entry.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/modbus_traffic_format.dart';
+import '../../widgets/section_card.dart';
 
 /// Full breakdown of a single captured Modbus frame: MBAP header, decoded PDU
 /// fields and the raw hex dump. Opened by tapping a row on the traffic screen.
@@ -36,7 +37,10 @@ class TrafficDetailScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(info?.functionLabel ?? entry.function, style: tt.titleMedium),
+        title: Text(
+          info?.functionLabel ?? entry.function,
+          style: tt.titleMedium,
+        ),
         actions: [
           if (hasFrame)
             IconButton(
@@ -83,10 +87,17 @@ class TrafficDetailScreen extends StatelessWidget {
                 _Card(
                   child: Column(
                     children: [
-                      _InfoRow(l10n.trafficTransactionId, _hex16(info!.transactionId)),
+                      _InfoRow(
+                        l10n.trafficTransactionId,
+                        _hex16(info!.transactionId),
+                      ),
                       _InfoRow(l10n.trafficProtocolId, _hex16(info.protocolId)),
                       _InfoRow(l10n.trafficLength, '${info.length ?? '—'}'),
-                      _InfoRow(l10n.trafficUnitId, '${info.unitId ?? '—'}', last: true),
+                      _InfoRow(
+                        l10n.trafficUnitId,
+                        '${info.unitId ?? '—'}',
+                        last: true,
+                      ),
                     ],
                   ),
                 ),
@@ -96,8 +107,14 @@ class TrafficDetailScreen extends StatelessWidget {
                 _Card(
                   child: Column(
                     children: [
-                      _InfoRow(l10n.trafficFunctionCode, _functionCodeText(info)),
-                      _InfoRow(l10n.colDirection, isTx ? l10n.filterTx : l10n.filterRx),
+                      _InfoRow(
+                        l10n.trafficFunctionCode,
+                        _functionCodeText(info),
+                      ),
+                      _InfoRow(
+                        l10n.colDirection,
+                        isTx ? l10n.filterTx : l10n.filterRx,
+                      ),
                       _InfoRow(l10n.colTime, entry.time, last: true),
                     ],
                   ),
@@ -195,25 +212,10 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      width: double.infinity,
+    // Shares the single OutlinedCard surface style; keeps the tighter vertical
+    // padding the info rows were laid out around.
+    return OutlinedCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: cs.outline.withValues(alpha: isDark ? 0.7 : 0.28),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withValues(alpha: isDark ? 0.16 : 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
       child: child,
     );
   }
@@ -256,7 +258,9 @@ class _InfoRow extends StatelessWidget {
       decoration: BoxDecoration(
         border: last
             ? null
-            : Border(bottom: BorderSide(color: cs.outline.withValues(alpha: 0.18))),
+            : Border(
+                bottom: BorderSide(color: cs.outline.withValues(alpha: 0.18)),
+              ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
