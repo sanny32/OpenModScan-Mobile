@@ -200,6 +200,11 @@ class _ScanSheetState extends State<ScanSheet> {
           // and updates as the user drags it. Reserve 68pt for the action button
           // pinned below the list (top padding 8 + button 44 + bottom padding 16).
           const buttonAreaHeight = 68.0;
+          const headerActionWidth = 104.0;
+          final headerActionStyle = TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          );
           return Container(
             decoration: BoxDecoration(
               color: cs.surface,
@@ -225,9 +230,16 @@ class _ScanSheetState extends State<ScanSheet> {
                   ),
                   child: Row(
                     children: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(l10n.cancel),
+                      SizedBox(
+                        width: headerActionWidth,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: headerActionStyle,
+                            child: Text(l10n.cancel, maxLines: 1),
+                          ),
+                        ),
                       ),
                       Expanded(
                         child: Text(
@@ -237,14 +249,18 @@ class _ScanSheetState extends State<ScanSheet> {
                         ),
                       ),
                       SizedBox(
-                        width: 72,
+                        width: headerActionWidth,
                         child:
                             controller.scannerState != ScannerStateView.scanning
                             ? Align(
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
                                   onPressed: _clearResults,
-                                  child: Text(l10n.devicesClearDiscovered),
+                                  style: headerActionStyle,
+                                  child: Text(
+                                    l10n.devicesClearDiscovered,
+                                    maxLines: 1,
+                                  ),
                                 ),
                               )
                             : null,
