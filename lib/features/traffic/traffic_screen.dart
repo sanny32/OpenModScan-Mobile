@@ -7,9 +7,12 @@ import '../../utils/modbus_traffic_format.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/connection_info_bar.dart';
 import '../../widgets/connection_status_chip.dart';
+import '../../widgets/device_select_sheet.dart';
 import '../../widgets/error_feedback.dart';
 import 'traffic_controller.dart';
 import 'traffic_detail_screen.dart';
+
+enum _TrafficMenuAction { clearTraffic, selectDevice }
 
 class TrafficScreen extends StatefulWidget {
   final TrafficController controller;
@@ -28,6 +31,24 @@ class _TrafficScreenState extends State<TrafficScreen> {
 
   void _clearTraffic() {
     widget.controller.clearTraffic();
+  }
+
+  void _handleMenu(_TrafficMenuAction action) {
+    switch (action) {
+      case _TrafficMenuAction.clearTraffic:
+        _clearTraffic();
+      case _TrafficMenuAction.selectDevice:
+        _showSelectDeviceSheet();
+    }
+  }
+
+  Future<void> _showSelectDeviceSheet() async {
+    final selected = await showDeviceSelectSheet(
+      context,
+      devices: widget.controller.connectedDevices,
+      selectedId: _selectedDevice?.id,
+    );
+    if (selected != null) widget.controller.selectDevice(selected);
   }
 
   Future<void> _toggleSelectedConnection() async {
@@ -59,9 +80,7 @@ class _TrafficScreenState extends State<TrafficScreen> {
     if (widget.controller.autoScroll) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _scrollController.hasClients) {
-          _scrollController.jumpTo(
-            _scrollController.position.maxScrollExtent,
-          );
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
         }
       });
     }
@@ -112,12 +131,12 @@ class _TrafficScreenState extends State<TrafficScreen> {
                   : l10n.connect,
               onPressed: _connectionBusy ? null : _toggleSelectedConnection,
             ),
-          PopupMenuButton<String>(
+          PopupMenuButton<_TrafficMenuAction>(
             icon: const Icon(Icons.more_vert),
-            onSelected: widget.controller.selectDevice,
+            onSelected: _handleMenu,
             itemBuilder: (context) => [
-              PopupMenuItem<String>(
-                onTap: _clearTraffic,
+              PopupMenuItem(
+                value: _TrafficMenuAction.clearTraffic,
                 child: Row(
                   children: [
                     Icon(
@@ -130,24 +149,19 @@ class _TrafficScreenState extends State<TrafficScreen> {
                   ],
                 ),
               ),
-              if (widget.controller.connectedDevices.isNotEmpty)
+              if (widget.controller.connectedDevices.isNotEmpty) ...[
                 const PopupMenuDivider(),
-              ...widget.controller.connectedDevices.map(
-                (d) => PopupMenuItem<String>(
-                  value: d.id,
+                PopupMenuItem(
+                  value: _TrafficMenuAction.selectDevice,
                   child: Row(
                     children: [
                       Icon(Icons.memory, size: 18, color: cs.onSurfaceVariant),
                       const SizedBox(width: 10),
-                      Text(d.name),
-                      if (d.id == selected?.id) ...[
-                        const Spacer(),
-                        Icon(Icons.check, size: 16, color: cs.primary),
-                      ],
+                      Text(l10n.menuSelectDevice),
                     ],
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ],

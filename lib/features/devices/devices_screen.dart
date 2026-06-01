@@ -468,16 +468,16 @@ class _ScanNetworkDock extends StatelessWidget {
         AppSpacing.screenGutter,
         12,
       ),
-      child: OutlinedButton.icon(
+      child: FilledButton.icon(
         icon: Icon(scanning ? Icons.travel_explore : Icons.sensors, size: 24),
         label: Text(
           scanning ? l10n.devicesScanningTitle : l10n.devicesScanNetwork,
         ),
         onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
+        style: FilledButton.styleFrom(
           minimumSize: const Size(double.infinity, 52),
-          side: BorderSide(color: cs.primary),
-          foregroundColor: cs.primary,
+          backgroundColor: cs.primary,
+          foregroundColor: cs.onPrimary,
           textStyle: tt.titleSmall,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),

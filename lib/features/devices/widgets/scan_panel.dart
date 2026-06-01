@@ -52,11 +52,10 @@ class DiscoveredDevicesPreview extends StatelessWidget {
       if (countWithoutFooter >= discoveredDevices.length) {
         visibleCount = discoveredDevices.length;
       } else {
-        visibleCount =
-            ((space - footerWithGap) / rowHeight).floor().clamp(
-              1,
-              discoveredDevices.length,
-            );
+        visibleCount = ((space - footerWithGap) / rowHeight).floor().clamp(
+          1,
+          discoveredDevices.length,
+        );
       }
     } else {
       visibleCount = MediaQuery.sizeOf(context).height >= 900 ? 2 : 1;
@@ -239,8 +238,8 @@ class _ScanSheetState extends State<ScanSheet> {
                       ),
                       SizedBox(
                         width: 72,
-                        child: controller.scannerState !=
-                                ScannerStateView.scanning
+                        child:
+                            controller.scannerState != ScannerStateView.scanning
                             ? Align(
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
@@ -292,6 +291,8 @@ class _ScanSheetState extends State<ScanSheet> {
                         ? controller.stopScan
                         : controller.startScan,
                     color: cs.primary,
+                    filled:
+                        controller.scannerState != ScannerStateView.scanning,
                   ),
                 ),
               ],
@@ -384,16 +385,38 @@ class _ScanActionButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
   final Color color;
+  final bool filled;
 
   const _ScanActionButton({
     required this.icon,
     required this.label,
     required this.onPressed,
     required this.color,
+    required this.filled,
   });
 
   @override
   Widget build(BuildContext context) {
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+    );
+    final textStyle = Theme.of(context).textTheme.titleSmall;
+
+    if (filled) {
+      return FilledButton.icon(
+        icon: Icon(icon, size: 24),
+        label: Text(label),
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(double.infinity, 44),
+          backgroundColor: color,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          textStyle: textStyle,
+          shape: shape,
+        ),
+      );
+    }
+
     return OutlinedButton.icon(
       icon: Icon(icon, size: 24),
       label: Text(label),
@@ -402,8 +425,8 @@ class _ScanActionButton extends StatelessWidget {
         minimumSize: const Size(double.infinity, 44),
         side: BorderSide(color: color),
         foregroundColor: color,
-        textStyle: Theme.of(context).textTheme.titleSmall,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        textStyle: textStyle,
+        shape: shape,
       ),
     );
   }
@@ -419,14 +442,14 @@ class _ScanNetworkButton extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
-    return OutlinedButton.icon(
+    return FilledButton.icon(
       icon: const Icon(Icons.sensors, size: 24),
       label: Text(l10n.devicesScanNetwork),
       onPressed: onStart,
-      style: OutlinedButton.styleFrom(
+      style: FilledButton.styleFrom(
         minimumSize: const Size(double.infinity, 52),
-        side: BorderSide(color: cs.primary),
-        foregroundColor: cs.primary,
+        backgroundColor: cs.primary,
+        foregroundColor: cs.onPrimary,
         textStyle: tt.titleSmall,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
@@ -510,7 +533,9 @@ class _ScanningCard extends StatelessWidget {
       maxVisible = maxVisible.clamp(1, discoveredDevices.length);
     }
 
-    final visibleDiscoveredDevices = discoveredDevices.take(maxVisible).toList();
+    final visibleDiscoveredDevices = discoveredDevices
+        .take(maxVisible)
+        .toList();
     final hiddenDiscoveredCount =
         discoveredDevices.length - visibleDiscoveredDevices.length;
 
@@ -638,6 +663,7 @@ class _ScanningCard extends StatelessWidget {
                 label: l10n.devicesScanStop,
                 onPressed: onStop!,
                 color: cs.primary,
+                filled: false,
               ),
             ],
             if (completed && onRestart != null) ...[
@@ -647,6 +673,7 @@ class _ScanningCard extends StatelessWidget {
                 label: l10n.devicesScanNetwork,
                 onPressed: onRestart!,
                 color: cs.primary,
+                filled: true,
               ),
             ],
           ],

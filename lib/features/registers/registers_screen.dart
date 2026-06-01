@@ -13,6 +13,7 @@ import '../../services/modbus_client.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/connection_info_bar.dart';
 import '../../widgets/connection_status_chip.dart';
+import '../../widgets/device_select_sheet.dart';
 import '../../widgets/error_feedback.dart';
 import '../../utils/modbus_format.dart';
 import '../../widgets/type_badge.dart';
@@ -229,31 +230,10 @@ class _RegistersScreenState extends State<RegistersScreen>
   }
 
   Future<void> _showSelectDeviceDialog() async {
-    final l10n = context.l10n;
-    final cs = Theme.of(context).colorScheme;
-    final connected = widget.controller.connectedDevices;
-
-    final selected = await showDialog<String>(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: Text(l10n.menuSelectDevice),
-        children: connected
-            .map(
-              (d) => SimpleDialogOption(
-                onPressed: () => Navigator.pop(ctx, d.id),
-                child: Row(
-                  children: [
-                    Icon(Icons.memory, size: 20, color: cs.onSurfaceVariant),
-                    const SizedBox(width: 12),
-                    Expanded(child: Text(d.name)),
-                    if (d.id == widget.controller.selectedDeviceId)
-                      Icon(Icons.check, size: 18, color: cs.primary),
-                  ],
-                ),
-              ),
-            )
-            .toList(),
-      ),
+    final selected = await showDeviceSelectSheet(
+      context,
+      devices: widget.controller.connectedDevices,
+      selectedId: widget.controller.selectedDeviceId,
     );
 
     if (selected != null && selected != widget.controller.selectedDeviceId) {
