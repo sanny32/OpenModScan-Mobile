@@ -246,28 +246,32 @@ class _TrafficScreenState extends State<TrafficScreen> {
           ),
           Divider(height: 1, color: dividerColor),
           Expanded(
-            child: ListView.separated(
+            child: Scrollbar(
               controller: _scrollController,
-              itemCount: entries.length,
-              separatorBuilder: (_, _) =>
-                  Divider(height: 1, color: dividerColor),
-              itemBuilder: (context, i) {
-                final entry = entries[i];
-                // Entries without a decodable frame (e.g. errors) have no
-                // breakdown to show, so they are not tappable.
-                if (frameForEntry(entry).isEmpty) {
-                  return _LogRow(entry: entry);
-                }
-                return InkWell(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => TrafficDetailScreen(entry: entry),
+              thumbVisibility: false,
+              child: ListView.separated(
+                controller: _scrollController,
+                itemCount: entries.length,
+                separatorBuilder: (_, _) =>
+                    Divider(height: 1, color: dividerColor),
+                itemBuilder: (context, i) {
+                  final entry = entries[i];
+                  // Entries without a decodable frame (e.g. errors) have no
+                  // breakdown to show, so they are not tappable.
+                  if (frameForEntry(entry).isEmpty) {
+                    return _LogRow(entry: entry);
+                  }
+                  return InkWell(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => TrafficDetailScreen(entry: entry),
+                      ),
                     ),
-                  ),
-                  child: _LogRow(entry: entry),
-                );
-              },
+                    child: _LogRow(entry: entry),
+                  );
+                },
+              ),
             ),
           ),
           Container(

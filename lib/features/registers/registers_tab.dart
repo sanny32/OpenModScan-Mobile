@@ -74,6 +74,7 @@ class _RegistersTabState extends State<_RegistersTab> {
   var _reading = false;
   var _manualReadInProgress = false;
   final _expandedRegisterGroups = <int>{};
+  final ScrollController _scrollController = ScrollController();
   Timer? _autoRefreshTimer;
 
   void _onCtrlChanged() => setState(() {});
@@ -120,6 +121,7 @@ class _RegistersTabState extends State<_RegistersTab> {
   void dispose() {
     widget.startAddrCtrl.removeListener(_onCtrlChanged);
     widget.countCtrl.removeListener(_onCtrlChanged);
+    _scrollController.dispose();
     _autoRefreshTimer?.cancel();
     super.dispose();
   }
@@ -369,34 +371,40 @@ class _RegistersTabState extends State<_RegistersTab> {
         ),
         Divider(height: 1, color: dividerColor),
         Expanded(
-          child: ListView.separated(
-            itemCount: displayItems.length,
-            separatorBuilder: (_, _) => Divider(height: 1, color: dividerColor),
-            itemBuilder: (context, i) {
-              final item = displayItems[i];
-              return RegisterRow(
-                entry: item.entry,
-                canWrite: addressType.canWrite,
-                groupWordCount: item.wordCount,
-                groupExpanded: _expandedRegisterGroups.contains(
-                  item.entry.address,
-                ),
-                onGroupExpansionToggled: item.isGroup
-                    ? () {
-                        setState(() {
-                          final address = item.entry.address;
-                          if (!_expandedRegisterGroups.add(address)) {
-                            _expandedRegisterGroups.remove(address);
-                          }
-                        });
-                      }
-                    : null,
-                onEntryChanged: widget.onEntryChanged,
-                onValueWritten: widget.onValueWritten,
-                valuesListenable: widget.valuesListenable,
-                liveValueAt: widget.liveValueAt,
-              );
-            },
+          child: Scrollbar(
+            controller: _scrollController,
+            thumbVisibility: false,
+            child: ListView.separated(
+              controller: _scrollController,
+              itemCount: displayItems.length,
+              separatorBuilder: (_, _) =>
+                  Divider(height: 1, color: dividerColor),
+              itemBuilder: (context, i) {
+                final item = displayItems[i];
+                return RegisterRow(
+                  entry: item.entry,
+                  canWrite: addressType.canWrite,
+                  groupWordCount: item.wordCount,
+                  groupExpanded: _expandedRegisterGroups.contains(
+                    item.entry.address,
+                  ),
+                  onGroupExpansionToggled: item.isGroup
+                      ? () {
+                          setState(() {
+                            final address = item.entry.address;
+                            if (!_expandedRegisterGroups.add(address)) {
+                              _expandedRegisterGroups.remove(address);
+                            }
+                          });
+                        }
+                      : null,
+                  onEntryChanged: widget.onEntryChanged,
+                  onValueWritten: widget.onValueWritten,
+                  valuesListenable: widget.valuesListenable,
+                  liveValueAt: widget.liveValueAt,
+                );
+              },
+            ),
           ),
         ),
         Container(
