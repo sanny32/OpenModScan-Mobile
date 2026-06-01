@@ -232,8 +232,9 @@ class _RegistersScreenState extends State<RegistersScreen>
   Future<void> _showSelectDeviceDialog() async {
     final selected = await showDeviceSelectSheet(
       context,
-      devices: widget.controller.connectedDevices,
+      devices: widget.controller.devices,
       selectedId: widget.controller.selectedDeviceId,
+      isConnected: widget.controller.isConnected,
     );
 
     if (selected != null && selected != widget.controller.selectedDeviceId) {

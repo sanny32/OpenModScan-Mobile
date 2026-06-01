@@ -34,6 +34,8 @@ class TrafficController extends ChangeNotifier {
       ? null
       : _repository.findById(_selectedDeviceId!);
 
+  List<DeviceInfo> get devices => _repository.snapshot;
+
   List<DeviceInfo> get connectedDevices =>
       _repository.snapshot.where(_connectionRuntime.isConnected).toList();
 

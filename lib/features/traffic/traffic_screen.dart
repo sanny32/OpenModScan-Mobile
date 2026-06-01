@@ -45,8 +45,9 @@ class _TrafficScreenState extends State<TrafficScreen> {
   Future<void> _showSelectDeviceSheet() async {
     final selected = await showDeviceSelectSheet(
       context,
-      devices: widget.controller.connectedDevices,
+      devices: widget.controller.devices,
       selectedId: _selectedDevice?.id,
+      isConnected: widget.controller.isConnected,
     );
     if (selected != null) widget.controller.selectDevice(selected);
   }
@@ -149,7 +150,7 @@ class _TrafficScreenState extends State<TrafficScreen> {
                   ],
                 ),
               ),
-              if (widget.controller.connectedDevices.isNotEmpty) ...[
+              if (widget.controller.devices.isNotEmpty) ...[
                 const PopupMenuDivider(),
                 PopupMenuItem(
                   value: _TrafficMenuAction.selectDevice,
