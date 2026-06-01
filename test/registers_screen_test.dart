@@ -1279,6 +1279,63 @@ void main() {
     await _disposeRegistersHarness(tester, harness);
   });
 
+  testWidgets('Registers tab ignores configs from another register type', (
+    WidgetTester tester,
+  ) async {
+    final harness = await _pumpRegistersHarness(
+      tester,
+      RegisterList(
+        id: 'mixed-type-config-list',
+        name: 'Mixed Type Config List',
+        startAddress: 0,
+        count: 1,
+        autoRefresh: false,
+        entries: [
+          RegisterConfig(address: 30000, comment: 'Input comment'),
+          RegisterConfig(address: 40000, comment: 'Holding comment'),
+        ],
+      ),
+    );
+
+    expect(find.text('40000'), findsOneWidget);
+    expect(find.text('Holding comment'), findsOneWidget);
+    expect(find.text('Input comment'), findsNothing);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Registers tab rebases visible addresses in one-based mode', (
+    WidgetTester tester,
+  ) async {
+    await AppSettings.instance.setAddressBase('1-based');
+
+    final harness = await _pumpRegistersHarness(
+      tester,
+      RegisterList(
+        id: 'one-based-start-list',
+        name: 'One Based Start List',
+        startAddress: 0,
+        count: 2,
+        autoRefresh: false,
+        entries: [
+          RegisterConfig(address: 40001, comment: 'Offset one comment'),
+        ],
+      ),
+    );
+
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is TextField && widget.controller?.text == '1',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('40001'), findsOneWidget);
+    expect(find.text('40002'), findsOneWidget);
+    expect(find.text('Offset one comment'), findsOneWidget);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
   testWidgets('Register list groups UInt32 tail register by default', (
     WidgetTester tester,
   ) async {

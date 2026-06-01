@@ -23,14 +23,46 @@ enum RegisterAddressType {
   bool get supportsStatusRead => isBit;
 
   int toModbusAddress(int displayAddress, {int addressBase = 1}) {
-    final firstDisplayAddress = displayOffset + addressBase;
     if (addressBase < 0 || addressBase > 1) {
       throw RangeError.value(addressBase, 'addressBase');
     }
+    final firstDisplayAddress = displayOffset + addressBase;
     if (displayAddress < firstDisplayAddress) {
       throw RangeError.value(displayAddress, 'displayAddress');
     }
     return displayAddress - firstDisplayAddress;
+  }
+
+  int toDisplayAddress(int modbusAddress, {int addressBase = 1}) {
+    if (addressBase < 0 || addressBase > 1) {
+      throw RangeError.value(addressBase, 'addressBase');
+    }
+    if (modbusAddress < 0) {
+      throw RangeError.value(modbusAddress, 'modbusAddress');
+    }
+    return displayOffset + addressBase + modbusAddress;
+  }
+
+  int toCanonicalAddress(int displayAddress, {int addressBase = 1}) =>
+      displayOffset + toModbusAddress(displayAddress, addressBase: addressBase);
+
+  int canonicalAddressToDisplay(int canonicalAddress, {int addressBase = 1}) {
+    final modbusAddress = toModbusAddress(canonicalAddress, addressBase: 0);
+    return toDisplayAddress(modbusAddress, addressBase: addressBase);
+  }
+
+  int? tryCanonicalAddressToDisplay(
+    int canonicalAddress, {
+    int addressBase = 1,
+  }) {
+    try {
+      return canonicalAddressToDisplay(
+        canonicalAddress,
+        addressBase: addressBase,
+      );
+    } on RangeError {
+      return null;
+    }
   }
 
   static RegisterAddressType fromCode(

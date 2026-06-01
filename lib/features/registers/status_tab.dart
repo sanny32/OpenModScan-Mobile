@@ -220,10 +220,17 @@ class _StatusTabState extends State<_StatusTab> {
       for (final e in widget.referenceStatuses(startAddress, count))
         e.address: e,
     };
-    final configByAddress = {
-      for (final e in widget.registerList.statusEntries)
-        if (e.statusType == widget.statusType) e.address: e,
-    };
+    final configByAddress = <int, StatusConfig>{};
+    for (final entry in widget.registerList.statusEntries) {
+      if (entry.statusType != widget.statusType) continue;
+      final displayAddress = _addressType.tryCanonicalAddressToDisplay(
+        entry.address,
+        addressBase: minStart,
+      );
+      if (displayAddress != null) {
+        configByAddress[displayAddress] = entry;
+      }
+    }
     final visibleStatuses = List.generate(count, (i) {
       final address = startAddress + i;
       final reference = references[address];

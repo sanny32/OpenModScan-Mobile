@@ -78,7 +78,8 @@ class _RegisterListDialogState extends State<_RegisterListDialog> {
   int _startAddress() {
     final minStart = AppSettings.instance.addressBaseStart;
     final value = int.tryParse(_startCtrl.text) ?? minStart;
-    return value < minStart ? minStart : value;
+    final displayStart = value < minStart ? minStart : value;
+    return displayStart - minStart;
   }
 
   int _count() {

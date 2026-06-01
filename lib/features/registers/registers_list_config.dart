@@ -30,19 +30,19 @@ class _ListConfig {
   int get coilRefreshIntervalMs => data.coilRefreshIntervalMs;
 
   _ListConfig(this.data, {this.onChanged}) {
-    final minStart = AppSettings.instance.addressBaseStart;
-    if (data.startAddress < minStart) data.startAddress = minStart;
-    if (data.coilStartAddress < minStart) data.coilStartAddress = minStart;
+    final addressBaseStart = AppSettings.instance.addressBaseStart;
     if (data.count < 1) data.count = 20;
     if (data.coilCount < 1) data.coilCount = 20;
 
-    startAddrCtrl = TextEditingController(text: data.startAddress.toString());
+    startAddrCtrl = TextEditingController(
+      text: (data.startAddress + addressBaseStart).toString(),
+    );
     countCtrl = TextEditingController(text: data.count.toString());
     refreshIntervalCtrl = TextEditingController(
       text: data.refreshIntervalMs.toString(),
     );
     coilStartAddrCtrl = TextEditingController(
-      text: data.coilStartAddress.toString(),
+      text: (data.coilStartAddress + addressBaseStart).toString(),
     );
     coilCountCtrl = TextEditingController(text: data.coilCount.toString());
     coilRefreshIntervalCtrl = TextEditingController(
@@ -52,7 +52,8 @@ class _ListConfig {
     startAddrCtrl.addListener(() {
       final minStart = AppSettings.instance.addressBaseStart;
       final value = int.tryParse(startAddrCtrl.text) ?? minStart;
-      data.startAddress = value < minStart ? minStart : value;
+      final displayStart = value < minStart ? minStart : value;
+      data.startAddress = displayStart - minStart;
       onChanged?.call(data);
     });
     countCtrl.addListener(() {
@@ -73,7 +74,8 @@ class _ListConfig {
     coilStartAddrCtrl.addListener(() {
       final minStart = AppSettings.instance.addressBaseStart;
       final value = int.tryParse(coilStartAddrCtrl.text) ?? minStart;
-      data.coilStartAddress = value < minStart ? minStart : value;
+      final displayStart = value < minStart ? minStart : value;
+      data.coilStartAddress = displayStart - minStart;
       onChanged?.call(data);
     });
     coilCountCtrl.addListener(() {

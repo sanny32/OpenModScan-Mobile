@@ -80,6 +80,7 @@ class AppSettings {
 
   final showLastValuesNotifier = ValueNotifier<bool>(true);
   final showTypeBadgesNotifier = ValueNotifier<bool>(false);
+  final addressBaseNotifier = ValueNotifier<String>(addressBases.first);
   final themeModeNotifier = ValueNotifier<ThemeMode>(ThemeMode.system);
   final localeNotifier = ValueNotifier<Locale?>(null);
 
@@ -106,7 +107,7 @@ class AppSettings {
     readFailureAttempts = _store.getInt(_readFailureAttemptsKey) ?? 3;
     defaultUnitId = _store.getInt(_defaultUnitIdKey) ?? 1;
     defaultReadQty = _store.getInt(_defaultReadQtyKey) ?? 20;
-    addressBase = _store.getString(_addressBaseKey) ?? addressBases.first;
+    _setAddressBaseValue(_store.getString(_addressBaseKey));
     registerOrder = _store.getString(_registerOrderKey) ?? registerOrders.first;
     byteOrder = _store.getString(_byteOrderKey) ?? byteOrders.first;
     writeEnabled = _store.getBool(_writeEnabledKey) ?? true;
@@ -115,7 +116,11 @@ class AppSettings {
     showTypeBadgesNotifier.value = _store.getBool(_showTypeBadgesKey) ?? false;
     saveLogToFile = _store.getBool(_saveLogToFileKey) ?? false;
     clearLogOnDisconnect = _store.getBool(_clearLogOnDisconnectKey) ?? false;
-    maxLogEntries = _clampInt(_store.getInt(_maxLogEntriesKey) ?? 1000, 50, 100000);
+    maxLogEntries = _clampInt(
+      _store.getInt(_maxLogEntriesKey) ?? 1000,
+      50,
+      100000,
+    );
     scanProtocol = _protocolFromValue(_store.getString(_scanProtocolKey));
     scanSubnetPrefix = _clampInt(
       _store.getInt(_scanSubnetPrefixKey) ?? 24,
@@ -199,7 +204,7 @@ class AppSettings {
   }
 
   Future<void> setAddressBase(String value) async {
-    addressBase = value;
+    _setAddressBaseValue(value);
     await _saveEditableValues();
   }
 
@@ -304,7 +309,7 @@ class AppSettings {
     readFailureAttempts = 3;
     defaultUnitId = 1;
     defaultReadQty = 20;
-    addressBase = addressBases.first;
+    _setAddressBaseValue(addressBases.first);
     registerOrder = registerOrders.first;
     byteOrder = byteOrders.first;
     writeEnabled = true;
@@ -381,17 +386,22 @@ class AppSettings {
     );
     readFailureAttempts =
         read<int>(_readFailureAttemptsKey) ?? readFailureAttempts;
-    defaultUnitId = _clampInt(read<int>(_defaultUnitIdKey) ?? defaultUnitId, 1, 247);
+    defaultUnitId = _clampInt(
+      read<int>(_defaultUnitIdKey) ?? defaultUnitId,
+      1,
+      247,
+    );
     defaultReadQty = _clampInt(
       read<int>(_defaultReadQtyKey) ?? defaultReadQty,
       1,
       125,
     );
-    addressBase = read<String>(_addressBaseKey) ?? addressBase;
+    _setAddressBaseValue(read<String>(_addressBaseKey) ?? addressBase);
     registerOrder = read<String>(_registerOrderKey) ?? registerOrder;
     byteOrder = read<String>(_byteOrderKey) ?? byteOrder;
     writeEnabled = read<bool>(_writeEnabledKey) ?? writeEnabled;
-    confirmBeforeWrite = read<bool>(_confirmBeforeWriteKey) ?? confirmBeforeWrite;
+    confirmBeforeWrite =
+        read<bool>(_confirmBeforeWriteKey) ?? confirmBeforeWrite;
     showLastValues = read<bool>(_showLastValuesKey) ?? showLastValues;
     showTypeBadges = read<bool>(_showTypeBadgesKey) ?? showTypeBadges;
     saveLogToFile = read<bool>(_saveLogToFileKey) ?? saveLogToFile;
@@ -413,7 +423,11 @@ class AppSettings {
       1,
       65535,
     );
-    scanPortEnd = _clampInt(read<int>(_scanPortEndKey) ?? scanPortEnd, 1, 65535);
+    scanPortEnd = _clampInt(
+      read<int>(_scanPortEndKey) ?? scanPortEnd,
+      1,
+      65535,
+    );
     scanUnitIdStart = _clampInt(
       read<int>(_scanUnitIdStartKey) ?? scanUnitIdStart,
       1,
@@ -447,6 +461,11 @@ class AppSettings {
     await _saveEditableValues();
     await _setThemeMode(_themeModeFromValue(read<String>(_themeModeKey)));
     await _setLocale(_localeFromValue(read<String>(_localeKey)));
+  }
+
+  void _setAddressBaseValue(String? value) {
+    addressBase = addressBases.contains(value) ? value! : addressBases.first;
+    addressBaseNotifier.value = addressBase;
   }
 
   Future<void> _saveEditableValues() async {

@@ -151,7 +151,8 @@ class _RegistersTabState extends State<_RegistersTab> {
       return;
     }
 
-    final offset = _regTypeOffset(widget.regType);
+    final addressType = RegisterAddressType.fromCode(widget.regType);
+    final offset = addressType.displayOffset;
     final minStart = AppSettings.instance.addressBaseStart;
     final parsedStart = int.tryParse(widget.startAddrCtrl.text) ?? minStart;
     final rawStart = parsedStart < minStart ? minStart : parsedStart;
@@ -208,7 +209,8 @@ class _RegistersTabState extends State<_RegistersTab> {
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
     final dividerColor = Theme.of(context).dividerTheme.color ?? cs.outline;
-    final offset = _regTypeOffset(widget.regType);
+    final addressType = RegisterAddressType.fromCode(widget.regType);
+    final offset = addressType.displayOffset;
     final minStart = AppSettings.instance.addressBaseStart;
     final parsedStart = int.tryParse(widget.startAddrCtrl.text) ?? minStart;
     final rawStart = parsedStart < minStart ? minStart : parsedStart;
@@ -220,9 +222,16 @@ class _RegistersTabState extends State<_RegistersTab> {
       for (final e in widget.referenceRegisters(startAddr, count + 3))
         e.address: e,
     };
-    final configByAddress = {
-      for (final e in widget.registerList.entries) e.address: e,
-    };
+    final configByAddress = <int, RegisterConfig>{};
+    for (final entry in widget.registerList.entries) {
+      final displayAddress = addressType.tryCanonicalAddressToDisplay(
+        entry.address,
+        addressBase: minStart,
+      );
+      if (displayAddress != null) {
+        configByAddress[displayAddress] = entry;
+      }
+    }
     // Build raw uint16 map for visible + 3 extra addresses (needed for 64-bit types).
     final rawInts = <int, int>{};
     final previousRawInts = <int, int>{};
@@ -367,7 +376,7 @@ class _RegistersTabState extends State<_RegistersTab> {
               final item = displayItems[i];
               return RegisterRow(
                 entry: item.entry,
-                canWrite: RegisterAddressType.fromCode(widget.regType).canWrite,
+                canWrite: addressType.canWrite,
                 groupWordCount: item.wordCount,
                 groupExpanded: _expandedRegisterGroups.contains(
                   item.entry.address,

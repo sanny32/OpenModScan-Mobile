@@ -54,6 +54,50 @@ void main() {
     controller.dispose();
   });
 
+  test(
+    'stores register config as zero-based canonical display address',
+    () async {
+      await AppSettings.instance.setAddressBase('1-based');
+      final repository = DeviceRepository.instance;
+      await repository.replaceAll([
+        DeviceInfo(
+          id: 'device-canonical-config',
+          name: 'PLC Canonical Config',
+          host: '127.0.0.22',
+          port: 502,
+          protocol: ProtocolType.modbusTcp,
+          unitId: 1,
+          registerLists: [RegisterList(id: 'list-canonical', name: 'List 1')],
+        ),
+      ]);
+      final controller = RegistersController(
+        repository,
+        _TestConnectionRuntime(),
+        DemoRegisterRuntime(),
+        AppSettings.instance,
+      );
+
+      await controller.selectTarget(
+        const RegistersRouteArgs(
+          deviceId: 'device-canonical-config',
+          registerListId: 'list-canonical',
+        ),
+      );
+      await controller.updateEntry(40001, 'UInt16', 'First register');
+
+      final entry = repository
+          .findById('device-canonical-config')!
+          .registerLists
+          .single
+          .entries
+          .single;
+      expect(entry.address, 40000);
+      expect(entry.comment, 'First register');
+
+      controller.dispose();
+    },
+  );
+
   test('setAllTypes still writes multi-word types to every address', () async {
     final repository = DeviceRepository.instance;
     await repository.replaceAll([

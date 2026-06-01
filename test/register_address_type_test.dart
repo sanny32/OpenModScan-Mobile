@@ -47,6 +47,45 @@ void main() {
     expect(RegisterAddressType.coils.toModbusAddress(1, addressBase: 0), 1);
   });
 
+  test(
+    'converts Modbus offsets and canonical addresses to display addresses',
+    () {
+      expect(
+        RegisterAddressType.holdingRegisters.toDisplayAddress(
+          0,
+          addressBase: 0,
+        ),
+        40000,
+      );
+      expect(RegisterAddressType.holdingRegisters.toDisplayAddress(0), 40001);
+      expect(
+        RegisterAddressType.holdingRegisters.canonicalAddressToDisplay(
+          40001,
+          addressBase: 1,
+        ),
+        40002,
+      );
+      expect(
+        RegisterAddressType.holdingRegisters.toCanonicalAddress(
+          40001,
+          addressBase: 1,
+        ),
+        40000,
+      );
+    },
+  );
+
+  test('safe canonical conversion ignores addresses from another type', () {
+    expect(
+      RegisterAddressType.holdingRegisters.tryCanonicalAddressToDisplay(30000),
+      isNull,
+    );
+    expect(
+      RegisterAddressType.holdingRegisters.tryCanonicalAddressToDisplay(40000),
+      40001,
+    );
+  });
+
   test('rejects addresses below configured base', () {
     expect(
       () => RegisterAddressType.holdingRegisters.toModbusAddress(40000),

@@ -1,8 +1,5 @@
 part of 'registers_screen.dart';
 
-int _regTypeOffset(String regType) =>
-    RegisterAddressType.fromCode(regType).displayOffset;
-
 String _formatTimestamp(DateTime value) => formatModbusTime(value);
 
 String _formatDate(DateTime value) => formatModbusDate(value);

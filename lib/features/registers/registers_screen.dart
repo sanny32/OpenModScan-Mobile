@@ -99,6 +99,7 @@ class _RegistersScreenState extends State<RegistersScreen>
         })
         .join(',');
     return '${widget.controller.selectedDeviceId}:'
+        '${AppSettings.instance.addressBaseStart}:'
         '$listsSignature:'
         '${widget.controller.activeList?.id}';
   }

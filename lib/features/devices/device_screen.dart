@@ -553,10 +553,7 @@ class _RegisterListTile extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final offset = _regTypeOffset(list.regType);
     final minStart = AppSettings.instance.addressBaseStart;
-    final startAddress = list.startAddress < minStart
-        ? minStart
-        : list.startAddress;
-    final start = offset + startAddress;
+    final start = offset + minStart + list.startAddress;
     final end = start + list.count - 1;
     return Card(
       margin: const EdgeInsets.only(bottom: 6),

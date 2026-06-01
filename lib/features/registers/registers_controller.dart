@@ -31,6 +31,7 @@ class RegistersController extends ChangeNotifier {
   ) {
     _repository.devices.addListener(_onRepositoryChanged);
     _connectionRuntime.connectedDeviceIds.addListener(_forwardChange);
+    _settings.addressBaseNotifier.addListener(_onAddressBaseChanged);
     _selectFallbackDevice();
   }
 
@@ -159,10 +160,19 @@ class RegistersController extends ChangeNotifier {
     final device = selectedDevice;
     final list = activeList;
     if (device == null || list == null) return;
+    final addressType = RegisterAddressType.fromCode(list.regType);
+    final canonicalAddress = addressType.toCanonicalAddress(
+      address,
+      addressBase: _settings.addressBaseStart,
+    );
     await _repository.upsertRegisterConfig(
       device.id,
       list.id,
-      RegisterConfig(address: address, typeName: typeName, comment: comment),
+      RegisterConfig(
+        address: canonicalAddress,
+        typeName: typeName,
+        comment: comment,
+      ),
     );
   }
 
@@ -194,10 +204,22 @@ class RegistersController extends ChangeNotifier {
     final device = selectedDevice;
     final list = activeList;
     if (device == null || list == null) return;
+    final addressType = RegisterAddressType.fromCode(
+      statusType,
+      fallback: RegisterAddressType.coils,
+    );
+    final canonicalAddress = addressType.toCanonicalAddress(
+      address,
+      addressBase: _settings.addressBaseStart,
+    );
     await _repository.upsertStatusConfig(
       device.id,
       list.id,
-      StatusConfig(statusType: statusType, address: address, comment: comment),
+      StatusConfig(
+        statusType: statusType,
+        address: canonicalAddress,
+        comment: comment,
+      ),
     );
   }
 
@@ -250,9 +272,7 @@ class RegistersController extends ChangeNotifier {
         newValue = computeDisplayValue(
           address,
           typeName,
-          {
-            for (var i = 0; i < readBack.length; i++) address + i: readBack[i],
-          },
+          {for (var i = 0; i < readBack.length; i++) address + i: readBack[i]},
           registerOrder: _settings.registerOrder,
           byteOrder: _settings.byteOrder,
         );
@@ -441,10 +461,17 @@ class RegistersController extends ChangeNotifier {
 
   void _forwardChange() => notifyListeners();
 
+  void _onAddressBaseChanged() {
+    _runtimeValues.clear();
+    _runtimeStatusValues.clear();
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _repository.devices.removeListener(_onRepositoryChanged);
     _connectionRuntime.connectedDeviceIds.removeListener(_forwardChange);
+    _settings.addressBaseNotifier.removeListener(_onAddressBaseChanged);
     super.dispose();
   }
 }
