@@ -52,10 +52,7 @@ void main() {
     expect(scanner.discoveredDevices.devices, isEmpty);
     expect(scanner.scannedCount, scanner.totalCount);
     expect(scanner.state, ScannerStateView.done);
-    await Future<void>.delayed(const Duration(milliseconds: 1100));
-    expect(scanner.state, ScannerStateView.idle);
-    expect(scanner.scannedCount, 0);
-    expect(scanner.totalCount, 0);
+    expect(scanner.totalCount, 2);
   });
 
   test('successful Modbus TCP probe adds a discovered device', () async {

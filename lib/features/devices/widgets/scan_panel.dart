@@ -517,6 +517,13 @@ class _ScanningCard extends StatelessWidget {
         : completed
         ? 100
         : (progress * 100).clamp(0, 99).floor();
+    final progressValue = total == 0
+        ? completed
+              ? 0.0
+              : null
+        : completed
+        ? 1.0
+        : progress.clamp(0.0, 0.99).toDouble();
     // The success check pops in liveColor on completion; everything structural
     // (progress bar, percentage) stays in the primary green so the card reads
     // as one coherent palette rather than two competing greens.
@@ -616,11 +623,7 @@ class _ScanningCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(99),
                     child: LinearProgressIndicator(
                       minHeight: 8,
-                      value: total == 0
-                          ? null
-                          : completed
-                          ? 1.0
-                          : progress.clamp(0.0, 0.99).toDouble(),
+                      value: progressValue,
                       color: cs.primary,
                       backgroundColor: cs.surfaceContainerHighest,
                     ),

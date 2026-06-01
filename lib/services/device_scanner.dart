@@ -142,9 +142,6 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
     if (generation != _scanGeneration) return;
     _state = _cancelled ? ScannerStateView.idle : ScannerStateView.done;
     notifyListeners();
-    if (!_cancelled && discoveredDevices.isEmpty) {
-      _resetEmptyScanAfterDelay(generation);
-    }
   }
 
   @override
@@ -177,22 +174,6 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
       return;
     }
     _lastProgressNotify = now;
-    notifyListeners();
-  }
-
-  Future<void> _resetEmptyScanAfterDelay(int generation) async {
-    await Future<void>.delayed(const Duration(seconds: 1));
-    if (generation != _scanGeneration ||
-        _state != ScannerStateView.done ||
-        !discoveredDevices.isEmpty) {
-      return;
-    }
-    _scanned = 0;
-    _total = 0;
-    _scanCidr = null;
-    _scanStartedAt = null;
-    _scanProtocol = null;
-    _state = ScannerStateView.idle;
     notifyListeners();
   }
 
