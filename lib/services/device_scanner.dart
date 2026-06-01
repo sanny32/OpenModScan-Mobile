@@ -8,9 +8,17 @@ import 'discovered_device_list.dart';
 import 'modbus_discovery_probe.dart';
 import 'network_scan_subnet.dart';
 
-typedef NetworkInterfacesProvider = Future<List<NetworkInterface>> Function();
+typedef NetworkInterfacesProvider =
+    Future<List<ScanNetworkInterface>> Function();
 typedef ScanHostsProvider =
     Future<List<String>> Function(DeviceScanRequest request);
+
+class ScanNetworkInterface {
+  final String name;
+  final List<InternetAddress> addresses;
+
+  const ScanNetworkInterface({required this.name, required this.addresses});
+}
 
 class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
   static final DeviceScanner instance = DeviceScanner();
@@ -25,10 +33,19 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
     this.scanHostsProvider,
   }) : _networkInterfacesProvider =
            networkInterfacesProvider ??
-           (() => NetworkInterface.list(
-             type: InternetAddressType.IPv4,
-             includeLoopback: false,
-           )) {
+           (() async {
+             final interfaces = await NetworkInterface.list(
+               type: InternetAddressType.IPv4,
+               includeLoopback: false,
+             );
+             return [
+               for (final interface in interfaces)
+                 ScanNetworkInterface(
+                   name: interface.name,
+                   addresses: interface.addresses,
+                 ),
+             ];
+           }) {
     discoveredDevices.addListener(notifyListeners);
   }
 
@@ -70,6 +87,27 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
 
   @override
   ProtocolType? get scanProtocol => _scanProtocol;
+
+  Future<List<String>> availableSubnetCidrs({required int prefix}) async {
+    final interfaces = await _networkInterfacesProvider().catchError(
+      (_) => const <ScanNetworkInterface>[],
+    );
+    final privateCandidates = _interfaceIpv4Candidates(interfaces)
+        .where((candidate) => isPrivateIpv4(candidate.address.address))
+        .toList(growable: false);
+    privateCandidates.sort((a, b) {
+      final aWifi = _isWifiInterface(a.interfaceName);
+      final bWifi = _isWifiInterface(b.interfaceName);
+      if (aWifi == bWifi) return 0;
+      return aWifi ? -1 : 1;
+    });
+
+    final cidrs = <String>{};
+    for (final candidate in privateCandidates) {
+      cidrs.add(Ipv4Subnet.fromAddress(candidate.address.address, prefix).cidr);
+    }
+    return cidrs.toList(growable: false);
+  }
 
   @override
   Future<void> startScan(DeviceScanRequest request) async {
@@ -182,6 +220,13 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
     if (customHosts != null) {
       return customHosts(request);
     }
+    final customSubnet = request.subnetCidr == null
+        ? null
+        : Ipv4Subnet.tryParse(request.subnetCidr!);
+    if (customSubnet != null) {
+      _scanCidr = customSubnet.cidr;
+      return customSubnet.hosts();
+    }
     final currentAddress = await _currentIpv4Address().catchError((_) => null);
     if (currentAddress == null) return const [];
     final subnet = Ipv4Subnet.fromAddress(currentAddress, request.subnetPrefix);
@@ -191,14 +236,36 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
 
   Future<String?> _currentIpv4Address() async {
     final interfaces = await _networkInterfacesProvider();
-    final addresses = [
-      for (final interface in interfaces)
-        for (final address in interface.addresses)
-          if (isUsableIpv4(address)) address.address,
-    ];
-    if (addresses.isEmpty) return null;
-    return addresses.firstWhere(isPrivateIpv4, orElse: () => addresses.first);
+    final candidates = _interfaceIpv4Candidates(interfaces);
+    if (candidates.isEmpty) return null;
+
+    final privateCandidates = candidates
+        .where((candidate) => isPrivateIpv4(candidate.address.address))
+        .toList(growable: false);
+
+    for (final candidate in privateCandidates) {
+      if (_isWifiInterface(candidate.interfaceName)) {
+        return candidate.address.address;
+      }
+    }
+
+    if (privateCandidates.isNotEmpty) {
+      return privateCandidates.first.address.address;
+    }
+
+    return candidates.first.address.address;
   }
+}
+
+List<_InterfaceIpv4> _interfaceIpv4Candidates(
+  List<ScanNetworkInterface> interfaces,
+) {
+  return [
+    for (final interface in interfaces)
+      for (final address in interface.addresses)
+        if (isUsableIpv4(address))
+          _InterfaceIpv4(interfaceName: interface.name, address: address),
+  ];
 }
 
 class _ScanJob {
@@ -206,4 +273,19 @@ class _ScanJob {
   final int port;
 
   const _ScanJob({required this.host, required this.port});
+}
+
+class _InterfaceIpv4 {
+  final String interfaceName;
+  final InternetAddress address;
+
+  const _InterfaceIpv4({required this.interfaceName, required this.address});
+}
+
+bool _isWifiInterface(String name) {
+  final normalized = name.toLowerCase();
+  return normalized == 'en0' ||
+      normalized.startsWith('wlan') ||
+      normalized.startsWith('wifi') ||
+      normalized.contains('wi-fi');
 }

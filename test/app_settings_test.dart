@@ -70,6 +70,7 @@ void main() {
     await settings.resetToDefaults();
 
     expect(settings.scanProtocol, ProtocolType.modbusTcp);
+    expect(settings.scanSubnetCidr, isEmpty);
     expect(settings.scanSubnetPrefix, 24);
     expect(settings.scanPortStart, 502);
     expect(settings.scanPortEnd, 502);
@@ -83,6 +84,7 @@ void main() {
     expect(settings.confirmBeforeWrite, isFalse);
 
     await settings.setScanProtocol(ProtocolType.modbusRtuIp);
+    await settings.setScanSubnetCidr('192.168.88.16/24');
     await settings.setScanSubnetPrefix(20);
     await settings.setScanPortRange(503, 502);
     await settings.setScanUnitIdRange(12, 3);
@@ -93,6 +95,7 @@ void main() {
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('scanProtocol'), 'modbusRtuIp');
+    expect(prefs.getString('scanSubnetCidr'), '192.168.88.0/24');
     expect(prefs.getInt('scanSubnetPrefix'), 20);
     expect(prefs.getInt('scanPortStart'), 502);
     expect(prefs.getInt('scanPortEnd'), 503);
@@ -104,11 +107,18 @@ void main() {
     expect(prefs.getInt('scanConcurrency'), 256);
 
     await settings.load();
+    expect(settings.scanSubnetCidr, '192.168.88.0/24');
     expect(settings.scanConnectTimeout, 50);
     expect(settings.scanConcurrency, 256);
 
+    await settings.setScanSubnetCidr('not a cidr');
+    expect(settings.scanSubnetCidr, '192.168.88.0/24');
+    await settings.setScanSubnetCidr('');
+    expect(settings.scanSubnetCidr, isEmpty);
+
     await settings.resetToDefaults();
     expect(settings.scanProtocol, ProtocolType.modbusTcp);
+    expect(settings.scanSubnetCidr, isEmpty);
     expect(settings.scanPortStart, 502);
     expect(settings.scanPortEnd, 502);
     expect(settings.scanUnitIdStart, 1);
@@ -182,6 +192,7 @@ void main() {
     await source.setWriteEnabled(false);
     await source.setConfirmBeforeWrite(true);
     await source.setShowTypeBadges(true);
+    await source.setScanSubnetCidr('10.20.30.40/24');
     await source.setScanSubnetPrefix(20);
     await source.setScanPortRange(100, 200);
     await source.setScanUnitIdRange(2, 8);
@@ -209,6 +220,7 @@ void main() {
     expect(target.writeEnabled, isFalse);
     expect(target.confirmBeforeWrite, isTrue);
     expect(target.showTypeBadges, isTrue);
+    expect(target.scanSubnetCidr, '10.20.30.0/24');
     expect(target.scanSubnetPrefix, 20);
     expect(target.scanPortStart, 100);
     expect(target.scanPortEnd, 200);
@@ -227,11 +239,13 @@ void main() {
     final settings = AppSettings.withStore(store);
 
     await settings.setWriteEnabled(false);
+    await settings.setScanSubnetCidr('192.168.1.42/24');
     await settings.setScanSubnetPrefix(20);
     await settings.setByteOrder('Swapped');
 
     // Values land in the store, not in SharedPreferences.
     expect(store.values['writeEnabled'], isFalse);
+    expect(store.values['scanSubnetCidr'], '192.168.1.0/24');
     expect(store.values['scanSubnetPrefix'], 20);
     expect(store.values['byteOrder'], 'Swapped');
 
@@ -240,6 +254,7 @@ void main() {
     await reloaded.load();
     expect(store.loaded, isTrue);
     expect(reloaded.writeEnabled, isFalse);
+    expect(reloaded.scanSubnetCidr, '192.168.1.0/24');
     expect(reloaded.scanSubnetPrefix, 20);
     expect(reloaded.byteOrder, 'Swapped');
   });

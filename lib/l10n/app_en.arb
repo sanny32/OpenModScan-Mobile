@@ -572,6 +572,12 @@
   "settingsScanProtocol": "Scan Protocol",
   "@settingsScanProtocol": {},
 
+  "settingsScanSubnetCidr": "Scan subnet",
+  "@settingsScanSubnetCidr": {},
+
+  "settingsScanSubnetAuto": "Auto (Wi-Fi)",
+  "@settingsScanSubnetAuto": {},
+
   "settingsScanSubnetPrefix": "Current subnet mask",
   "@settingsScanSubnetPrefix": {},
 

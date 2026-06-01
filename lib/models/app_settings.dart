@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/settings_store.dart';
+import '../services/network_scan_subnet.dart';
 import 'device_info.dart';
 import 'modbus_scan.dart';
 
@@ -34,6 +35,7 @@ class AppSettings {
   static const _clearLogOnDisconnectKey = 'clearLogOnDisconnect';
   static const _maxLogEntriesKey = 'maxLogEntries';
   static const _scanProtocolKey = 'scanProtocol';
+  static const _scanSubnetCidrKey = 'scanSubnetCidr';
   static const _scanSubnetPrefixKey = 'scanSubnetPrefix';
   static const _scanPortStartKey = 'scanPortStart';
   static const _scanPortEndKey = 'scanPortEnd';
@@ -66,6 +68,7 @@ class AppSettings {
   bool clearLogOnDisconnect = false;
   int maxLogEntries = 1000;
   ProtocolType scanProtocol = ProtocolType.modbusTcp;
+  String scanSubnetCidr = '';
   int scanSubnetPrefix = 24;
   int scanPortStart = 502;
   int scanPortEnd = 502;
@@ -122,6 +125,9 @@ class AppSettings {
       100000,
     );
     scanProtocol = _protocolFromValue(_store.getString(_scanProtocolKey));
+    scanSubnetCidr = _normalizeScanSubnetCidr(
+      _store.getString(_scanSubnetCidrKey),
+    );
     scanSubnetPrefix = _clampInt(
       _store.getInt(_scanSubnetPrefixKey) ?? 24,
       16,
@@ -258,6 +264,11 @@ class AppSettings {
     await _saveEditableValues();
   }
 
+  Future<void> setScanSubnetCidr(String value) async {
+    scanSubnetCidr = _normalizeScanSubnetCidr(value);
+    await _saveEditableValues();
+  }
+
   Future<void> setScanSubnetPrefix(int value) async {
     scanSubnetPrefix = _clampInt(value, 16, 30);
     await _saveEditableValues();
@@ -320,6 +331,7 @@ class AppSettings {
     clearLogOnDisconnect = false;
     maxLogEntries = 1000;
     scanProtocol = ProtocolType.modbusTcp;
+    scanSubnetCidr = '';
     scanSubnetPrefix = 24;
     scanPortStart = 502;
     scanPortEnd = 502;
@@ -354,6 +366,7 @@ class AppSettings {
     _clearLogOnDisconnectKey: clearLogOnDisconnect,
     _maxLogEntriesKey: maxLogEntries,
     _scanProtocolKey: scanProtocol.name,
+    _scanSubnetCidrKey: scanSubnetCidr,
     _scanSubnetPrefixKey: scanSubnetPrefix,
     _scanPortStartKey: scanPortStart,
     _scanPortEndKey: scanPortEnd,
@@ -413,6 +426,9 @@ class AppSettings {
       100000,
     );
     scanProtocol = _protocolFromValue(read<String>(_scanProtocolKey));
+    scanSubnetCidr = _normalizeScanSubnetCidr(
+      read<String>(_scanSubnetCidrKey) ?? scanSubnetCidr,
+    );
     scanSubnetPrefix = _clampInt(
       read<int>(_scanSubnetPrefixKey) ?? scanSubnetPrefix,
       16,
@@ -486,6 +502,7 @@ class AppSettings {
     await _store.setBool(_clearLogOnDisconnectKey, clearLogOnDisconnect);
     await _store.setInt(_maxLogEntriesKey, maxLogEntries);
     await _store.setString(_scanProtocolKey, scanProtocol.name);
+    await _store.setString(_scanSubnetCidrKey, scanSubnetCidr);
     await _store.setInt(_scanSubnetPrefixKey, scanSubnetPrefix);
     await _store.setInt(_scanPortStartKey, scanPortStart);
     await _store.setInt(_scanPortEndKey, scanPortEnd);
@@ -581,5 +598,12 @@ class AppSettings {
       scanUnitIdStart = scanUnitIdEnd;
       scanUnitIdEnd = tmp;
     }
+  }
+
+  String _normalizeScanSubnetCidr(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) return '';
+    final subnet = Ipv4Subnet.tryParse(trimmed);
+    return subnet?.cidr ?? scanSubnetCidr;
   }
 }

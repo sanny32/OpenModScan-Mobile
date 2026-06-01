@@ -4,13 +4,19 @@ import '../../models/app_settings.dart';
 import '../../models/device_info.dart';
 import '../../models/modbus_scan.dart';
 import '../../services/backup_service.dart';
+import '../../services/device_scanner.dart';
 
 class SettingsController extends ChangeNotifier {
   final AppSettings settings;
   final BackupService _backup;
+  final DeviceScanner _scanner;
 
-  SettingsController(this.settings, {BackupService? backupService})
-    : _backup = backupService ?? BackupService();
+  SettingsController(
+    this.settings, {
+    BackupService? backupService,
+    DeviceScanner? scanner,
+  }) : _backup = backupService ?? BackupService(),
+       _scanner = scanner ?? DeviceScanner.instance;
 
   Future<void> setTheme(String value) async {
     await settings.setTheme(value);
@@ -105,6 +111,15 @@ class SettingsController extends ChangeNotifier {
   Future<void> setScanProtocol(ProtocolType value) async {
     await settings.setScanProtocol(value);
     notifyListeners();
+  }
+
+  Future<void> setScanSubnetCidr(String value) async {
+    await settings.setScanSubnetCidr(value);
+    notifyListeners();
+  }
+
+  Future<List<String>> scanSubnetCidrs() {
+    return _scanner.availableSubnetCidrs(prefix: settings.scanSubnetPrefix);
   }
 
   Future<void> setScanSubnetPrefix(int value) async {

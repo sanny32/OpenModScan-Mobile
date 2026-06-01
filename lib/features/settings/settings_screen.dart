@@ -189,7 +189,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _SettingsSection.connection =>
         '${_protocolLabel(l10n, _s.connectionType)} · ${l10n.settingsValueMs(_s.timeout)}',
       _SettingsSection.networkScanner =>
-        '${_protocolLabel(l10n, _s.scanProtocol)} · /${_s.scanSubnetPrefix} · ${l10n.settingsSummaryPort(_formatRange(_s.scanPortStart, _s.scanPortEnd))}',
+        '${_protocolLabel(l10n, _s.scanProtocol)} · ${_scanSubnetValue(l10n)} · ${l10n.settingsSummaryPort(_formatRange(_s.scanPortStart, _s.scanPortEnd))}',
       _SettingsSection.readWrite =>
         '${l10n.settingsSummaryAddressBase(_s.addressBase)} · ${_s.registerOrder} · ${_s.byteOrder}',
       _SettingsSection.log => l10n.settingsSummaryEntries(_s.maxLogEntries),
@@ -310,19 +310,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         _divider(),
         _navTile(
-          icon: Icons.account_tree_outlined,
-          label: l10n.settingsScanSubnetPrefix,
-          value: '/${_s.scanSubnetPrefix}',
-          onTap: () => showSettingNumberSheet(
-            context,
-            title: l10n.settingsScanSubnetPrefix,
-            initialValue: _s.scanSubnetPrefix,
-            min: 16,
-            max: 30,
-            onSubmitted: widget.controller.setScanSubnetPrefix,
-          ),
+          icon: Icons.lan_outlined,
+          label: l10n.settingsScanSubnetCidr,
+          value: _scanSubnetValue(l10n),
+          onTap: () => _showScanSubnetSheet(l10n),
         ),
         _divider(),
+        if (_s.scanSubnetCidr.isEmpty) ...[
+          _navTile(
+            icon: Icons.account_tree_outlined,
+            label: l10n.settingsScanSubnetPrefix,
+            value: '/${_s.scanSubnetPrefix}',
+            onTap: () => showSettingNumberSheet(
+              context,
+              title: l10n.settingsScanSubnetPrefix,
+              initialValue: _s.scanSubnetPrefix,
+              min: 16,
+              max: 30,
+              onSubmitted: widget.controller.setScanSubnetPrefix,
+            ),
+          ),
+          _divider(),
+        ],
         _navTile(
           icon: Icons.settings_ethernet,
           label: l10n.settingsScanPortRange,
@@ -656,6 +665,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   String _formatRange(int start, int end) {
     return start == end ? '$start' : '$start-$end';
+  }
+
+  String _scanSubnetValue(AppLocalizations l10n) {
+    return _s.scanSubnetCidr.isEmpty
+        ? l10n.settingsScanSubnetAuto
+        : _s.scanSubnetCidr;
+  }
+
+  Future<void> _showScanSubnetSheet(AppLocalizations l10n) async {
+    final detected = await widget.controller.scanSubnetCidrs();
+    if (!mounted) return;
+
+    await showSettingChoiceSheet(
+      context,
+      title: l10n.settingsScanSubnetCidr,
+      options: ['', ...detected],
+      selected: _s.scanSubnetCidr,
+      optionLabel: (value) =>
+          value.isEmpty ? l10n.settingsScanSubnetAuto : value,
+      onSelected: widget.controller.setScanSubnetCidr,
+    );
   }
 
   String _scanRequestTypeLabel(

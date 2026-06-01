@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omodscan_mobile/models/device_info.dart';
@@ -37,6 +38,94 @@ void main() {
     expect(probe.endpointCalls, isEmpty);
     expect(scanner.totalCount, 0);
     expect(scanner.discoveredDevices.devices, isEmpty);
+  });
+
+  test('scan prefers Wi-Fi IPv4 over other private interfaces', () async {
+    final probe = _FakeProbe();
+    final scanner = DeviceScanner(
+      probe: probe,
+      networkInterfacesProvider: () async => [
+        ScanNetworkInterface(
+          name: 'pdp_ip0',
+          addresses: [InternetAddress('10.240.94.10')],
+        ),
+        ScanNetworkInterface(
+          name: 'en0',
+          addresses: [InternetAddress('192.168.88.16')],
+        ),
+      ],
+    );
+
+    await scanner.startScan(
+      const DeviceScanRequest(
+        subnetPrefix: 30,
+        portStart: 502,
+        portEnd: 502,
+        unitIdStart: 1,
+        unitIdEnd: 1,
+        concurrency: 1,
+      ),
+    );
+
+    expect(scanner.scanCidr, '192.168.88.16/30');
+    expect(probe.endpointCalls.map((call) => call.host), [
+      '192.168.88.17',
+      '192.168.88.18',
+    ]);
+  });
+
+  test('available subnets prefer Wi-Fi and remove duplicates', () async {
+    final scanner = DeviceScanner(
+      networkInterfacesProvider: () async => [
+        ScanNetworkInterface(
+          name: 'pdp_ip0',
+          addresses: [InternetAddress('10.240.94.10')],
+        ),
+        ScanNetworkInterface(
+          name: 'en0',
+          addresses: [InternetAddress('192.168.88.16')],
+        ),
+        ScanNetworkInterface(
+          name: 'en1',
+          addresses: [InternetAddress('192.168.88.20')],
+        ),
+      ],
+    );
+
+    expect(await scanner.availableSubnetCidrs(prefix: 24), [
+      '192.168.88.0/24',
+      '10.240.94.0/24',
+    ]);
+  });
+
+  test('scan uses configured subnet before current interface', () async {
+    final probe = _FakeProbe();
+    final scanner = DeviceScanner(
+      probe: probe,
+      networkInterfacesProvider: () async => [
+        ScanNetworkInterface(
+          name: 'en0',
+          addresses: [InternetAddress('192.168.88.16')],
+        ),
+      ],
+    );
+
+    await scanner.startScan(
+      const DeviceScanRequest(
+        subnetCidr: '10.0.5.200/30',
+        portStart: 502,
+        portEnd: 502,
+        unitIdStart: 1,
+        unitIdEnd: 1,
+        concurrency: 1,
+      ),
+    );
+
+    expect(scanner.scanCidr, '10.0.5.200/30');
+    expect(probe.endpointCalls.map((call) => call.host), [
+      '10.0.5.201',
+      '10.0.5.202',
+    ]);
   });
 
   test('closed ports do not add discovered devices', () async {
@@ -97,9 +186,7 @@ void main() {
   });
 
   test('a single endpoint connection probes the whole unit id range', () async {
-    final probe = _FakeProbe(
-      found: {const _ProbeKey('192.168.1.1', 502, 5)},
-    );
+    final probe = _FakeProbe(found: {const _ProbeKey('192.168.1.1', 502, 5)});
     final scanner = DeviceScanner(
       probe: probe,
       scanHostsProvider: (_) async => ['192.168.1.1'],
@@ -134,27 +221,30 @@ void main() {
     expect(scanner.totalCount, 50);
   });
 
-  test('request carries connect timeout and concurrency to the probe', () async {
-    final probe = _FakeProbe();
-    final scanner = DeviceScanner(
-      probe: probe,
-      scanHostsProvider: (_) async => ['192.168.1.1'],
-    );
+  test(
+    'request carries connect timeout and concurrency to the probe',
+    () async {
+      final probe = _FakeProbe();
+      final scanner = DeviceScanner(
+        probe: probe,
+        scanHostsProvider: (_) async => ['192.168.1.1'],
+      );
 
-    await scanner.startScan(
-      const DeviceScanRequest(
-        unitIdStart: 1,
-        unitIdEnd: 1,
-        timeout: Duration(milliseconds: 750),
-        connectTimeout: Duration(milliseconds: 250),
-        concurrency: 4,
-      ),
-    );
+      await scanner.startScan(
+        const DeviceScanRequest(
+          unitIdStart: 1,
+          unitIdEnd: 1,
+          timeout: Duration(milliseconds: 750),
+          connectTimeout: Duration(milliseconds: 250),
+          concurrency: 4,
+        ),
+      );
 
-    final call = probe.endpointCalls.single;
-    expect(call.connectTimeout, const Duration(milliseconds: 250));
-    expect(call.responseTimeout, const Duration(milliseconds: 750));
-  });
+      final call = probe.endpointCalls.single;
+      expect(call.connectTimeout, const Duration(milliseconds: 250));
+      expect(call.responseTimeout, const Duration(milliseconds: 750));
+    },
+  );
 
   test('different protocols are not treated as duplicates', () async {
     final probe = _FakeProbe(found: {const _ProbeKey('192.168.1.1', 502, 1)});

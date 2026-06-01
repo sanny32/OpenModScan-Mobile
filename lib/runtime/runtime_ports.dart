@@ -110,6 +110,7 @@ enum ScannerStateView { idle, scanning, done }
 
 class DeviceScanRequest {
   final ProtocolType protocol;
+  final String? subnetCidr;
   final int subnetPrefix;
   final int portStart;
   final int portEnd;
@@ -129,6 +130,7 @@ class DeviceScanRequest {
 
   const DeviceScanRequest({
     this.protocol = ProtocolType.modbusTcp,
+    this.subnetCidr,
     this.subnetPrefix = 24,
     this.portStart = 502,
     this.portEnd = 502,

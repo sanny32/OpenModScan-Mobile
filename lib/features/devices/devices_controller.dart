@@ -272,6 +272,9 @@ class DevicesController extends ChangeNotifier {
     return _scanner.startScan(
       DeviceScanRequest(
         protocol: _settings.scanProtocol,
+        subnetCidr: _settings.scanSubnetCidr.isEmpty
+            ? null
+            : _settings.scanSubnetCidr,
         subnetPrefix: _settings.scanSubnetPrefix,
         portStart: _settings.scanPortStart,
         portEnd: _settings.scanPortEnd,

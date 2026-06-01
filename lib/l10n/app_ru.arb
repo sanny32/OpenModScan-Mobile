@@ -170,6 +170,8 @@
   "settingsDefaultUnitId": "Unit ID по умолчанию (Slave ID)",
   "settingsSectionNetworkScan": "Сканер сети",
   "settingsScanProtocol": "Протокол поиска",
+  "settingsScanSubnetCidr": "Подсеть сканирования",
+  "settingsScanSubnetAuto": "Авто (Wi-Fi)",
   "settingsScanSubnetPrefix": "Маска текущей подсети",
   "settingsScanPortRange": "Диапазон портов",
   "settingsScanUnitIdRange": "Диапазон Unit ID",
