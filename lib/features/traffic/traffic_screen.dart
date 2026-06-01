@@ -205,13 +205,27 @@ class _TrafficScreenState extends State<TrafficScreen> {
                       widget.controller.setFilter(TrafficFilter.errors),
                 ),
                 const Spacer(),
-                Text(
-                  l10n.labelAutoScroll,
-                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
-                ),
-                AppSwitch(
-                  value: widget.controller.autoScroll,
-                  onChanged: widget.controller.setAutoScroll,
+                Tooltip(
+                  message: l10n.labelAutoScroll,
+                  child: Semantics(
+                    label: l10n.labelAutoScroll,
+                    toggled: widget.controller.autoScroll,
+                    container: true,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.vertical_align_bottom,
+                          size: 20,
+                          color: cs.onSurfaceVariant,
+                        ),
+                        AppSwitch(
+                          value: widget.controller.autoScroll,
+                          onChanged: widget.controller.setAutoScroll,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),

@@ -65,7 +65,7 @@
   "filterTx": "TX",
   "filterRx": "RX",
   "filterErrors": "Ошибки",
-  "labelAutoScroll": "Прокрут.",
+  "labelAutoScroll": "Автопрокрутка",
   "colTime": "Время",
   "colDirection": "Напр.",
   "colFunction": "Функция",
