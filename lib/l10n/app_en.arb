@@ -312,6 +312,9 @@
   "editDevice": "Edit Device",
   "@editDevice": {},
 
+  "addDevice": "Add Device",
+  "@addDevice": {},
+
   "deviceDeleted": "Device deleted",
   "@deviceDeleted": {},
 

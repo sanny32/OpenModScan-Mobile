@@ -157,7 +157,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                   ),
                   Expanded(
                     child: Text(
-                      _isEdit ? l10n.editDevice : l10n.connectToDevice,
+                      _isEdit ? l10n.editDevice : l10n.addDevice,
                       textAlign: TextAlign.center,
                       style: tt.titleMedium,
                     ),

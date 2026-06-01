@@ -85,6 +85,7 @@
   "trafficHexCopied": "Кадр скопирован в буфер обмена",
   "trafficNoFrame": "Нет данных кадра",
   "editDevice": "Редактировать устройство",
+  "addDevice": "Добавить устройство",
   "deviceDeleted": "Устройство удалено",
   "undo": "Отменить",
   "connectToDevice": "Подключиться к устройству",
