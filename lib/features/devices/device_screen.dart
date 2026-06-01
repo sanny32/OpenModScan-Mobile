@@ -58,14 +58,16 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
   }
 
-  Future<void> _editNotes() => showDialog<void>(
-    context: context,
-    builder: (_) => _NotesDialog(
-      initial: _device.notes,
-      onSaved: (text) =>
-          widget.controller.updateDevice(_device.copyWith(notes: text)),
-    ),
-  );
+  Future<void> _editNotes() async {
+    final notes = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _NotesSheet(initial: _device.notes),
+    );
+    if (!mounted || notes == null) return;
+    widget.controller.updateDevice(_device.copyWith(notes: notes));
+  }
 
   @override
   void dispose() {
@@ -486,17 +488,16 @@ class _AddRegisterListTile extends StatelessWidget {
   }
 }
 
-class _NotesDialog extends StatefulWidget {
+class _NotesSheet extends StatefulWidget {
   final String initial;
-  final ValueChanged<String> onSaved;
 
-  const _NotesDialog({required this.initial, required this.onSaved});
+  const _NotesSheet({required this.initial});
 
   @override
-  State<_NotesDialog> createState() => _NotesDialogState();
+  State<_NotesSheet> createState() => _NotesSheetState();
 }
 
-class _NotesDialogState extends State<_NotesDialog> {
+class _NotesSheetState extends State<_NotesSheet> {
   late final TextEditingController _ctrl;
 
   @override
@@ -513,28 +514,82 @@ class _NotesDialogState extends State<_NotesDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
-    return AlertDialog(
-      title: Text(l10n.labelNotes),
-      content: TextField(
-        controller: _ctrl,
-        autofocus: true,
-        maxLines: null,
-        decoration: InputDecoration(hintText: l10n.notesHint),
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: SafeArea(
+        top: false,
+        child: Container(
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: cs.onSurfaceVariant.withAlpha(102),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(l10n.labelNotes, style: tt.titleLarge),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: _ctrl,
+                  autofocus: true,
+                  minLines: 4,
+                  maxLines: 8,
+                  textInputAction: TextInputAction.newline,
+                  decoration: InputDecoration(hintText: l10n.notesHint),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(l10n.cancel),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: () =>
+                          Navigator.pop(context, _ctrl.text.trim()),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: cs.primary,
+                        foregroundColor: cs.onPrimary,
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      child: Text(l10n.save),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-        TextButton(
-          onPressed: () {
-            widget.onSaved(_ctrl.text.trim());
-            Navigator.pop(context);
-          },
-          child: Text(l10n.save),
-        ),
-      ],
     );
   }
 }

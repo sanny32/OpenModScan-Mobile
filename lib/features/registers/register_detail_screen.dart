@@ -794,13 +794,17 @@ class _CommentCard extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: () => showDialog<void>(
-          context: context,
-          builder: (ctx) {
-            final ctrl = TextEditingController(text: comment ?? '');
-            return _CommentDialog(ctrl: ctrl, onSaved: onChanged);
-          },
-        ),
+        onTap: () async {
+          final text = await showModalBottomSheet<String>(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => _CommentSheet(initial: comment ?? ''),
+          );
+          if (text == null) return;
+          final updatedComment = text.trim();
+          onChanged(updatedComment.isEmpty ? null : updatedComment);
+        },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
@@ -812,6 +816,8 @@ class _CommentCard extends StatelessWidget {
                     color: hasComment ? cs.onSurface : cs.onSurfaceVariant,
                     fontSize: 15,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 8),
@@ -824,48 +830,107 @@ class _CommentCard extends StatelessWidget {
   }
 }
 
-class _CommentDialog extends StatefulWidget {
-  final TextEditingController ctrl;
-  final ValueChanged<String?> onSaved;
+class _CommentSheet extends StatefulWidget {
+  final String initial;
 
-  const _CommentDialog({required this.ctrl, required this.onSaved});
+  const _CommentSheet({required this.initial});
 
   @override
-  State<_CommentDialog> createState() => _CommentDialogState();
+  State<_CommentSheet> createState() => _CommentSheetState();
 }
 
-class _CommentDialogState extends State<_CommentDialog> {
+class _CommentSheetState extends State<_CommentSheet> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.initial);
+  }
+
   @override
   void dispose() {
-    widget.ctrl.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return AlertDialog(
-      title: Text(l10n.colComment),
-      content: TextField(
-        controller: widget.ctrl,
-        autofocus: true,
-        maxLines: null,
-        decoration: InputDecoration(hintText: l10n.commentHint),
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: SafeArea(
+        top: false,
+        child: Container(
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: cs.onSurfaceVariant.withAlpha(102),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(l10n.colComment, style: tt.titleLarge),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: _ctrl,
+                  autofocus: true,
+                  minLines: 4,
+                  maxLines: 8,
+                  textInputAction: TextInputAction.newline,
+                  decoration: InputDecoration(hintText: l10n.commentHint),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(l10n.cancel),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: () =>
+                          Navigator.pop(context, _ctrl.text.trim()),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: cs.primary,
+                        foregroundColor: cs.onPrimary,
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      child: Text(l10n.save),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-        TextButton(
-          onPressed: () {
-            final text = widget.ctrl.text.trim();
-            widget.onSaved(text.isEmpty ? null : text);
-            Navigator.pop(context);
-          },
-          child: Text(l10n.save),
-        ),
-      ],
     );
   }
 }

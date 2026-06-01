@@ -80,8 +80,8 @@ Future<void> showSettingTextSheet(
 }) async {
   await showModalBottomSheet<void>(
     context: context,
-    showDragHandle: true,
     isScrollControlled: true,
+    backgroundColor: Colors.transparent,
     builder: (ctx) => TextSettingSheet(
       title: title,
       initialValue: initialValue,
@@ -103,8 +103,8 @@ Future<void> showSettingRangeSheet(
 }) async {
   await showModalBottomSheet<void>(
     context: context,
-    showDragHandle: true,
     isScrollControlled: true,
+    backgroundColor: Colors.transparent,
     builder: (ctx) => RangeSettingSheet(
       title: title,
       startValue: startValue,
@@ -151,44 +151,108 @@ class _TextSettingSheetState extends State<TextSettingSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+    return _SettingSheetFrame(
+      title: widget.title,
+      onSave: () async {
+        final value = _controller.text.trim();
+        Navigator.pop(context);
+        await widget.onSubmitted(value);
+      },
+      child: TextField(
+        controller: _controller,
+        keyboardType: widget.keyboardType,
+        autofocus: true,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) async {
+          final value = _controller.text.trim();
+          Navigator.pop(context);
+          await widget.onSubmitted(value);
+        },
+        decoration: const InputDecoration(
+          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        ),
       ),
+    );
+  }
+}
+
+class _SettingSheetFrame extends StatelessWidget {
+  final String title;
+  final Widget child;
+  final FutureOr<void> Function() onSave;
+
+  const _SettingSheetFrame({
+    required this.title,
+    required this.child,
+    required this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: bottomInset),
       child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              widget.title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _controller,
-              keyboardType: widget.keyboardType,
-              autofocus: true,
-              decoration: const InputDecoration(
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 14,
+        top: false,
+        child: Container(
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: cs.onSurfaceVariant.withAlpha(102),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 18),
+                Text(title, style: tt.titleLarge),
+                const SizedBox(height: 14),
+                child,
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(context.l10n.cancel),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: () async => onSave(),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: cs.primary,
+                        foregroundColor: cs.onPrimary,
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      child: Text(context.l10n.save),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            _SaveButton(
-              onPressed: () async {
-                final value = _controller.text.trim();
-                Navigator.pop(context);
-                await widget.onSubmitted(value);
-              },
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -237,91 +301,41 @@ class _RangeSettingSheetState extends State<RangeSettingSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              widget.title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+    return _SettingSheetFrame(
+      title: widget.title,
+      onSave: () async {
+        final start = int.tryParse(_startController.text) ?? widget.startValue;
+        final end = int.tryParse(_endController.text) ?? widget.endValue;
+        Navigator.pop(context);
+        await widget.onSubmitted(
+          start.clamp(widget.min, widget.max).toInt(),
+          end.clamp(widget.min, widget.max).toInt(),
+        );
+      },
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _startController,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsRangeStart,
               ),
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _startController,
-                    keyboardType: TextInputType.number,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      labelText: context.l10n.settingsRangeStart,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _endController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: context.l10n.settingsRangeEnd,
-                    ),
-                  ),
-                ),
-              ],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: _endController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsRangeEnd,
+              ),
             ),
-            const SizedBox(height: 20),
-            _SaveButton(
-              onPressed: () async {
-                final start =
-                    int.tryParse(_startController.text) ?? widget.startValue;
-                final end =
-                    int.tryParse(_endController.text) ?? widget.endValue;
-                Navigator.pop(context);
-                await widget.onSubmitted(
-                  start.clamp(widget.min, widget.max).toInt(),
-                  end.clamp(widget.min, widget.max).toInt(),
-                );
-              },
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
-}
-
-/// Full-width, solid primary save action used across the setting sheets so the
-/// button reads clearly against the sheet surface.
-class _SaveButton extends StatelessWidget {
-  final VoidCallback onPressed;
-
-  const _SaveButton({required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return FilledButton(
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        backgroundColor: cs.primary,
-        foregroundColor: cs.onPrimary,
-        textStyle: Theme.of(context).textTheme.titleMedium,
-        minimumSize: const Size(double.infinity, 52),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      child: Text(context.l10n.save),
     );
   }
 }
