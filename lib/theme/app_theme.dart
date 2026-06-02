@@ -267,6 +267,7 @@ class AppTheme {
       error: const Color(0xFFEF5350),
     ),
     switchTheme: _switchTheme,
+    snackBarTheme: const SnackBarThemeData(actionTextColor: _primary),
     extensions: const [AppColors.dark],
   );
 
@@ -332,6 +333,9 @@ class AppTheme {
       error: const Color(0xFFD32F2F),
     ),
     switchTheme: _switchTheme,
+    // Light theme snackbar has a dark background, so use white for the action
+    // (the brand green is too dim on black).
+    snackBarTheme: const SnackBarThemeData(actionTextColor: Colors.white),
     extensions: const [AppColors.light],
   );
 }
