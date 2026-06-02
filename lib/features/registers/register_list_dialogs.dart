@@ -7,11 +7,34 @@ import '../../models/register_address_type.dart';
 import '../../models/register_list.dart';
 import 'widgets/max_count_formatter.dart';
 
+class RegisterListDialogResult {
+  final RegisterList list;
+  final RegisterAddressType selectedAddressType;
+
+  const RegisterListDialogResult({
+    required this.list,
+    required this.selectedAddressType,
+  });
+}
+
 Future<RegisterList?> showRegisterListDialog(
   BuildContext context, {
   required String defaultName,
   List<String> existingNames = const [],
-}) => showDialog<RegisterList>(
+}) async {
+  final result = await showRegisterListResultDialog(
+    context,
+    defaultName: defaultName,
+    existingNames: existingNames,
+  );
+  return result?.list;
+}
+
+Future<RegisterListDialogResult?> showRegisterListResultDialog(
+  BuildContext context, {
+  required String defaultName,
+  List<String> existingNames = const [],
+}) => showDialog<RegisterListDialogResult>(
   context: context,
   builder: (_) => _RegisterListDialog(
     defaultName: defaultName,
@@ -65,17 +88,21 @@ class _RegisterListDialogState extends State<_RegisterListDialog> {
       setState(() => _nameError = context.l10n.nameAlreadyExists);
       return;
     }
-    final isBit = RegisterAddressType.fromCode(_regType).isBit;
+    final addressType = RegisterAddressType.fromCode(_regType);
+    final isBit = addressType.isBit;
     Navigator.pop(
       context,
-      RegisterList(
-        name: name,
-        regType: isBit ? '4xxxx' : _regType,
-        coilType: isBit ? _regType : '0xxxx',
-        startAddress: isBit ? 0 : _startAddress(),
-        count: isBit ? 20 : _count(),
-        coilStartAddress: isBit ? _startAddress() : 0,
-        coilCount: isBit ? _count() : 20,
+      RegisterListDialogResult(
+        selectedAddressType: addressType,
+        list: RegisterList(
+          name: name,
+          regType: isBit ? '4xxxx' : _regType,
+          coilType: isBit ? _regType : '0xxxx',
+          startAddress: isBit ? 0 : _startAddress(),
+          count: isBit ? 20 : _count(),
+          coilStartAddress: isBit ? _startAddress() : 0,
+          coilCount: isBit ? _count() : 20,
+        ),
       ),
     );
   }

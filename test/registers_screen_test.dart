@@ -751,6 +751,58 @@ void main() {
     returnDeviceId.dispose();
   });
 
+  testWidgets('Adding status list from registers tab switches to Status', (
+    WidgetTester tester,
+  ) async {
+    final harness = await _pumpRegistersHarness(
+      tester,
+      RegisterList(id: 'add-status-source-list', name: 'Source List'),
+    );
+
+    await tester.tap(find.byType(DropdownButton<int>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New List').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Holding (4xxxx)'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Coils (0xxxx)').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    final tabBar = tester.widget<TabBar>(find.byType(TabBar));
+    expect(tabBar.controller?.index, 1);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
+  testWidgets('Adding register list from status tab switches to Registers', (
+    WidgetTester tester,
+  ) async {
+    final harness = await _pumpRegistersHarness(
+      tester,
+      RegisterList(id: 'add-register-source-list', name: 'Source List'),
+    );
+
+    await tester.tap(find.widgetWithText(Tab, 'Status'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DropdownButton<int>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New List').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Holding (4xxxx)'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Input (3xxxx)').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    final tabBar = tester.widget<TabBar>(find.byType(TabBar));
+    expect(tabBar.controller?.index, 0);
+
+    await _disposeRegistersHarness(tester, harness);
+  });
+
   testWidgets('Status tab shows one-based display coil address', (
     WidgetTester tester,
   ) async {

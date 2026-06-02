@@ -143,21 +143,18 @@ class _RegistersScreenState extends State<RegistersScreen>
       _registerValueStatusLabel = null;
       _statusValueState = RegisterValueState.received;
       _statusValueStatusLabel = null;
-      for (final list in _lists) {
-        list.dispose();
-      }
+      final staleLists = _lists;
       _lists = _buildListsFromDevice();
       _activeList = widget.controller.activeListIndex.clamp(
         0,
         _lists.length - 1,
       );
       _listSignature = signature;
-      final activeType = RegisterAddressType.fromCode(
-        _lists[_activeList].data.regType,
-      );
-      if (activeType.isBit) {
-        _tabController.animateTo(1);
-      }
+      Timer(const Duration(milliseconds: 500), () {
+        for (final list in staleLists) {
+          list.dispose();
+        }
+      });
     }
     if (_selectedDevice != null &&
         !widget.controller.isConnected(_selectedDevice!)) {
@@ -215,7 +212,7 @@ class _RegistersScreenState extends State<RegistersScreen>
   }
 
   Future<void> _addList() async {
-    final result = await showRegisterListDialog(
+    final result = await showRegisterListResultDialog(
       context,
       defaultName: 'List ${_lists.length + 1}',
       existingNames: _lists.map((l) => l.name).toList(),
@@ -223,7 +220,9 @@ class _RegistersScreenState extends State<RegistersScreen>
 
     if (!mounted) return;
     if (result != null) {
-      await widget.controller.addList(result);
+      await widget.controller.addList(result.list);
+      if (!mounted) return;
+      _tabController.animateTo(result.selectedAddressType.isBit ? 1 : 0);
     }
   }
 
