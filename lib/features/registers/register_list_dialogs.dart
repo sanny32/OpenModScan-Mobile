@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../l10n/l10n.dart';
 import '../../models/app_settings.dart';
+import '../../models/register_address_type.dart';
 import '../../models/register_list.dart';
 import 'widgets/max_count_formatter.dart';
 
@@ -64,13 +65,17 @@ class _RegisterListDialogState extends State<_RegisterListDialog> {
       setState(() => _nameError = context.l10n.nameAlreadyExists);
       return;
     }
+    final isBit = RegisterAddressType.fromCode(_regType).isBit;
     Navigator.pop(
       context,
       RegisterList(
         name: name,
-        regType: _regType,
-        startAddress: _startAddress(),
-        count: _count(),
+        regType: isBit ? '4xxxx' : _regType,
+        coilType: isBit ? _regType : '0xxxx',
+        startAddress: isBit ? 0 : _startAddress(),
+        count: isBit ? 20 : _count(),
+        coilStartAddress: isBit ? _startAddress() : 0,
+        coilCount: isBit ? _count() : 20,
       ),
     );
   }
