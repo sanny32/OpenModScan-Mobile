@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/l10n.dart';
 import '../../models/app_settings.dart';
 import '../../models/device_info.dart';
+import '../../widgets/keyboard_done_bar.dart';
 import 'device_marker_color_palette.dart';
 
 class DeviceFormResult {
@@ -205,6 +206,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                   const SizedBox(height: 6),
                   _field(
                     _nameCtrl,
+                    label: l10n.labelName,
                     errorText: _nameError,
                     onChanged: (_) {
                       if (_nameError != null) setState(() => _nameError = null);
@@ -230,7 +232,11 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                           children: [
                             _label(context, l10n.labelHost),
                             const SizedBox(height: 6),
-                            _field(_hostCtrl, type: TextInputType.url),
+                            _field(
+                              _hostCtrl,
+                              label: l10n.labelHost,
+                              type: TextInputType.url,
+                            ),
                           ],
                         ),
                       ),
@@ -242,7 +248,11 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                           children: [
                             _label(context, l10n.labelPort),
                             const SizedBox(height: 6),
-                            _field(_portCtrl, type: TextInputType.number),
+                            _field(
+                              _portCtrl,
+                              label: l10n.labelPort,
+                              type: TextInputType.number,
+                            ),
                           ],
                         ),
                       ),
@@ -251,7 +261,11 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                   const SizedBox(height: 16),
                   _label(context, l10n.labelUnitIdField),
                   const SizedBox(height: 6),
-                  _field(_unitCtrl, type: TextInputType.number),
+                  _field(
+                    _unitCtrl,
+                    label: l10n.labelUnitIdField,
+                    type: TextInputType.number,
+                  ),
                   const SizedBox(height: 16),
                   // Labels and fields live in separate rows so the two inputs
                   // stay aligned even when a label wraps to a different number
@@ -271,23 +285,37 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                   Row(
                     children: [
                       Expanded(
-                        child: _fieldSuffix(_timeoutCtrl, 'ms', context),
+                        child: _fieldSuffix(
+                          _timeoutCtrl,
+                          'ms',
+                          context,
+                          label: l10n.labelTimeout,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _fieldSuffix(_reconnectCtrl, 'ms', context),
+                        child: _fieldSuffix(
+                          _reconnectCtrl,
+                          'ms',
+                          context,
+                          label: l10n.labelReconnectDelay,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   _label(context, l10n.labelNotes),
                   const SizedBox(height: 6),
-                  TextField(
-                    controller: _notesCtrl,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      hintText: l10n.notesHint,
-                      contentPadding: const EdgeInsets.all(12),
+                  KeyboardDoneField(
+                    label: l10n.labelNotes,
+                    builder: (focusNode) => TextField(
+                      controller: _notesCtrl,
+                      focusNode: focusNode,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        hintText: l10n.notesHint,
+                        contentPadding: const EdgeInsets.all(12),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -296,6 +324,8 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: cs.primary,
                       foregroundColor: cs.onPrimary,
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
                       textStyle: tt.titleMedium,
                       minimumSize: const Size(double.infinity, 52),
                       shape: RoundedRectangleBorder(
@@ -322,31 +352,47 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
 
   Widget _field(
     TextEditingController c, {
+    required String label,
     TextInputType? type,
     String? errorText,
     ValueChanged<String>? onChanged,
-  }) => TextField(
-    controller: c,
-    keyboardType: type,
-    onChanged: onChanged,
-    decoration: InputDecoration(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      errorText: errorText,
+  }) => KeyboardDoneField(
+    label: label,
+    builder: (focusNode) => TextField(
+      controller: c,
+      focusNode: focusNode,
+      keyboardType: type,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 14,
+        ),
+        errorText: errorText,
+      ),
     ),
   );
 
   Widget _fieldSuffix(
     TextEditingController c,
     String suffix,
-    BuildContext context,
-  ) => TextField(
-    controller: c,
-    keyboardType: TextInputType.number,
-    decoration: InputDecoration(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      suffixText: suffix,
-      suffixStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
+    BuildContext context, {
+    required String label,
+  }) => KeyboardDoneField(
+    label: label,
+    builder: (focusNode) => TextField(
+      controller: c,
+      focusNode: focusNode,
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 14,
+        ),
+        suffixText: suffix,
+        suffixStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
     ),
   );

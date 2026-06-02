@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
+import '../../widgets/keyboard_done_bar.dart';
 import '../../models/device_info.dart';
 import '../../theme/app_dimens.dart';
 import 'devices_controller.dart';
@@ -118,16 +119,20 @@ class _SavedDevicesScreenState extends State<SavedDevicesScreen> {
                 AppSpacing.screenGutter,
                 4,
               ),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: l10n.devicesSearch,
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: cs.onSurfaceVariant,
-                    size: 20,
+              child: KeyboardDoneField(
+                label: l10n.kbSearch,
+                builder: (focusNode) => TextField(
+                  controller: _searchController,
+                  focusNode: focusNode,
+                  decoration: InputDecoration(
+                    hintText: l10n.devicesSearch,
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: cs.onSurfaceVariant,
+                      size: 20,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
                 ),
               ),
             ),

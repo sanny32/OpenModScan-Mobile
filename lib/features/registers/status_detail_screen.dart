@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
+import '../../widgets/keyboard_done_bar.dart';
 import '../../theme/app_dimens.dart';
 import '../../utils/modbus_format.dart';
 import '../../widgets/error_feedback.dart';
@@ -208,29 +209,33 @@ class _StatusDetailScreenState extends State<StatusDetailScreen> {
             _StatusSectionHeader(l10n.labelProperties),
             const SizedBox(height: 7),
             _StatusCard(
-              child: TextField(
-                controller: _commentCtrl,
-                style: tt.bodyLarge?.copyWith(
-                  color: cs.onSurface,
-                  fontSize: 15,
-                ),
-                decoration: InputDecoration(
-                  labelText: l10n.colComment,
-                  floatingLabelBehavior: FloatingLabelBehavior.always,
-                  filled: false,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 13,
+              child: KeyboardDoneField(
+                label: l10n.colComment,
+                builder: (focusNode) => TextField(
+                  controller: _commentCtrl,
+                  focusNode: focusNode,
+                  style: tt.bodyLarge?.copyWith(
+                    color: cs.onSurface,
+                    fontSize: 15,
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                    borderSide: BorderSide(
-                      color: cs.outline.withValues(alpha: 0.55),
+                  decoration: InputDecoration(
+                    labelText: l10n.colComment,
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                    filled: false,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 13,
                     ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                    borderSide: BorderSide(color: cs.primary, width: 1.4),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(
+                        color: cs.outline.withValues(alpha: 0.55),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(color: cs.primary, width: 1.4),
+                    ),
                   ),
                 ),
               ),

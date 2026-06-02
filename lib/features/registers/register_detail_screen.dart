@@ -913,7 +913,8 @@ class _CommentSheetState extends State<_CommentSheet> {
                       style: FilledButton.styleFrom(
                         backgroundColor: cs.primary,
                         foregroundColor: cs.onPrimary,
-                        elevation: 3,
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(24),
                         ),

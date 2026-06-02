@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../l10n/l10n.dart';
+import '../../widgets/keyboard_done_bar.dart';
 import '../../models/app_settings.dart';
 import '../../models/device_info.dart';
 import '../../models/register_address_type.dart';
@@ -36,6 +37,8 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
   late DeviceInfo _device;
   final _addressCtrl = TextEditingController();
   final _valueCtrl = TextEditingController();
+  final _addressFocusNode = FocusNode();
+  final _valueFocusNode = FocusNode();
   var _mode = _WriteMode.register;
   var _typeName = 'UInt16';
   late String _registerOrder;
@@ -61,14 +64,20 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
     _valueCtrl.text = '0';
     _addressCtrl.addListener(_onFormChanged);
     _valueCtrl.addListener(_onFormChanged);
+    _addressFocusNode.addListener(_onFieldFocusChanged);
+    _valueFocusNode.addListener(_onFieldFocusChanged);
     widget.controller.addListener(_onControllerChanged);
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(_onControllerChanged);
+    _addressFocusNode.removeListener(_onFieldFocusChanged);
+    _valueFocusNode.removeListener(_onFieldFocusChanged);
     _addressCtrl.removeListener(_onFormChanged);
     _valueCtrl.removeListener(_onFormChanged);
+    _addressFocusNode.dispose();
+    _valueFocusNode.dispose();
     _addressCtrl.dispose();
     _valueCtrl.dispose();
     super.dispose();
@@ -88,6 +97,11 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
       });
       return;
     }
+    setState(() {});
+  }
+
+  void _onFieldFocusChanged() {
+    if (!mounted) return;
     setState(() {});
   }
 
@@ -304,6 +318,9 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
     final words = _encodedWords();
     final isRegister = _mode == _WriteMode.register;
 
+    final editingTextField =
+        _addressFocusNode.hasFocus || _valueFocusNode.hasFocus;
+
     return Scaffold(
       backgroundColor: cs.surfaceContainerHighest,
       appBar: AppBar(
@@ -328,42 +345,40 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: AnimatedPadding(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: EdgeInsets.only(
-          left: AppSpacing.screenGutter,
-          right: AppSpacing.screenGutter,
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: FilledButton.icon(
-              onPressed: _formValid ? _submit : null,
-              icon: _writing
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.upload_outlined),
-              label: Text(l10n.btnWrite),
-              style: FilledButton.styleFrom(
-                backgroundColor: cs.primary,
-                foregroundColor: cs.onPrimary,
-                minimumSize: const Size(double.infinity, 52),
-                textStyle: tt.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+      bottomNavigationBar: editingTextField
+          ? null
+          : Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenGutter,
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: FilledButton.icon(
+                    onPressed: _formValid ? _submit : null,
+                    icon: _writing
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.upload_outlined),
+                    label: Text(l10n.btnWrite),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: cs.primary,
+                      foregroundColor: cs.onPrimary,
+                      minimumSize: const Size(double.infinity, 52),
+                      textStyle: tt.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.screenGutter,
@@ -446,30 +461,40 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
                   const SizedBox(height: 12),
                 ],
                 _fieldLabel(l10n.colAddress),
-                TextField(
-                  controller: _addressCtrl,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 14,
-                    ),
-                    errorText: _addressError,
-                  ),
-                ),
-                if (isRegister) ...[
-                  const SizedBox(height: 12),
-                  _fieldLabel(l10n.colValue),
-                  TextField(
-                    controller: _valueCtrl,
-                    keyboardType: _valueKeyboardType,
+                KeyboardDoneField(
+                  label: l10n.colAddress,
+                  focusNode: _addressFocusNode,
+                  builder: (focusNode) => TextField(
+                    controller: _addressCtrl,
+                    focusNode: focusNode,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: InputDecoration(
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 14,
                       ),
-                      errorText: _valueError,
+                      errorText: _addressError,
+                    ),
+                  ),
+                ),
+                if (isRegister) ...[
+                  const SizedBox(height: 12),
+                  _fieldLabel(l10n.colValue),
+                  KeyboardDoneField(
+                    label: l10n.colValue,
+                    focusNode: _valueFocusNode,
+                    builder: (focusNode) => TextField(
+                      controller: _valueCtrl,
+                      focusNode: focusNode,
+                      keyboardType: _valueKeyboardType,
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 14,
+                        ),
+                        errorText: _valueError,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 6),

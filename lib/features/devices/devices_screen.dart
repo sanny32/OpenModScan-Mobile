@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
+import '../../widgets/keyboard_done_bar.dart';
 import '../../models/device_info.dart';
 import '../../models/discovered_device.dart';
 import '../../runtime/runtime_ports.dart';
@@ -303,16 +304,20 @@ class _DevicesScreenState extends State<DevicesScreen> {
                   AppSpacing.screenGutter,
                   0,
                 ),
-                child: TextField(
-                  onChanged: widget.controller.setSearch,
-                  decoration: InputDecoration(
-                    hintText: l10n.devicesSearch,
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: cs.onSurfaceVariant,
-                      size: 20,
+                child: KeyboardDoneField(
+                  label: l10n.kbSearch,
+                  builder: (focusNode) => TextField(
+                    focusNode: focusNode,
+                    onChanged: widget.controller.setSearch,
+                    decoration: InputDecoration(
+                      hintText: l10n.devicesSearch,
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: cs.onSurfaceVariant,
+                        size: 20,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
                   ),
                 ),
               ),

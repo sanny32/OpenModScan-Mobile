@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:keyboard_actions/keyboard_actions.dart';
 import '../../l10n/l10n.dart';
 import '../../models/device_info.dart';
 import '../../models/app_settings.dart';
@@ -15,6 +16,7 @@ import '../../widgets/connection_info_bar.dart';
 import '../../widgets/connection_status_chip.dart';
 import '../../widgets/device_select_sheet.dart';
 import '../../widgets/error_feedback.dart';
+import '../../widgets/keyboard_done_bar.dart';
 import '../../utils/modbus_format.dart';
 import '../../widgets/type_badge.dart';
 import 'register_list_dialogs.dart';
@@ -416,81 +418,103 @@ class _RegistersScreenState extends State<RegistersScreen>
           ),
         ],
       ),
-      body: Column(
-        children: [
-          if (_selectedDevice != null)
-            ConnectionInfoBar(device: _selectedDevice!),
-          TabBar(
-            controller: _tabController,
-            tabs: [
-              Tab(text: l10n.navRegisters),
-              Tab(text: l10n.tabCoils),
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: KeyboardActions(
+          disableScroll: true,
+          config: buildKeyboardDoneConfig(context, [
+            KeyboardBarField(active.startAddrFocus, l10n.kbStartAddress),
+            KeyboardBarField(active.countFocus, l10n.kbCount),
+            KeyboardBarField(active.refreshIntervalFocus, l10n.kbInterval),
+            KeyboardBarField(active.coilStartAddrFocus, l10n.kbStartAddress),
+            KeyboardBarField(active.coilCountFocus, l10n.kbCount),
+            KeyboardBarField(active.coilRefreshIntervalFocus, l10n.kbInterval),
+          ]),
+          child: Column(
+            children: [
+              if (_selectedDevice != null)
+                ConnectionInfoBar(device: _selectedDevice!),
+              TabBar(
+                controller: _tabController,
+                tabs: [
+                  Tab(text: l10n.navRegisters),
+                  Tab(text: l10n.tabCoils),
+                ],
+              ),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _RegistersTab(
+                      regType: active.regType,
+                      onRegTypeChanged: (v) =>
+                          _updateActiveList(active..regType = v),
+                      listSelector: _buildListSelector(),
+                      autoRefresh: active.autoRefresh,
+
+                      isActive: _activeTab == 0,
+                      onAutoRefreshChanged: (v) =>
+                          _updateActiveList(active..autoRefresh = v),
+                      autoRefreshIntervalMs: active.refreshIntervalMs,
+                      refreshIntervalCtrl: active.refreshIntervalCtrl,
+                      onRefreshIntervalCommitted: active.commitRefreshInterval,
+                      startAddrCtrl: active.startAddrCtrl,
+                      countCtrl: active.countCtrl,
+                      startAddrFocus: active.startAddrFocus,
+                      countFocus: active.countFocus,
+                      refreshIntervalFocus: active.refreshIntervalFocus,
+                      registerList: active.data,
+                      runtimeValues: widget.controller.runtimeValues,
+                      lastReadAt: widget.controller.lastRegisterReadAt,
+                      referenceRegisters: widget.controller.referenceRegisters,
+                      isConnected: selectedDeviceConnected,
+                      canRead: selectedDeviceConnected,
+                      valueState: effectiveRegisterValueState,
+                      onValueStateChanged: _onRegisterValueStateChanged,
+                      onRead: widget.controller.readRegisters,
+                      onEntryChanged: _onEntryChanged,
+                      onValueWritten: _onValueWritten,
+                      valuesListenable: widget.controller,
+                      liveValueAt: (address) =>
+                          widget.controller.runtimeValues[address],
+                    ),
+                    _StatusTab(
+                      statusType: active.coilType,
+                      onStatusTypeChanged: (v) =>
+                          _updateActiveList(active..coilType = v),
+                      listSelector: _buildListSelector(),
+                      autoRefresh: active.coilAutoRefresh,
+                      isActive: _activeTab == 1,
+                      onAutoRefreshChanged: (v) =>
+                          _updateActiveList(active..coilAutoRefresh = v),
+                      autoRefreshIntervalMs: active.coilRefreshIntervalMs,
+                      refreshIntervalCtrl: active.coilRefreshIntervalCtrl,
+                      onRefreshIntervalCommitted:
+                          active.commitCoilRefreshInterval,
+                      startAddrCtrl: active.coilStartAddrCtrl,
+                      countCtrl: active.coilCountCtrl,
+                      startAddrFocus: active.coilStartAddrFocus,
+                      countFocus: active.coilCountFocus,
+                      refreshIntervalFocus: active.coilRefreshIntervalFocus,
+                      registerList: active.data,
+                      runtimeValues: widget.controller.runtimeStatusValues,
+                      lastReadAt: widget.controller.lastStatusReadAt,
+                      referenceStatuses: widget.controller.referenceStatuses,
+                      canRead: selectedDeviceConnected,
+                      valueState: effectiveStatusValueState,
+                      onValueStateChanged: _onStatusValueStateChanged,
+                      onRead: widget.controller.readStatuses,
+                      onEntryChanged: (address, comment) => widget.controller
+                          .updateStatusEntry(active.coilType, address, comment),
+                      onValueWritten: _onStatusValueWritten,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _RegistersTab(
-                  regType: active.regType,
-                  onRegTypeChanged: (v) =>
-                      _updateActiveList(active..regType = v),
-                  listSelector: _buildListSelector(),
-                  autoRefresh: active.autoRefresh,
-
-                  isActive: _activeTab == 0,
-                  onAutoRefreshChanged: (v) =>
-                      _updateActiveList(active..autoRefresh = v),
-                  autoRefreshIntervalMs: active.refreshIntervalMs,
-                  refreshIntervalCtrl: active.refreshIntervalCtrl,
-                  onRefreshIntervalCommitted: active.commitRefreshInterval,
-                  startAddrCtrl: active.startAddrCtrl,
-                  countCtrl: active.countCtrl,
-                  registerList: active.data,
-                  runtimeValues: widget.controller.runtimeValues,
-                  lastReadAt: widget.controller.lastRegisterReadAt,
-                  referenceRegisters: widget.controller.referenceRegisters,
-                  isConnected: selectedDeviceConnected,
-                  canRead: selectedDeviceConnected,
-                  valueState: effectiveRegisterValueState,
-                  onValueStateChanged: _onRegisterValueStateChanged,
-                  onRead: widget.controller.readRegisters,
-                  onEntryChanged: _onEntryChanged,
-                  onValueWritten: _onValueWritten,
-                  valuesListenable: widget.controller,
-                  liveValueAt: (address) =>
-                      widget.controller.runtimeValues[address],
-                ),
-                _StatusTab(
-                  statusType: active.coilType,
-                  onStatusTypeChanged: (v) =>
-                      _updateActiveList(active..coilType = v),
-                  listSelector: _buildListSelector(),
-                  autoRefresh: active.coilAutoRefresh,
-                  isActive: _activeTab == 1,
-                  onAutoRefreshChanged: (v) =>
-                      _updateActiveList(active..coilAutoRefresh = v),
-                  autoRefreshIntervalMs: active.coilRefreshIntervalMs,
-                  refreshIntervalCtrl: active.coilRefreshIntervalCtrl,
-                  onRefreshIntervalCommitted: active.commitCoilRefreshInterval,
-                  startAddrCtrl: active.coilStartAddrCtrl,
-                  countCtrl: active.coilCountCtrl,
-                  registerList: active.data,
-                  runtimeValues: widget.controller.runtimeStatusValues,
-                  lastReadAt: widget.controller.lastStatusReadAt,
-                  referenceStatuses: widget.controller.referenceStatuses,
-                  canRead: selectedDeviceConnected,
-                  valueState: effectiveStatusValueState,
-                  onValueStateChanged: _onStatusValueStateChanged,
-                  onRead: widget.controller.readStatuses,
-                  onEntryChanged: (address, comment) => widget.controller
-                      .updateStatusEntry(active.coilType, address, comment),
-                  onValueWritten: _onStatusValueWritten,
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

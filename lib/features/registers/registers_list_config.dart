@@ -10,6 +10,24 @@ class _ListConfig {
   late final TextEditingController coilCountCtrl;
   late final TextEditingController coilRefreshIntervalCtrl;
 
+  final startAddrFocus = FocusNode();
+  final countFocus = FocusNode();
+  final refreshIntervalFocus = FocusNode();
+  final coilStartAddrFocus = FocusNode();
+  final coilCountFocus = FocusNode();
+  final coilRefreshIntervalFocus = FocusNode();
+
+  /// Focus nodes for every numeric field, in tab order, used to build the
+  /// `keyboard_actions` toolbar.
+  List<FocusNode> get focusNodes => [
+    startAddrFocus,
+    countFocus,
+    refreshIntervalFocus,
+    coilStartAddrFocus,
+    coilCountFocus,
+    coilRefreshIntervalFocus,
+  ];
+
   String get name => data.name;
   set name(String value) => data.name = value;
 
@@ -136,5 +154,8 @@ class _ListConfig {
     coilStartAddrCtrl.dispose();
     coilCountCtrl.dispose();
     coilRefreshIntervalCtrl.dispose();
+    for (final node in focusNodes) {
+      node.dispose();
+    }
   }
 }

@@ -221,6 +221,18 @@
   "labelAutoRefresh": "Auto refresh",
   "@labelAutoRefresh": {},
 
+  "kbStartAddress": "Start address",
+  "@kbStartAddress": {},
+
+  "kbCount": "Count",
+  "@kbCount": {},
+
+  "kbInterval": "Refresh interval, ms",
+  "@kbInterval": {},
+
+  "kbSearch": "Search",
+  "@kbSearch": {},
+
   "registersShowing": "Showing {start} – {end}",
   "@registersShowing": {
     "placeholders": {
@@ -329,6 +341,9 @@
 
   "save": "Save",
   "@save": {},
+
+  "done": "Done",
+  "@done": {},
 
   "connect": "Connect",
   "@connect": {},

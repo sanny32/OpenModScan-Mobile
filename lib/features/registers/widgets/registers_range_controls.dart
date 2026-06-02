@@ -15,6 +15,9 @@ class RegistersRangeControls extends StatelessWidget {
   final ValueChanged<bool> onAutoRefreshChanged;
   final TextEditingController refreshIntervalCtrl;
   final VoidCallback onRefreshIntervalCommitted;
+  final FocusNode? startAddrFocus;
+  final FocusNode? countFocus;
+  final FocusNode? refreshIntervalFocus;
 
   const RegistersRangeControls({
     super.key,
@@ -26,6 +29,9 @@ class RegistersRangeControls extends StatelessWidget {
     required this.onAutoRefreshChanged,
     required this.refreshIntervalCtrl,
     required this.onRefreshIntervalCommitted,
+    this.startAddrFocus,
+    this.countFocus,
+    this.refreshIntervalFocus,
   });
 
   @override
@@ -47,6 +53,7 @@ class RegistersRangeControls extends StatelessWidget {
             width: 58,
             child: TextField(
               controller: startAddrCtrl,
+              focusNode: startAddrFocus,
               keyboardType: TextInputType.number,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
@@ -73,6 +80,7 @@ class RegistersRangeControls extends StatelessWidget {
             width: 42,
             child: TextField(
               controller: countCtrl,
+              focusNode: countFocus,
               keyboardType: TextInputType.number,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
@@ -99,10 +107,7 @@ class RegistersRangeControls extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
-          AppSwitch(
-            value: autoRefresh,
-            onChanged: onAutoRefreshChanged,
-          ),
+          AppSwitch(value: autoRefresh, onChanged: onAutoRefreshChanged),
           const SizedBox(width: 2),
           Focus(
             onFocusChange: (hasFocus) {
@@ -114,6 +119,7 @@ class RegistersRangeControls extends StatelessWidget {
               width: 58,
               child: TextField(
                 controller: refreshIntervalCtrl,
+                focusNode: refreshIntervalFocus,
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.done,
                 inputFormatters: [

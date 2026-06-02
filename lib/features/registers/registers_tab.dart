@@ -12,6 +12,9 @@ class _RegistersTab extends StatefulWidget {
   final VoidCallback onRefreshIntervalCommitted;
   final TextEditingController startAddrCtrl;
   final TextEditingController countCtrl;
+  final FocusNode startAddrFocus;
+  final FocusNode countFocus;
+  final FocusNode refreshIntervalFocus;
   final RegisterList registerList;
   final Map<int, RegisterRuntimeValue> runtimeValues;
   final DateTime? lastReadAt;
@@ -51,6 +54,9 @@ class _RegistersTab extends StatefulWidget {
     required this.onRefreshIntervalCommitted,
     required this.startAddrCtrl,
     required this.countCtrl,
+    required this.startAddrFocus,
+    required this.countFocus,
+    required this.refreshIntervalFocus,
     required this.registerList,
     required this.runtimeValues,
     required this.lastReadAt,
@@ -341,6 +347,9 @@ class _RegistersTabState extends State<_RegistersTab> {
           onAutoRefreshChanged: widget.onAutoRefreshChanged,
           refreshIntervalCtrl: widget.refreshIntervalCtrl,
           onRefreshIntervalCommitted: widget.onRefreshIntervalCommitted,
+          startAddrFocus: widget.startAddrFocus,
+          countFocus: widget.countFocus,
+          refreshIntervalFocus: widget.refreshIntervalFocus,
         ),
         Container(
           color: cs.surfaceContainer,
