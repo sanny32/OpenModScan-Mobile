@@ -7,13 +7,12 @@ enum DeviceMarkerColor { blue, green, amber, red, purple, teal, gray }
 extension ProtocolTypeX on ProtocolType {
   bool get supportsConnection => switch (this) {
     ProtocolType.modbusTcp => true,
-    ProtocolType.modbusRtuIp => false,
+    ProtocolType.modbusRtuIp => true,
   };
 
   String get unsupportedConnectionMessage => switch (this) {
     ProtocolType.modbusTcp => '',
-    ProtocolType.modbusRtuIp =>
-      'Modbus RTU/IP connections are not implemented yet.',
+    ProtocolType.modbusRtuIp => '',
   };
 }
 

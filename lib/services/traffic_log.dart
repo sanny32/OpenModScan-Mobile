@@ -60,6 +60,25 @@ class TrafficLog extends ChangeNotifier implements TrafficLogSource {
     _activeDeviceId = deviceId;
   }
 
+  void recordFrameForDevice(
+    String deviceId, {
+    required Uint8List frame,
+    required LogDirection direction,
+    required LogFrameKind frameKind,
+    DateTime? time,
+  }) {
+    if (frame.isEmpty) return;
+    _append(
+      deviceId,
+      buildTrafficLogEntry(
+        frame: frame,
+        direction: direction,
+        time: time ?? DateTime.now(),
+        frameKind: frameKind,
+      ),
+    );
+  }
+
   @override
   List<LogEntry> entriesFor(String? deviceId) =>
       deviceId == null ? const [] : (_byDevice[deviceId] ?? const []);
@@ -77,11 +96,17 @@ class TrafficLog extends ChangeNotifier implements TrafficLogSource {
   void onLog(LogRecord record) {
     final message = record.message;
     if (message.startsWith('Sent data:')) {
-      _recordFrame(message.substring('Sent data:'.length), LogDirection.tx,
-          record.time);
+      _recordFrame(
+        message.substring('Sent data:'.length),
+        LogDirection.tx,
+        record.time,
+      );
     } else if (message.startsWith('Incoming data:')) {
-      _recordFrame(message.substring('Incoming data:'.length), LogDirection.rx,
-          record.time);
+      _recordFrame(
+        message.substring('Incoming data:'.length),
+        LogDirection.rx,
+        record.time,
+      );
     } else if (record.level >= Level.WARNING) {
       _recordError(message, record.time);
     }
@@ -99,7 +124,8 @@ class TrafficLog extends ChangeNotifier implements TrafficLogSource {
         _txnToDevice[transactionId] = deviceId;
       }
     } else {
-      deviceId = (transactionId != null ? _txnToDevice[transactionId] : null) ??
+      deviceId =
+          (transactionId != null ? _txnToDevice[transactionId] : null) ??
           _activeDeviceId;
     }
     if (deviceId == null) return;

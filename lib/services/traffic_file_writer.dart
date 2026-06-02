@@ -64,7 +64,7 @@ String formatTrafficLine(String deviceId, LogEntry entry) {
   final data = entry.data.replaceAll('\n', ' | ');
   final frame = entry.frame;
   final detail = (frame != null && entry.direction != null)
-      ? trafficDetailText(frame, entry.direction!)
+      ? trafficDetailText(frame, entry.direction!, frameKind: entry.frameKind)
       : '';
   final suffix = detail.isEmpty ? '' : '  $detail';
   return '${entry.time} [$deviceId] $direction ${entry.function}  $data$suffix';

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import '../models/app_settings.dart';
 import '../models/log_entry.dart';
 import '../models/modbus_exception.dart';
+import 'modbus_crc.dart';
 
 /// A single decoded label/value pair from a Modbus PDU.
 class TrafficField {
@@ -11,9 +12,10 @@ class TrafficField {
   const TrafficField(this.label, this.value);
 }
 
-/// Structured breakdown of a raw Modbus TCP ADU frame, used by the traffic
-/// detail screen.
+/// Structured breakdown of a raw Modbus ADU frame, used by the traffic detail
+/// screen.
 class ModbusFrameInfo {
+  final LogFrameKind frameKind;
   final int? transactionId;
   final int? protocolId;
   final int? length;
@@ -21,9 +23,12 @@ class ModbusFrameInfo {
   final int? functionCode;
   final String functionLabel;
   final bool isException;
+  final int? crc;
+  final bool? crcValid;
   final List<TrafficField> fields;
 
   const ModbusFrameInfo({
+    required this.frameKind,
     required this.transactionId,
     required this.protocolId,
     required this.length,
@@ -31,8 +36,12 @@ class ModbusFrameInfo {
     required this.functionCode,
     required this.functionLabel,
     required this.isException,
+    required this.crc,
+    required this.crcValid,
     required this.fields,
   });
+
+  bool get isRtu => frameKind == LogFrameKind.modbusRtu;
 }
 
 /// Decodes a raw Modbus TCP ADU frame (MBAP header + PDU) into a [LogEntry]
@@ -48,41 +57,63 @@ LogEntry buildTrafficLogEntry({
   required Uint8List frame,
   required LogDirection direction,
   required DateTime time,
+  LogFrameKind frameKind = LogFrameKind.modbusTcp,
 }) {
-  final isError = _isException(frame);
+  final isError = _isException(frame, frameKind);
   return LogEntry(
     time: formatTrafficTime(time),
     direction: direction,
-    function: isError ? 'Exception Response' : _functionLabel(frame),
+    function: isError ? 'Exception Response' : _functionLabel(frame, frameKind),
     data: formatHexBytes(frame),
     type: isError ? LogEntryType.error : LogEntryType.normal,
     frame: frame,
+    frameKind: frameKind,
   );
 }
 
 /// Builds the full structured breakdown (MBAP header + decoded PDU fields).
-ModbusFrameInfo describeModbusFrame(Uint8List frame, LogDirection direction) {
-  int? at16(int offset) =>
-      frame.length >= offset + 2 ? (frame[offset] << 8) | frame[offset + 1] : null;
+ModbusFrameInfo describeModbusFrame(
+  Uint8List frame,
+  LogDirection direction, {
+  LogFrameKind frameKind = LogFrameKind.modbusTcp,
+}) {
+  int? at16(int offset) => frame.length >= offset + 2
+      ? (frame[offset] << 8) | frame[offset + 1]
+      : null;
+
+  final crc = frameKind == LogFrameKind.modbusRtu && frame.length >= 2
+      ? frame[frame.length - 2] | (frame[frame.length - 1] << 8)
+      : null;
+  final crcValid = frameKind == LogFrameKind.modbusRtu && frame.length >= 4
+      ? rtuCrcValid(frame)
+      : null;
 
   return ModbusFrameInfo(
-    transactionId: at16(0),
-    protocolId: at16(2),
-    length: at16(4),
-    unitId: frame.length > 6 ? frame[6] : null,
-    functionCode: _functionCode(frame),
-    functionLabel: _functionLabel(frame),
-    isException: _isException(frame),
-    fields: _decodeFields(frame, direction),
+    frameKind: frameKind,
+    transactionId: frameKind == LogFrameKind.modbusTcp ? at16(0) : null,
+    protocolId: frameKind == LogFrameKind.modbusTcp ? at16(2) : null,
+    length: frameKind == LogFrameKind.modbusTcp ? at16(4) : null,
+    unitId: _unitId(frame, frameKind),
+    functionCode: _functionCode(frame, frameKind),
+    functionLabel: _functionLabel(frame, frameKind),
+    isException: _isException(frame, frameKind),
+    crc: crc,
+    crcValid: crcValid,
+    fields: _decodeFields(frame, direction, frameKind),
   );
 }
 
 /// Joins the decoded PDU fields into a single compact line, e.g.
 /// `Start address: 0    Quantity: 20`. Empty when nothing is decoded.
-String trafficDetailText(Uint8List frame, LogDirection direction) =>
-    _decodeFields(frame, direction)
-        .map((f) => '${f.label}: ${f.value}')
-        .join('    ');
+String trafficDetailText(
+  Uint8List frame,
+  LogDirection direction, {
+  LogFrameKind frameKind = LogFrameKind.modbusTcp,
+}) => _decodeFields(
+  frame,
+  direction,
+  frameKind,
+).map((f) => '${f.label}: ${f.value}').join('    ');
 
 /// Resolves the raw frame bytes for a log [entry]: the captured [LogEntry.frame]
 /// when present, otherwise the hex parsed from the first line of its data.
@@ -93,8 +124,9 @@ Uint8List frameForEntry(LogEntry entry) =>
 
 /// Formats bytes as space-separated, upper-case, two-digit hex, e.g.
 /// `00 01 00 00 00 06 01 03`.
-String formatHexBytes(Iterable<int> bytes) =>
-    bytes.map((b) => b.toRadixString(16).toUpperCase().padLeft(2, '0')).join(' ');
+String formatHexBytes(Iterable<int> bytes) => bytes
+    .map((b) => b.toRadixString(16).toUpperCase().padLeft(2, '0'))
+    .join(' ');
 
 /// Parses a hex string such as `00 01 0A FF` back into bytes. Returns an empty
 /// list when the string contains no valid hex tokens.
@@ -118,11 +150,23 @@ String formatTrafficTime(DateTime t) =>
 
 const _kMbapLen = 7;
 
-int? _functionCode(Uint8List frame) =>
-    frame.length > _kMbapLen ? frame[_kMbapLen] : null;
+int _pduOffset(LogFrameKind frameKind) =>
+    frameKind == LogFrameKind.modbusTcp ? _kMbapLen : 1;
 
-bool _isException(Uint8List frame) {
-  final fc = _functionCode(frame);
+int? _unitId(Uint8List frame, LogFrameKind frameKind) {
+  if (frameKind == LogFrameKind.modbusTcp) {
+    return frame.length > 6 ? frame[6] : null;
+  }
+  return frame.isNotEmpty ? frame[0] : null;
+}
+
+int? _functionCode(Uint8List frame, LogFrameKind frameKind) {
+  final offset = _pduOffset(frameKind);
+  return frame.length > offset ? frame[offset] : null;
+}
+
+bool _isException(Uint8List frame, LogFrameKind frameKind) {
+  final fc = _functionCode(frame, frameKind);
   return fc != null && (fc & 0x80) != 0;
 }
 
@@ -137,8 +181,8 @@ const _functionNames = <int, String>{
   0x10: 'Write Multiple Registers',
 };
 
-String _functionLabel(Uint8List frame) {
-  final fc = _functionCode(frame);
+String _functionLabel(Uint8List frame, LogFrameKind frameKind) {
+  final fc = _functionCode(frame, frameKind);
   if (fc == null) return 'Unknown';
   final code = fc & 0x7f;
   final name = _functionNames[code];
@@ -146,32 +190,43 @@ String _functionLabel(Uint8List frame) {
   return name == null ? hexCode : '$hexCode $name';
 }
 
-/// PDU view starting just after the MBAP header (i.e. function code at index 0).
-ByteData? _pdu(Uint8List frame) {
-  if (frame.length <= _kMbapLen) return null;
-  return ByteData.sublistView(frame, _kMbapLen);
+/// PDU view (function code at index 0).
+ByteData? _pdu(Uint8List frame, LogFrameKind frameKind) {
+  final offset = _pduOffset(frameKind);
+  final checksumLen = frameKind == LogFrameKind.modbusRtu ? 2 : 0;
+  if (frame.length <= offset + checksumLen) return null;
+  return ByteData.sublistView(frame, offset, frame.length - checksumLen);
 }
 
 String _displayAddress(int rawAddress) =>
     (rawAddress + AppSettings.instance.addressBaseStart).toString();
 
-List<TrafficField> _decodeFields(Uint8List frame, LogDirection direction) {
-  final pdu = _pdu(frame);
+List<TrafficField> _decodeFields(
+  Uint8List frame,
+  LogDirection direction,
+  LogFrameKind frameKind,
+) {
+  final pdu = _pdu(frame, frameKind);
   if (pdu == null) return const [];
   final fc = pdu.getUint8(0);
+  final fields = <TrafficField>[];
 
   // Exception response: function code + 0x80, then exception code.
   if ((fc & 0x80) != 0) {
-    if (pdu.lengthInBytes < 2) return const [];
+    if (pdu.lengthInBytes < 2) return fields;
     final code = pdu.getUint8(1);
     final exception = ModbusExceptionCode.fromCode(code);
-    return [
-      TrafficField('Exception code', '0x${code.toRadixString(16).toUpperCase().padLeft(2, '0')}'),
+    fields.addAll([
+      TrafficField(
+        'Exception code',
+        '0x${code.toRadixString(16).toUpperCase().padLeft(2, '0')}',
+      ),
       TrafficField('Description', exception?.label ?? 'Unknown exception'),
-    ];
+    ]);
+    return fields;
   }
 
-  return switch (fc) {
+  fields.addAll(switch (fc) {
     0x01 || 0x02 || 0x03 || 0x04 =>
       direction == LogDirection.tx
           ? _readRequestFields(pdu)
@@ -181,7 +236,8 @@ List<TrafficField> _decodeFields(Uint8List frame, LogDirection direction) {
     // Write multiple req/resp both start with start-address + quantity.
     0x0F || 0x10 => _addressQuantityFields(pdu),
     _ => const [],
-  };
+  });
+  return fields;
 }
 
 List<TrafficField> _readRequestFields(ByteData pdu) {

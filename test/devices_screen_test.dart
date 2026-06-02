@@ -300,8 +300,9 @@ void main() {
     expect(find.text('Show all (7)'), findsOneWidget);
 
     // No rendered device card may extend below the scan dock (no clipping).
-    final scanDockTop =
-        tester.getTopLeft(find.byKey(AppTestKeys.scanNetworkButton)).dy;
+    final scanDockTop = tester
+        .getTopLeft(find.byKey(AppTestKeys.scanNetworkButton))
+        .dy;
     for (final card in find.byType(DeviceCard).evaluate()) {
       final bottom = tester.getBottomLeft(find.byWidget(card.widget)).dy;
       expect(bottom, lessThanOrEqualTo(scanDockTop));
@@ -682,29 +683,36 @@ void main() {
     expect(find.text('Connect to Device'), findsNothing);
   });
 
-  test('unsupported discovered protocol is not saved or removed', () async {
-    final discovered = DiscoveredDevice(
-      host: '192.168.88.104',
-      port: 502,
-      unitId: 1,
-      protocol: ProtocolType.modbusRtuIp,
-    );
-    final scanner = _ScanPort(ScannerStateView.done, discovered: [discovered]);
-    final controller = DevicesController(
-      DeviceRepository.instance,
-      PollingConnectionRuntime(),
-      scanner,
-      AppSettings.instance,
-    );
-    addTearDown(controller.dispose);
+  test(
+    'RTU/IP discovered protocol is saved and removed after connect',
+    () async {
+      final discovered = DiscoveredDevice(
+        host: '192.168.88.104',
+        port: 502,
+        unitId: 1,
+        protocol: ProtocolType.modbusRtuIp,
+      );
+      final scanner = _ScanPort(
+        ScannerStateView.done,
+        discovered: [discovered],
+      );
+      final runtime = PollingConnectionRuntime();
+      final controller = DevicesController(
+        DeviceRepository.instance,
+        runtime,
+        scanner,
+        AppSettings.instance,
+      );
+      addTearDown(controller.dispose);
 
-    await expectLater(
-      controller.connectDiscoveredDevice(discovered),
-      throwsUnsupportedError,
-    );
-    expect(controller.devices, isEmpty);
-    expect(scanner.discoveredDevices.devices, [discovered]);
-  });
+      final device = await controller.connectDiscoveredDevice(discovered);
+
+      expect(device.protocol, ProtocolType.modbusRtuIp);
+      expect(controller.devices.single.protocol, ProtocolType.modbusRtuIp);
+      expect(runtime.isConnected(device), isTrue);
+      expect(scanner.discoveredDevices.isEmpty, isTrue);
+    },
+  );
 
   test('connecting saved device updates last connected timestamp', () async {
     final device = DeviceInfo(
@@ -755,17 +763,19 @@ void main() {
     addTearDown(controller.dispose);
 
     // The saved list mirrors the stored repository order verbatim.
-    expect(
-      controller.savedDevicesForSearch('').map((device) => device.name),
-      ['A', 'B', 'C'],
-    );
+    expect(controller.savedDevicesForSearch('').map((device) => device.name), [
+      'A',
+      'B',
+      'C',
+    ]);
 
     // Move A (index 0) to the end; onReorderItem reports the post-removal index.
     await controller.reorderSavedDevices(0, 2);
-    expect(
-      controller.savedDevicesForSearch('').map((device) => device.name),
-      ['B', 'C', 'A'],
-    );
+    expect(controller.savedDevicesForSearch('').map((device) => device.name), [
+      'B',
+      'C',
+      'A',
+    ]);
 
     // The new order is persisted and survives a reload from the store.
     final reloaded = await DeviceRepository.instance.load();
@@ -795,14 +805,15 @@ void main() {
     addTearDown(controller.dispose);
 
     // The preview is the storage order, not a created/connection sort.
-    expect(
-      controller.visibleHomeDevices(3).map((device) => device.name),
-      ['A', 'B', 'C'],
-    );
-    expect(
-      controller.visibleHomeDevices(2).map((device) => device.name),
-      ['A', 'B'],
-    );
+    expect(controller.visibleHomeDevices(3).map((device) => device.name), [
+      'A',
+      'B',
+      'C',
+    ]);
+    expect(controller.visibleHomeDevices(2).map((device) => device.name), [
+      'A',
+      'B',
+    ]);
   });
 
   testWidgets('scan sheet action button stays visible with many devices', (

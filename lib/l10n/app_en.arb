@@ -288,6 +288,21 @@
   "trafficMbapHeader": "MBAP header",
   "@trafficMbapHeader": {},
 
+  "trafficRtuHeader": "RTU Frame",
+  "@trafficRtuHeader": {},
+
+  "trafficCrc": "CRC",
+  "@trafficCrc": {},
+
+  "trafficCrcStatus": "CRC Status",
+  "@trafficCrcStatus": {},
+
+  "trafficCrcOk": "OK",
+  "@trafficCrcOk": {},
+
+  "trafficCrcInvalid": "Invalid",
+  "@trafficCrcInvalid": {},
+
   "trafficPdu": "PDU",
   "@trafficPdu": {},
 

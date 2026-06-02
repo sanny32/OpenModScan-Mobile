@@ -5,6 +5,7 @@ import 'package:modbus_client_tcp/modbus_client_tcp.dart' as modbus_tcp;
 
 import '../models/device_info.dart';
 import '../models/modbus_exception.dart';
+import 'modbus_rtu_ip_serial_port.dart';
 import 'traffic_log.dart';
 
 class ModbusClient {
@@ -13,10 +14,14 @@ class ModbusClient {
 
   final DeviceInfo device;
   modbus_tcp.ModbusClientTcp? _tcpClient;
+  modbus.ModbusClientSerialRtuBase? _rtuClient;
 
   ModbusClient(this.device);
 
-  bool get isConnected => _tcpClient?.isConnected ?? false;
+  bool get isConnected => switch (device.protocol) {
+    ProtocolType.modbusTcp => _tcpClient?.isConnected ?? false,
+    ProtocolType.modbusRtuIp => _rtuClient?.isConnected ?? false,
+  };
 
   Future<void> connect() async {
     if (!device.protocol.supportsConnection) {
@@ -24,29 +29,55 @@ class ModbusClient {
     }
 
     final timeout = Duration(milliseconds: device.timeout);
-    final client =
-        _tcpClient ??
-        modbus_tcp.ModbusClientTcp(
-          device.host,
-          serverPort: device.port,
-          unitId: device.unitId,
-          connectionTimeout: timeout,
-          responseTimeout: timeout,
-        );
-    TrafficLog.instance.setActiveDevice(device.id);
-    try {
-      if (!await client.connect()) {
-        throw ModbusClientException('Could not connect to ${device.address}.');
-      }
-    } finally {
-      TrafficLog.instance.setActiveDevice(null);
+    switch (device.protocol) {
+      case ProtocolType.modbusTcp:
+        final client =
+            _tcpClient ??
+            modbus_tcp.ModbusClientTcp(
+              device.host,
+              serverPort: device.port,
+              unitId: device.unitId,
+              connectionTimeout: timeout,
+              responseTimeout: timeout,
+            );
+        TrafficLog.instance.setActiveDevice(device.id);
+        try {
+          if (!await client.connect()) {
+            throw ModbusClientException(
+              'Could not connect to ${device.address}.',
+            );
+          }
+        } finally {
+          TrafficLog.instance.setActiveDevice(null);
+        }
+        _tcpClient = client;
+      case ProtocolType.modbusRtuIp:
+        final client =
+            _rtuClient ??
+            modbus.ModbusClientSerialRtuBase(
+              serialPort: ModbusRtuIpSerialPort(
+                host: device.host,
+                port: device.port,
+                connectTimeout: timeout,
+                deviceId: device.id,
+              ),
+              unitId: device.unitId,
+              responseTimeout: timeout,
+            );
+        if (!await client.connect()) {
+          throw ModbusClientException(
+            'Could not connect to ${device.address}.',
+          );
+        }
+        _rtuClient = client;
     }
-    _tcpClient = client;
   }
 
   Future<void> disconnect() async {
     await _tcpClient?.disconnect();
+    await _rtuClient?.disconnect();
     _tcpClient = null;
+    _rtuClient = null;
   }
 
   Future<List<int>> readHoldingRegisters(int startAddress, int quantity) =>
@@ -192,8 +223,11 @@ class ModbusClient {
     return [for (final bit in bits) _bitValueFor(bit)];
   }
 
-  modbus_tcp.ModbusClientTcp _requireTcpClient() {
-    final client = _tcpClient;
+  modbus.ModbusClient _requireClient() {
+    final client = switch (device.protocol) {
+      ProtocolType.modbusTcp => _tcpClient,
+      ProtocolType.modbusRtuIp => _rtuClient,
+    };
     if (client == null) {
       throw StateError('Modbus client is not connected.');
     }
@@ -203,9 +237,12 @@ class ModbusClient {
   /// Sends [request] while tagging the traffic log with this device, so the
   /// global library logs (TX/RX frames) are attributed to the right device.
   Future<modbus.ModbusResponseCode> _send(modbus.ModbusRequest request) async {
+    if (device.protocol == ProtocolType.modbusRtuIp) {
+      return _requireClient().send(request);
+    }
     TrafficLog.instance.setActiveDevice(device.id);
     try {
-      return await _requireTcpClient().send(request);
+      return await _requireClient().send(request);
     } finally {
       TrafficLog.instance.setActiveDevice(null);
     }

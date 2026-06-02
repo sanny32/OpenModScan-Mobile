@@ -3,6 +3,7 @@ import 'package:omodscan_mobile/models/device_info.dart';
 import 'package:omodscan_mobile/services/connection_manager.dart';
 
 import 'helpers.dart';
+import 'modbus_rtu_ip_test_server.dart';
 import 'modbus_tcp_test_server.dart';
 
 void main() {
@@ -70,6 +71,40 @@ void main() {
     expect(server.holdingRegisters[6], 0x1111);
     expect(server.holdingRegisters[7], 0x2222);
     expect(server.coils[8], isTrue);
+  });
+
+  test('RTU/IP devices use the same connection runtime API', () async {
+    final server = await ModbusRtuIpTestServer.start(
+      holdingRegisters: {1: 7},
+      inputRegisters: {2: 8},
+      coils: {3: true},
+      discreteInputs: {4: false},
+    );
+    addTearDown(server.close);
+    final device = DeviceInfo(
+      id: 'rtu-plc',
+      name: 'RTU PLC',
+      host: server.host,
+      port: server.port,
+      protocol: ProtocolType.modbusRtuIp,
+      unitId: 1,
+    );
+    await manager.connect(device);
+
+    expect(manager.isConnected(device), isTrue);
+    expect(
+      await manager.readHoldingRegisters(device, startAddress: 1, count: 1),
+      [7],
+    );
+    expect(
+      await manager.readInputRegisters(device, startAddress: 2, count: 1),
+      [8],
+    );
+    expect(await manager.readCoils(device, startAddress: 3, count: 1), [true]);
+    expect(
+      await manager.readDiscreteInputs(device, startAddress: 4, count: 1),
+      [false],
+    );
   });
 
   test('operations on disconnected devices throw clear state errors', () {

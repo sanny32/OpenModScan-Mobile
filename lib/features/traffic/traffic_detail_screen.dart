@@ -26,7 +26,11 @@ class TrafficDetailScreen extends StatelessWidget {
     final frame = _frame;
     final hasFrame = frame.isNotEmpty;
     final info = hasFrame
-        ? describeModbusFrame(frame, entry.direction ?? LogDirection.tx)
+        ? describeModbusFrame(
+            frame,
+            entry.direction ?? LogDirection.tx,
+            frameKind: entry.frameKind,
+          )
         : null;
 
     final isTx = entry.direction == LogDirection.tx;
@@ -88,23 +92,54 @@ class TrafficDetailScreen extends StatelessWidget {
                   color: directionColor,
                 ),
                 const SizedBox(height: 16),
-                _SectionHeader(l10n.trafficMbapHeader),
+                _SectionHeader(
+                  info!.isRtu ? l10n.trafficRtuHeader : l10n.trafficMbapHeader,
+                ),
                 const SizedBox(height: 8),
                 _Card(
                   child: Column(
-                    children: [
-                      _InfoRow(
-                        l10n.trafficTransactionId,
-                        _hex16(info!.transactionId),
-                      ),
-                      _InfoRow(l10n.trafficProtocolId, _hex16(info.protocolId)),
-                      _InfoRow(l10n.trafficLength, '${info.length ?? '—'}'),
-                      _InfoRow(
-                        l10n.trafficUnitId,
-                        '${info.unitId ?? '—'}',
-                        last: true,
-                      ),
-                    ],
+                    children: info.isRtu
+                        ? [
+                            _InfoRow(
+                              l10n.trafficUnitId,
+                              '${info.unitId ?? '—'}',
+                            ),
+                            _InfoRow(
+                              l10n.trafficCrc,
+                              info.crc == null
+                                  ? '—'
+                                  : '0x${info.crc!.toRadixString(16).toUpperCase().padLeft(4, '0')}',
+                            ),
+                            _InfoRow(
+                              l10n.trafficCrcStatus,
+                              info.crcValid == true
+                                  ? l10n.trafficCrcOk
+                                  : l10n.trafficCrcInvalid,
+                              valueColor: info.crcValid == true
+                                  ? null
+                                  : cs.error,
+                              last: true,
+                            ),
+                          ]
+                        : [
+                            _InfoRow(
+                              l10n.trafficTransactionId,
+                              _hex16(info.transactionId),
+                            ),
+                            _InfoRow(
+                              l10n.trafficProtocolId,
+                              _hex16(info.protocolId),
+                            ),
+                            _InfoRow(
+                              l10n.trafficLength,
+                              '${info.length ?? '—'}',
+                            ),
+                            _InfoRow(
+                              l10n.trafficUnitId,
+                              '${info.unitId ?? '—'}',
+                              last: true,
+                            ),
+                          ],
                   ),
                 ),
                 const SizedBox(height: 16),

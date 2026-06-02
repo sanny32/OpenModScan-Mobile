@@ -10,6 +10,7 @@ import 'package:omodscan_mobile/models/device_info.dart';
 import 'package:omodscan_mobile/models/log_entry.dart';
 import 'package:omodscan_mobile/runtime/runtime_ports.dart';
 import 'package:omodscan_mobile/theme/app_theme.dart';
+import 'package:omodscan_mobile/utils/modbus_crc.dart';
 import 'package:omodscan_mobile/utils/modbus_traffic_format.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,11 +27,30 @@ LogEntry _readResponse() => buildTrafficLogEntry(
 
 LogEntry _exceptionResponse() => buildTrafficLogEntry(
   frame: Uint8List.fromList(const [
-    0x00, 0x01, 0x00, 0x00, 0x00, 0x03, 0x01, 0x83, 0x02,
+    0x00,
+    0x01,
+    0x00,
+    0x00,
+    0x00,
+    0x03,
+    0x01,
+    0x83,
+    0x02,
   ]),
   direction: LogDirection.rx,
   time: DateTime(2026, 5, 30),
 );
+
+LogEntry _rtuReadResponse({bool validCrc = true}) {
+  final frame = _rtuFrame([0x01, 0x03, 0x02, 0x00, 0x7B]);
+  if (!validCrc) frame[frame.length - 1] ^= 0xff;
+  return buildTrafficLogEntry(
+    frame: frame,
+    direction: LogDirection.rx,
+    time: DateTime(2026, 5, 30, 7, 11, 19, 868),
+    frameKind: LogFrameKind.modbusRtu,
+  );
+}
 
 Widget _host(Widget child) => MaterialApp(
   theme: AppTheme.lightTheme,
@@ -102,6 +122,35 @@ void main() {
     expect(find.text('Exception code'), findsOneWidget);
   });
 
+  testWidgets('renders RTU frame details with CRC status', (tester) async {
+    useTallScreen(tester);
+    await tester.pumpWidget(
+      _host(TrafficDetailScreen(entry: _rtuReadResponse())),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('RTU FRAME'), findsOneWidget);
+    expect(find.text('CRC Status'), findsOneWidget);
+    expect(find.text('OK'), findsOneWidget);
+    expect(find.text('Values'), findsOneWidget);
+    expect(find.text('123'), findsOneWidget);
+  });
+
+  testWidgets('renders invalid RTU CRC without hiding decoded fields', (
+    tester,
+  ) async {
+    useTallScreen(tester);
+    await tester.pumpWidget(
+      _host(TrafficDetailScreen(entry: _rtuReadResponse(validCrc: false))),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('CRC Status'), findsOneWidget);
+    expect(find.text('Invalid'), findsOneWidget);
+    expect(find.text('Values'), findsOneWidget);
+    expect(find.text('123'), findsOneWidget);
+  });
+
   testWidgets('copy button puts hex on the clipboard', (tester) async {
     final copied = <String>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -114,8 +163,10 @@ void main() {
       },
     );
     addTearDown(
-      () => tester.binding.defaultBinaryMessenger
-          .setMockMethodCallHandler(SystemChannels.platform, null),
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
     );
 
     await tester.pumpWidget(_host(TrafficDetailScreen(entry: _readResponse())));
@@ -200,4 +251,10 @@ void main() {
 
     expect(find.byType(TrafficDetailScreen), findsNothing);
   });
+}
+
+Uint8List _rtuFrame(List<int> bytes) {
+  final frame = [...bytes];
+  frame.addAll(modbusCrc16(frame));
+  return Uint8List.fromList(frame);
 }
