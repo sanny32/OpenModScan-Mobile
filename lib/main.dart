@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'app_flags.dart';
 import 'features/devices/devices_controller.dart';
@@ -19,6 +20,10 @@ import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations(const [
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   await AppSettings.instance.load();
   await DeviceRepository.instance.initialize(
     seedDevices: AppFlags.demoData ? demoDevices : const [],
