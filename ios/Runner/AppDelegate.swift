@@ -25,6 +25,8 @@ import UIKit
         result(AppDelegate.packageVersion())
       case "getPackageBuildDate":
         result(AppDelegate.packageBuildDate())
+      case "getAppName":
+        result(AppDelegate.appName())
       default:
         result(FlutterMethodNotImplemented)
       }
@@ -38,6 +40,15 @@ import UIKit
     let name = info?["CFBundleShortVersionString"] as? String ?? ""
     let code = Int(info?["CFBundleVersion"] as? String ?? "") ?? 0
     return ["name": name, "code": code]
+  }
+
+  /// Mirrors `package_info_plus`: prefers the user-facing `CFBundleDisplayName`
+  /// and falls back to `CFBundleName`.
+  private static func appName() -> String {
+    let info = Bundle.main.infoDictionary
+    return (info?["CFBundleDisplayName"] as? String)
+      ?? (info?["CFBundleName"] as? String)
+      ?? ""
   }
 
   /// iOS has no compile-time build-date resource like Android's gradle

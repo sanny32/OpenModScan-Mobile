@@ -14,6 +14,7 @@ class MainActivity : FlutterActivity() {
                 when (call.method) {
                     "getPackageBuildDate" -> result.success(getString(R.string.omodscan_build_date_utc))
                     "getPackageVersion" -> result.success(packageVersion())
+                    "getAppName" -> result.success(appName())
                     else -> result.notImplemented()
                 }
             }
@@ -33,6 +34,9 @@ class MainActivity : FlutterActivity() {
             "code" to versionCode,
         )
     }
+
+    private fun appName(): String =
+        applicationInfo.loadLabel(packageManager).toString()
 
     private companion object {
         const val BUILD_INFO_CHANNEL = "io.github.sanny32.omodscan_mobile/build_info"

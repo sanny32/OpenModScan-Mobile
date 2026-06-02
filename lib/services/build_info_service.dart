@@ -29,6 +29,17 @@ class BuildInfoService {
     }
   }
 
+  Future<String?> appName() async {
+    try {
+      final name = await _channel.invokeMethod<String>('getAppName');
+      return (name == null || name.isEmpty) ? null : name;
+    } on MissingPluginException {
+      return null;
+    } on PlatformException {
+      return null;
+    }
+  }
+
   Future<PackageVersion?> packageVersion() async {
     try {
       final rawVersion = await _channel.invokeMapMethod<String, Object?>(

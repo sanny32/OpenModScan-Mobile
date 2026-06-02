@@ -22,6 +22,7 @@ class _AboutScreenState extends State<AboutScreen> {
       .packageBuildDate();
   late final Future<PackageVersion?> _packageVersion = const BuildInfoService()
       .packageVersion();
+  late final Future<String?> _appName = const BuildInfoService().appName();
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +84,7 @@ class _AboutScreenState extends State<AboutScreen> {
                   context,
                   Icons.info_outline,
                   l10n.aboutApplication,
-                  l10n.appTitle,
+                  _appNameValue(context),
                 ),
                 _divider(context),
                 _infoTile(
@@ -159,6 +160,16 @@ class _AboutScreenState extends State<AboutScreen> {
         ),
       );
     },
+  );
+
+  Widget _appNameValue(BuildContext context) => FutureBuilder<String?>(
+    future: _appName,
+    builder: (context, snapshot) => Text(
+      snapshot.data ?? context.l10n.appBarName,
+      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    ),
   );
 
   Widget _packageVersionValue(
