@@ -506,6 +506,33 @@ void main() {
     expect(result?.device.markerColor, DeviceMarkerColor.teal);
   });
 
+  testWidgets('new device form highlights default connection type', (
+    tester,
+  ) async {
+    await AppSettings.instance.setConnectionType(ProtocolType.modbusRtuIp);
+    final controller = DevicesController(
+      DeviceRepository.instance,
+      PollingConnectionRuntime(),
+      _ScanPort(ScannerStateView.idle),
+      AppSettings.instance,
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: DevicesScreen(controller: controller, onOpenDevice: (_) {}),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+
+    expect(_typeCardBorderWidth(tester, 'Modbus TCP'), 1);
+    expect(_typeCardBorderWidth(tester, 'RTU over TCP/IP'), 2);
+  });
+
   testWidgets('saved devices screen lists in manual order and filters', (
     tester,
   ) async {
@@ -1121,6 +1148,23 @@ void main() {
     expect(scanner.clearCalled, isTrue);
     expect(find.text('Scan network'), findsOneWidget);
   });
+}
+
+double _typeCardBorderWidth(WidgetTester tester, String label) {
+  final card = tester.widget<Container>(
+    find
+        .ancestor(
+          of: find.text(label),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Container && widget.decoration is BoxDecoration,
+          ),
+        )
+        .first,
+  );
+  final decoration = card.decoration as BoxDecoration;
+  final border = decoration.border as Border;
+  return border.top.width;
 }
 
 class _ScanPort extends ChangeNotifier implements DeviceScannerPort {

@@ -55,6 +55,8 @@ class DevicesController extends ChangeNotifier {
 
   List<DeviceInfo> get devices => _repository.snapshot;
 
+  ProtocolType get defaultConnectionType => _settings.connectionType;
+
   /// Saved devices are ordered by the user's manual drag order, which is the
   /// persisted repository order. The home preview shows the first [limit].
   List<DeviceInfo> visibleHomeDevices([int limit = 3]) =>

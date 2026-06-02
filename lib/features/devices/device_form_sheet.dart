@@ -182,6 +182,9 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                     children: [
                       Expanded(
                         child: _TypeCard(
+                          key: const ValueKey(
+                            'device-connection-type-modbusTcp',
+                          ),
                           icon: Icons.lan_outlined,
                           label: l10n.connectTypeTcp,
                           sub: l10n.connectTypeTcpSub,
@@ -192,6 +195,9 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: _TypeCard(
+                          key: const ValueKey(
+                            'device-connection-type-modbusRtuIp',
+                          ),
                           icon: Icons.cable_outlined,
                           label: l10n.connectTypeRtu,
                           sub: l10n.connectTypeRtuSub,
@@ -493,6 +499,7 @@ class _TypeCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _TypeCard({
+    super.key,
     required this.icon,
     required this.label,
     required this.sub,
@@ -504,54 +511,58 @@ class _TypeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? cs.primary : cs.outline,
-            width: selected ? 2 : 1,
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected ? cs.primary : cs.outline,
+              width: selected ? 2 : 1,
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: Container(
-                width: 18,
-                height: 18,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: selected ? cs.primary : cs.onSurfaceVariant,
-                    width: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: selected ? cs.primary : cs.onSurfaceVariant,
+                      width: 2,
+                    ),
+                    color: selected ? cs.primary : Colors.transparent,
                   ),
-                  color: selected ? cs.primary : Colors.transparent,
+                  child: selected
+                      ? Icon(Icons.circle, size: 8, color: cs.onPrimary)
+                      : null,
                 ),
-                child: selected
-                    ? Icon(Icons.circle, size: 8, color: cs.onPrimary)
-                    : null,
               ),
-            ),
-            const SizedBox(height: 4),
-            Icon(icon, size: 34, color: cs.primary),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: tt.labelLarge!.copyWith(fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              sub,
-              style: tt.labelSmall!.copyWith(color: cs.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-          ],
+              const SizedBox(height: 4),
+              Icon(icon, size: 34, color: cs.primary),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: tt.labelLarge!.copyWith(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                sub,
+                style: tt.labelSmall!.copyWith(color: cs.onSurfaceVariant),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );

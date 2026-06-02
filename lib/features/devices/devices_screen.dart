@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
-import '../../widgets/keyboard_done_bar.dart';
-import '../../models/device_info.dart';
 import '../../models/discovered_device.dart';
+import '../../models/device_info.dart';
 import '../../runtime/runtime_ports.dart';
 import '../../theme/app_dimens.dart';
 import '../../widgets/app_test_keys.dart';
 import '../../widgets/error_feedback.dart';
+import '../../widgets/keyboard_done_bar.dart';
 import 'device_form_sheet.dart';
 import 'discovered_devices_screen.dart';
 import 'devices_controller.dart';
@@ -74,7 +74,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
       name: 'Device #${widget.controller.devices.length + 1}',
       host: discovered?.host ?? '',
       port: discovered?.port ?? 502,
-      protocol: discovered?.protocol ?? ProtocolType.modbusTcp,
+      protocol: discovered?.protocol ?? widget.controller.defaultConnectionType,
       unitId: discovered?.unitId ?? 1,
     );
 
