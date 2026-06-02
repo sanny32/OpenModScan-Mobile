@@ -66,7 +66,7 @@ class AppSettings {
   bool confirmBeforeWrite = false;
   bool saveLogToFile = false;
   bool clearLogOnDisconnect = false;
-  int maxLogEntries = 1000;
+  int maxLogEntries = 100;
   ProtocolType scanProtocol = ProtocolType.modbusTcp;
   String scanSubnetCidr = '';
   int scanSubnetPrefix = 24;
@@ -120,7 +120,7 @@ class AppSettings {
     saveLogToFile = _store.getBool(_saveLogToFileKey) ?? false;
     clearLogOnDisconnect = _store.getBool(_clearLogOnDisconnectKey) ?? false;
     maxLogEntries = _clampInt(
-      _store.getInt(_maxLogEntriesKey) ?? 1000,
+      _store.getInt(_maxLogEntriesKey) ?? 100,
       50,
       100000,
     );
@@ -329,7 +329,7 @@ class AppSettings {
     showTypeBadges = false;
     saveLogToFile = false;
     clearLogOnDisconnect = false;
-    maxLogEntries = 1000;
+    maxLogEntries = 100;
     scanProtocol = ProtocolType.modbusTcp;
     scanSubnetCidr = '';
     scanSubnetPrefix = 24;
