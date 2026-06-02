@@ -65,9 +65,11 @@ void main() {
     expect(find.text('Discovered devices'), findsOneWidget);
     expect(find.text('Scanning...'), findsOneWidget);
     expect(find.text('Network scanner'), findsNothing);
+    // With no saved devices the discovered preview fills the available height,
+    // so both results fit on the home screen and no "show all" footer appears.
     expect(find.text('192.168.88.104:502'), findsOneWidget);
-    expect(find.text('192.168.88.105:502'), findsNothing);
-    expect(find.text('+ 1 more'), findsOneWidget);
+    expect(find.text('192.168.88.105:502'), findsOneWidget);
+    expect(find.text('+ 1 more'), findsNothing);
 
     await tester.tap(find.text('Scanning...'));
     await tester.pumpAndSettle();
@@ -81,10 +83,12 @@ void main() {
     expect(find.textContaining('Elapsed:'), findsOneWidget);
     expect(find.text('Found: 2'), findsOneWidget);
     expect(find.text('Clear'), findsNothing);
+    // The scan sheet lists the discovered devices on top of the home preview,
+    // which now also shows both, so each result appears in both layers.
     expect(find.text('192.168.88.104:502'), findsWidgets);
-    expect(find.text('192.168.88.105:502'), findsOneWidget);
+    expect(find.text('192.168.88.105:502'), findsWidgets);
     expect(find.text('Modbus TCP • ID: 1'), findsWidgets);
-    expect(find.text('Modbus TCP • ID: 2'), findsOneWidget);
+    expect(find.text('Modbus TCP • ID: 2'), findsWidgets);
     expect(find.text('Connect'), findsAtLeastNWidgets(2));
 
     await tester.tap(find.text('Stop scanning'));
@@ -103,23 +107,30 @@ void main() {
   testWidgets('discovered show all opens full-screen results list only', (
     tester,
   ) async {
-    final scanner = _ScanPort(
-      ScannerStateView.scanning,
-      discovered: const [
+    // Enough discovered devices to overflow the home preview height, so the
+    // "show all" footer is rendered (the preview keeps the first two at the top).
+    final discovered = <DiscoveredDevice>[
+      const DiscoveredDevice(
+        host: '192.168.88.104',
+        port: 502,
+        unitId: 1,
+        protocol: ProtocolType.modbusTcp,
+      ),
+      const DiscoveredDevice(
+        host: '192.168.88.105',
+        port: 502,
+        unitId: 2,
+        protocol: ProtocolType.modbusTcp,
+      ),
+      for (var i = 0; i < 13; i++)
         DiscoveredDevice(
-          host: '192.168.88.104',
+          host: '192.168.88.${110 + i}',
           port: 502,
           unitId: 1,
           protocol: ProtocolType.modbusTcp,
         ),
-        DiscoveredDevice(
-          host: '192.168.88.105',
-          port: 502,
-          unitId: 2,
-          protocol: ProtocolType.modbusTcp,
-        ),
-      ],
-    );
+    ];
+    final scanner = _ScanPort(ScannerStateView.scanning, discovered: discovered);
     final controller = DevicesController(
       DeviceRepository.instance,
       PollingConnectionRuntime(),
@@ -136,7 +147,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Show all (2)'));
+    await tester.tap(find.text('Show all (15)'));
     await tester.pumpAndSettle();
 
     expect(find.text('Discovered devices'), findsWidgets);
@@ -154,6 +165,51 @@ void main() {
     expect(find.text('Connect'), findsAtLeastNWidgets(2));
     expect(find.byType(TextField), findsNothing);
   });
+
+  testWidgets(
+    'discovered preview fills available height when no saved devices',
+    (tester) async {
+      // Regression: with no saved devices the preview used to show a fixed
+      // 1–2 row prefix regardless of free space. It must now fill the height
+      // and render every result that fits (here all five), with no footer.
+      tester.view.physicalSize = const Size(393, 852);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final discovered = <DiscoveredDevice>[
+        for (var i = 0; i < 5; i++)
+          DiscoveredDevice(
+            host: '192.168.88.${100 + i}',
+            port: 502,
+            unitId: 1,
+            protocol: ProtocolType.modbusTcp,
+          ),
+      ];
+      final scanner = _ScanPort(ScannerStateView.done, discovered: discovered);
+      final controller = DevicesController(
+        DeviceRepository.instance,
+        PollingConnectionRuntime(),
+        scanner,
+        AppSettings.instance,
+      );
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: DevicesScreen(controller: controller, onOpenDevice: (_) {}),
+        ),
+      );
+
+      for (var i = 0; i < 5; i++) {
+        expect(find.text('192.168.88.${100 + i}:502'), findsOneWidget);
+      }
+      expect(find.textContaining('more'), findsNothing);
+      expect(find.textContaining('Show all'), findsNothing);
+    },
+  );
 
   testWidgets('empty scan panel starts scanning', (tester) async {
     final scanner = _ScanPort(ScannerStateView.idle);

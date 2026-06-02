@@ -256,27 +256,20 @@ class _DevicesScreenState extends State<DevicesScreen> {
       ];
     }
 
-    final discoveredChildren = <Widget>[
-      DevicesSectionHeader(
-        title: l10n.devicesDiscoveredTitle,
-        trailing: !canClearDiscovered
-            ? null
-            : TextButton(
-                onPressed: widget.controller.clearDiscoveredDevices,
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(l10n.devicesClearDiscovered),
+    final discoveredHeader = DevicesSectionHeader(
+      title: l10n.devicesDiscoveredTitle,
+      trailing: !canClearDiscovered
+          ? null
+          : TextButton(
+              onPressed: widget.controller.clearDiscoveredDevices,
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-      ),
-      DiscoveredDevicesPreview(
-        discoveredDevices: discovered,
-        onConnect: _connectDiscovered,
-        onShowAll: _openDiscoveredDevices,
-      ),
-    ];
+              child: Text(l10n.devicesClearDiscovered),
+            ),
+    );
 
     return ScaffoldMessenger(
       child: Scaffold(
@@ -349,25 +342,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                                   children: buildSavedChildren(savedLimit),
                                 ),
                               ),
-                              DevicesSectionHeader(
-                                title: l10n.devicesDiscoveredTitle,
-                                trailing: !canClearDiscovered
-                                    ? null
-                                    : TextButton(
-                                        onPressed: widget
-                                            .controller
-                                            .clearDiscoveredDevices,
-                                        style: TextButton.styleFrom(
-                                          padding: EdgeInsets.zero,
-                                          minimumSize: Size.zero,
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                        child: Text(
-                                          l10n.devicesClearDiscovered,
-                                        ),
-                                      ),
-                              ),
+                              discoveredHeader,
                               Expanded(
                                 child: LayoutBuilder(
                                   builder: (context, discoveredConstraints) {
@@ -385,6 +360,30 @@ class _DevicesScreenState extends State<DevicesScreen> {
                           );
                         },
                       )
+                    : hasDiscoveredDevices
+                    // Discovered-only (no saved devices): give the preview the
+                    // free height so it fills the screen with as many rows as
+                    // fit, instead of the fixed 1–2 row home prefix.
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ...buildSavedChildren(0),
+                          discoveredHeader,
+                          Expanded(
+                            child: LayoutBuilder(
+                              builder: (context, discoveredConstraints) {
+                                return DiscoveredDevicesPreview(
+                                  discoveredDevices: discovered,
+                                  onConnect: _connectDiscovered,
+                                  onShowAll: _openDiscoveredDevices,
+                                  availableHeight:
+                                      discoveredConstraints.maxHeight,
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      )
                     : LayoutBuilder(
                         builder: (context, constraints) {
                           final savedLimit = _savedFitCount(
@@ -397,7 +396,6 @@ class _DevicesScreenState extends State<DevicesScreen> {
                             padding: const EdgeInsets.only(bottom: 8),
                             children: [
                               ...buildSavedChildren(savedLimit),
-                              if (hasDiscoveredDevices) ...discoveredChildren,
                             ],
                           );
                         },
