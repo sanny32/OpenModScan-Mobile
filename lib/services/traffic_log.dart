@@ -42,6 +42,18 @@ class TrafficLog extends ChangeNotifier implements TrafficLogSource {
   @visibleForTesting
   void attachFileWriter(TrafficFileWriter? writer) => _fileWriter = writer;
 
+  @visibleForTesting
+  Future<void> resetForTesting() async {
+    _byDevice.clear();
+    _txnToDevice.clear();
+    _activeDeviceId = null;
+    _installed = false;
+    final writer = _fileWriter;
+    _fileWriter = null;
+    await writer?.close();
+    notifyListeners();
+  }
+
   /// Marks which device's traffic is currently being exchanged. Cleared (with
   /// `null`) once the operation completes.
   void setActiveDevice(String? deviceId) {

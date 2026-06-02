@@ -7,6 +7,7 @@ import '../../../models/device_info.dart';
 import '../../../models/discovered_device.dart';
 import '../../../runtime/runtime_ports.dart';
 import '../../../theme/app_theme.dart';
+import '../../../widgets/app_test_keys.dart';
 import '../devices_controller.dart';
 import '../discovered_devices_screen.dart';
 import '../layout_metrics.dart';
@@ -420,6 +421,7 @@ class _ScanActionButton extends StatelessWidget {
 
     if (filled) {
       return FilledButton.icon(
+        key: AppTestKeys.scanSheetActionButton,
         icon: Icon(icon, size: 24),
         label: Text(label),
         onPressed: onPressed,
@@ -434,6 +436,7 @@ class _ScanActionButton extends StatelessWidget {
     }
 
     return OutlinedButton.icon(
+      key: AppTestKeys.scanSheetActionButton,
       icon: Icon(icon, size: 24),
       label: Text(label),
       onPressed: onPressed,
@@ -459,6 +462,7 @@ class _ScanNetworkButton extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final l10n = context.l10n;
     return FilledButton.icon(
+      key: AppTestKeys.scanNetworkButton,
       icon: const Icon(Icons.sensors, size: 24),
       label: Text(l10n.devicesScanNetwork),
       onPressed: onStart,

@@ -725,6 +725,9 @@
   "settingsResetDefaults": "Reset to defaults",
   "@settingsResetDefaults": {},
 
+  "settingsResetAction": "Reset",
+  "@settingsResetAction": {},
+
   "settingsResetConfirmMessage": "All settings will be reset to their default values.",
   "@settingsResetConfirmMessage": {},
 

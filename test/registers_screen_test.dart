@@ -18,6 +18,7 @@ import 'package:omodscan_mobile/runtime/fakes/demo_fixtures.dart';
 import 'package:omodscan_mobile/runtime/fakes/demo_runtime.dart';
 import 'package:omodscan_mobile/services/device_repository.dart';
 import 'package:omodscan_mobile/theme/app_theme.dart';
+import 'package:omodscan_mobile/widgets/app_test_keys.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers.dart';
@@ -368,18 +369,10 @@ void main() {
     await tester.tap(find.text('Add a comment'));
     await tester.pumpAndSettle();
     await tester.enterText(
-      find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.byType(TextField),
-      ),
+      find.byKey(AppTestKeys.registerCommentField),
       'Pressure setpoint',
     );
-    await tester.tap(
-      find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.text('Save'),
-      ),
-    );
+    await tester.tap(find.byKey(AppTestKeys.registerCommentSaveButton));
     await tester.pumpAndSettle();
 
     expect(savedType, 'UInt32');

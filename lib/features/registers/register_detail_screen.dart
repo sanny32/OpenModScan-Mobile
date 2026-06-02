@@ -6,6 +6,7 @@ import '../../theme/app_dimens.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/modbus_format.dart';
 import '../../utils/value_input.dart';
+import '../../widgets/app_test_keys.dart';
 import '../../widgets/data_layout.dart';
 import '../../widgets/error_feedback.dart';
 import '../../widgets/section_card.dart';
@@ -891,6 +892,7 @@ class _CommentSheetState extends State<_CommentSheet> {
                 Text(l10n.colComment, style: tt.titleLarge),
                 const SizedBox(height: 14),
                 TextField(
+                  key: AppTestKeys.registerCommentField,
                   controller: _ctrl,
                   autofocus: true,
                   minLines: 4,
@@ -908,6 +910,7 @@ class _CommentSheetState extends State<_CommentSheet> {
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
+                      key: AppTestKeys.registerCommentSaveButton,
                       onPressed: () =>
                           Navigator.pop(context, _ctrl.text.trim()),
                       style: FilledButton.styleFrom(

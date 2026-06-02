@@ -43,7 +43,8 @@ class FileTrafficWriter implements TrafficFileWriter {
 
   @override
   Future<void> close() async {
-    final sink = _sink;
+    final opening = _opening;
+    final sink = _sink ?? (opening == null ? null : await opening);
     _sink = null;
     _opening = null;
     if (sink != null) {

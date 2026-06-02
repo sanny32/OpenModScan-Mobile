@@ -3,14 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:omodscan_mobile/main.dart';
 import 'package:omodscan_mobile/models/app_settings.dart';
 import 'package:omodscan_mobile/runtime/fakes/demo_fixtures.dart';
-import 'package:omodscan_mobile/services/device_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'helpers.dart';
 
 void main() {
   setUp(() async {
-    SharedPreferences.setMockInitialValues({});
-    await AppSettings.instance.resetToDefaults();
-    await DeviceRepository.instance.replaceAll(List.of(demoDevices));
+    await resetAppTestState(devices: demoDevices);
   });
 
   testWidgets('Theme setting updates app theme', (WidgetTester tester) async {
@@ -70,7 +69,7 @@ void main() {
   ) async {
     await _pumpSettings(tester);
 
-    expect(find.text('Modbus TCP · /24 · port 502'), findsOneWidget);
+    expect(find.text('Modbus TCP · Auto (Wi-Fi) · port 502'), findsOneWidget);
     expect(find.text('0-based · MSRF · Direct'), findsOneWidget);
     expect(find.text('1000 entries'), findsOneWidget);
     expect(find.text('Backup & Restore'), findsOneWidget);
@@ -168,7 +167,7 @@ void main() {
 
     await _pumpSettings(tester);
     await _tapSetting(tester, 'Reset to defaults');
-    await tester.tap(find.text('Reset to defaults').last);
+    await tester.tap(find.text('Reset'));
     await tester.pumpAndSettle();
 
     final prefs = await SharedPreferences.getInstance();

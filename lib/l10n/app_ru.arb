@@ -221,6 +221,7 @@
   "settingsBackupImportSuccess": "Резервная копия импортирована",
   "settingsBackupFailure": "Не удалось выполнить операцию резервного копирования",
   "settingsResetDefaults": "Сбросить настройки",
+  "settingsResetAction": "Сбросить",
   "settingsResetConfirmMessage": "Все настройки будут сброшены до значений по умолчанию.",
   "settingsSummaryPort": "порт {value}",
   "settingsSummaryEntries": "{value} записей",

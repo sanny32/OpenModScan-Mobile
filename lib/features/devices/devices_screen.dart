@@ -8,6 +8,7 @@ import '../../models/device_info.dart';
 import '../../models/discovered_device.dart';
 import '../../runtime/runtime_ports.dart';
 import '../../theme/app_dimens.dart';
+import '../../widgets/app_test_keys.dart';
 import '../../widgets/error_feedback.dart';
 import 'device_form_sheet.dart';
 import 'discovered_devices_screen.dart';
@@ -474,6 +475,7 @@ class _ScanNetworkDock extends StatelessWidget {
         12,
       ),
       child: FilledButton.icon(
+        key: AppTestKeys.scanNetworkButton,
         icon: Icon(scanning ? Icons.travel_explore : Icons.sensors, size: 24),
         label: Text(
           scanning ? l10n.devicesScanningTitle : l10n.devicesScanNetwork,

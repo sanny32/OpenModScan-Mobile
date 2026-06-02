@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +7,7 @@ import 'package:omodscan_mobile/models/app_settings.dart';
 import 'package:omodscan_mobile/models/log_entry.dart';
 import 'package:omodscan_mobile/services/traffic_file_writer.dart';
 import 'package:omodscan_mobile/services/traffic_log.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 class _FakeFileWriter implements TrafficFileWriter {
   final List<(String, LogEntry)> written = [];
@@ -15,6 +17,15 @@ class _FakeFileWriter implements TrafficFileWriter {
 
   @override
   Future<void> close() async {}
+}
+
+class _FakePathProvider extends PathProviderPlatform {
+  final String documentsPath;
+
+  _FakePathProvider(this.documentsPath);
+
+  @override
+  Future<String?> getApplicationDocumentsPath() async => documentsPath;
 }
 
 LogRecord _record(String message, [Level level = Level.FINEST]) =>
@@ -155,5 +166,48 @@ void main() {
     expect(line, contains('00 01 00 00 00 06 01 03 00 00 00 02'));
     expect(line, contains('Start address: 0'));
     expect(line, contains('Quantity: 2'));
+  });
+
+  test('FileTrafficWriter appends entries and flushes pending writes on close',
+      () async {
+    final previousPathProvider = PathProviderPlatform.instance;
+    final tempDir = await Directory.systemTemp.createTemp(
+      'omodscan_traffic_writer_test',
+    );
+    PathProviderPlatform.instance = _FakePathProvider(tempDir.path);
+    addTearDown(() async {
+      PathProviderPlatform.instance = previousPathProvider;
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    final writer = FileTrafficWriter();
+    writer.write(
+      'dev-a',
+      const LogEntry(
+        time: '10:42:31.234',
+        direction: LogDirection.tx,
+        function: 'Function',
+        data: 'line 1\nline 2',
+      ),
+    );
+    await writer.close();
+    writer.write(
+      'dev-a',
+      const LogEntry(
+        time: '10:42:32.000',
+        direction: LogDirection.rx,
+        function: 'Function',
+        data: 'response',
+      ),
+    );
+    await writer.close();
+
+    final file = File('${tempDir.path}/${FileTrafficWriter.fileName}');
+    final content = await file.readAsString();
+    expect(content, contains('10:42:31.234 [dev-a] TX Function'));
+    expect(content, contains('line 1 | line 2'));
+    expect(content, contains('10:42:32.000 [dev-a] RX Function'));
   });
 }

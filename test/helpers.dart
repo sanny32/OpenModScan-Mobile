@@ -2,12 +2,24 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:omodscan_mobile/features/registers/register_list_dialogs.dart';
 import 'package:omodscan_mobile/l10n/l10n.dart';
+import 'package:omodscan_mobile/models/app_settings.dart';
 import 'package:omodscan_mobile/models/device_info.dart';
 import 'package:omodscan_mobile/models/modbus_exception.dart';
 import 'package:omodscan_mobile/models/register_list.dart';
 import 'package:omodscan_mobile/runtime/runtime_ports.dart';
 import 'package:omodscan_mobile/services/device_repository.dart';
 import 'package:omodscan_mobile/services/modbus_client.dart';
+import 'package:omodscan_mobile/services/traffic_log.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+Future<void> resetAppTestState({
+  Iterable<DeviceInfo> devices = const [],
+}) async {
+  SharedPreferences.setMockInitialValues({});
+  await AppSettings.instance.resetToDefaults();
+  await DeviceRepository.instance.replaceAll(List.of(devices));
+  await TrafficLog.instance.resetForTesting();
+}
 
 /// In-memory [DeviceRepositoryPort] used to verify that controllers depend on
 /// the port rather than the concrete [DeviceRepository]/`SharedPreferences`.

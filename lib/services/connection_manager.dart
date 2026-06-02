@@ -23,6 +23,16 @@ class ConnectionManager implements ConnectionRuntime {
   bool isConnected(DeviceInfo device) =>
       clients.value[device.id]?.isConnected ?? false;
 
+  @visibleForTesting
+  Future<void> resetForTesting() async {
+    final currentClients = clients.value.values.toList(growable: false);
+    clients.value = const {};
+    _connectedDeviceIds.value = const {};
+    for (final client in currentClients) {
+      await client.disconnect();
+    }
+  }
+
   @override
   Future<void> connect(DeviceInfo device) async {
     if (!device.protocol.supportsConnection) {

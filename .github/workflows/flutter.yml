@@ -1,0 +1,41 @@
+name: Flutter
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test with coverage
+        run: flutter test --coverage
+
+      - name: Enforce coverage
+        run: |
+          awk '
+            /^LF:/ { sub("LF:", ""); total += $0 }
+            /^LH:/ { sub("LH:", ""); hit += $0 }
+            END {
+              coverage = total == 0 ? 0 : (hit / total) * 100
+              printf "Line coverage: %.1f%% (%d/%d)\n", coverage, hit, total
+              if (coverage < 80.0) exit 1
+            }
+          ' coverage/lcov.info

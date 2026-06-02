@@ -9,7 +9,7 @@ import 'package:omodscan_mobile/models/device_info.dart';
 import 'package:omodscan_mobile/runtime/runtime_ports.dart';
 import 'package:omodscan_mobile/services/discovered_device_list.dart';
 import 'package:omodscan_mobile/theme/app_theme.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:omodscan_mobile/widgets/app_test_keys.dart';
 
 import 'helpers.dart';
 
@@ -20,8 +20,7 @@ void main() {
   late DevicesController controller;
 
   setUp(() async {
-    SharedPreferences.setMockInitialValues({});
-    await AppSettings.instance.resetToDefaults();
+    await resetAppTestState();
     device = DeviceInfo(
       id: 'device-1',
       name: 'PLC',
@@ -80,11 +79,12 @@ void main() {
 
     expect(find.textContaining('0x0001, 0x0002'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Write'));
+    await _dismissKeyboard(tester);
+    await tester.tap(find.byKey(AppTestKeys.deviceWriteSubmitButton));
     await tester.pumpAndSettle();
     expect(find.text('Confirm write'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Write').last);
+    await tester.tap(find.byKey(AppTestKeys.deviceWriteConfirmButton));
     await tester.pumpAndSettle();
 
     expect(connections.lastWriteHoldingStartAddress, 0);
@@ -102,8 +102,9 @@ void main() {
     await tester.enterText(find.byType(TextField).at(1), '999999');
     await tester.pump();
 
+    await _dismissKeyboard(tester);
     final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Write'),
+      find.byKey(AppTestKeys.deviceWriteSubmitButton),
     );
     expect(button.onPressed, isNull);
   });
@@ -121,6 +122,11 @@ void _useTallScreen(WidgetTester tester) {
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
+}
+
+Future<void> _dismissKeyboard(WidgetTester tester) async {
+  await tester.tap(find.text('Done'));
+  await tester.pumpAndSettle();
 }
 
 class _IdleScanner extends ChangeNotifier implements DeviceScannerPort {

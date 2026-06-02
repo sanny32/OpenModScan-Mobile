@@ -10,6 +10,7 @@ import '../../models/register_entry.dart';
 import '../../theme/app_dimens.dart';
 import '../../utils/modbus_format.dart';
 import '../../widgets/app_switch.dart';
+import '../../widgets/app_test_keys.dart';
 import '../../widgets/connection_info_bar.dart';
 import '../../widgets/data_layout.dart';
 import '../../widgets/error_feedback.dart';
@@ -260,6 +261,7 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
             child: Text(l10n.cancel),
           ),
           FilledButton(
+            key: AppTestKeys.deviceWriteConfirmButton,
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(l10n.btnWrite),
           ),
@@ -356,6 +358,7 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: FilledButton.icon(
+                    key: AppTestKeys.deviceWriteSubmitButton,
                     onPressed: _formValid ? _submit : null,
                     icon: _writing
                         ? const SizedBox.square(

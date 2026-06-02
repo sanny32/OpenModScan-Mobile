@@ -12,15 +12,13 @@ import 'package:omodscan_mobile/models/device_info.dart';
 import 'package:omodscan_mobile/runtime/runtime_ports.dart';
 import 'package:omodscan_mobile/services/device_repository.dart';
 import 'package:omodscan_mobile/services/discovered_device_list.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:omodscan_mobile/widgets/app_test_keys.dart';
 
 import 'helpers.dart';
 
 void main() {
   setUp(() async {
-    SharedPreferences.setMockInitialValues({});
-    await AppSettings.instance.resetToDefaults();
-    await DeviceRepository.instance.replaceAll(const []);
+    await resetAppTestState();
   });
 
   testWidgets('scan card shows live scan details and stops on tap', (
@@ -176,7 +174,7 @@ void main() {
     );
 
     expect(find.text('Scan network'), findsOneWidget);
-    await tester.tap(find.text('Scan network'));
+    await tester.tap(find.byKey(AppTestKeys.scanNetworkButton));
     await tester.pump();
 
     expect(scanner.startCalled, isTrue);
@@ -236,7 +234,9 @@ void main() {
     );
 
     final savedTop = tester.getTopLeft(find.text('Saved connections')).dy;
-    final scanCenter = tester.getCenter(find.text('Scan network'));
+    final scanCenter = tester.getCenter(
+      find.byKey(AppTestKeys.scanNetworkButton),
+    );
     final navTop = tester.getTopLeft(find.byType(BottomNavigationBar)).dy;
 
     expect(savedTop, lessThan(scanCenter.dy));
@@ -300,9 +300,8 @@ void main() {
     expect(find.text('Show all (7)'), findsOneWidget);
 
     // No rendered device card may extend below the scan dock (no clipping).
-    final scanDockTop = tester
-        .getTopLeft(find.widgetWithText(OutlinedButton, 'Scan network'))
-        .dy;
+    final scanDockTop =
+        tester.getTopLeft(find.byKey(AppTestKeys.scanNetworkButton)).dy;
     for (final card in find.byType(DeviceCard).evaluate()) {
       final bottom = tester.getBottomLeft(find.byWidget(card.widget)).dy;
       expect(bottom, lessThanOrEqualTo(scanDockTop));
@@ -624,7 +623,7 @@ void main() {
     expect(find.text('Scan completed'), findsNothing);
     expect(find.text('Scan network'), findsOneWidget);
 
-    await tester.tap(find.text('Scan network'));
+    await tester.tap(find.byKey(AppTestKeys.scanNetworkButton));
     await tester.pump();
 
     expect(scanner.startCalled, isTrue);
@@ -897,7 +896,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Scan network'));
+    await tester.tap(find.byKey(AppTestKeys.scanNetworkButton));
     await tester.pumpAndSettle();
 
     expect(find.text('Network scanner'), findsOneWidget);
@@ -911,9 +910,7 @@ void main() {
     expect(find.text('192.168.0.110:502'), findsNothing); // last device hidden
 
     // Action button is rendered within the visible screen area.
-    final actionButton = find
-        .widgetWithText(OutlinedButton, 'Scan network')
-        .last;
+    final actionButton = find.byKey(AppTestKeys.scanSheetActionButton).last;
     final buttonBottom = tester.getRect(actionButton).bottom;
     final screenHeight =
         tester.view.physicalSize.height / tester.view.devicePixelRatio;
@@ -1010,7 +1007,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Scan network'));
+    await tester.tap(find.byKey(AppTestKeys.scanNetworkButton));
     await tester.pumpAndSettle();
 
     expect(find.text('Network scanner'), findsOneWidget);
@@ -1062,7 +1059,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Scan network'));
+    await tester.tap(find.byKey(AppTestKeys.scanNetworkButton));
     await tester.pumpAndSettle();
 
     expect(find.text('Network scanner'), findsOneWidget);

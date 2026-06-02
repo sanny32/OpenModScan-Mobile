@@ -707,23 +707,82 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final l10n = context.l10n;
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.settingsResetDefaults),
-        content: Text(l10n.settingsResetConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
+      builder: (ctx) {
+        final cs = Theme.of(ctx).colorScheme;
+        final tt = Theme.of(ctx).textTheme;
+        const warningColor = Color(0xFFF4B16B);
+        return AlertDialog(
+          iconPadding: const EdgeInsets.only(top: 24, bottom: 6),
+          icon: Icon(
+            Icons.warning_amber_rounded,
+            color: warningColor,
+            size: 54,
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await widget.controller.resetToDefaults();
-            },
-            child: Text(l10n.settingsResetDefaults),
+          titlePadding: const EdgeInsets.symmetric(horizontal: 24),
+          title: Text(
+            l10n.settingsResetDefaults,
+            textAlign: TextAlign.center,
+            style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
-        ],
-      ),
+          contentPadding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n.settingsResetConfirmMessage,
+                textAlign: TextAlign.center,
+                style: tt.bodyLarge?.copyWith(
+                  color: cs.onSurfaceVariant,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 22),
+              Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.12)),
+            ],
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(24, 14, 24, 22),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text(
+                        l10n.cancel,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: cs.error,
+                        foregroundColor: cs.onError,
+                        minimumSize: const Size(double.infinity, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        textStyle: tt.labelLarge?.copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        await widget.controller.resetToDefaults();
+                      },
+                      child: Text(l10n.settingsResetAction),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
