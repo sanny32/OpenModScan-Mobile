@@ -275,23 +275,48 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
               ),
             ],
           ),
+          actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
           actions: [
-            TextButton(
-              onPressed: writing ? null : () => Navigator.pop(ctx),
-              child: Text(l10n.cancel),
-            ),
-            TextButton(
-              onPressed: writing
-                  ? null
-                  : () => _doWrite(
-                      ctx,
-                      ctrl,
-                      l10n,
-                      setInnerState,
-                      (e) => error = e,
-                      (value) => writing = value,
+            SizedBox(
+              width: double.infinity,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: writing ? null : () => Navigator.pop(ctx),
+                      child: Text(l10n.cancel),
                     ),
-              child: Text(l10n.btnWrite),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: writing
+                          ? null
+                          : () => _doWrite(
+                              ctx,
+                              ctrl,
+                              l10n,
+                              setInnerState,
+                              (e) => error = e,
+                              (value) => writing = value,
+                            ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: cs.primary,
+                        foregroundColor: cs.onPrimary,
+                        minimumSize: const Size(double.infinity, 44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                        textStyle: tt.labelLarge?.copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      child: Text(l10n.btnWrite),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

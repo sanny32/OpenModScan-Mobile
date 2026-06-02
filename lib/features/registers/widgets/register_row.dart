@@ -318,14 +318,39 @@ Future<void> _showWriteRegisterDialog(
             ),
           ],
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
         actions: [
-          TextButton(
-            onPressed: writing ? null : () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: writing ? null : () => doWrite(ctx, setInnerState),
-            child: Text(l10n.btnWrite),
+          SizedBox(
+            width: double.infinity,
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: writing ? null : () => Navigator.pop(ctx),
+                    child: Text(l10n.cancel),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: writing ? null : () => doWrite(ctx, setInnerState),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: cs.primary,
+                      foregroundColor: cs.onPrimary,
+                      minimumSize: const Size(double.infinity, 44),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      textStyle: tt.labelLarge?.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    child: Text(l10n.btnWrite),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

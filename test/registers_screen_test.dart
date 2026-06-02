@@ -809,7 +809,7 @@ void main() {
 
     expect(find.text('Write Register'), findsOneWidget);
     await tester.enterText(find.byType(TextField).last, '77');
-    await tester.tap(find.widgetWithText(TextButton, 'Write'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Write'));
     await tester.pumpAndSettle();
 
     expect(connections.lastWriteHoldingAddress, 0);
