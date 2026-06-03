@@ -35,15 +35,28 @@ class RegistersTabToolbar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
       child: Row(
         children: [
-          if (leading != null) ...[leading!, const SizedBox(width: 8)],
-          SegmentedButton<String>(
-            segments: segments,
-            selected: {selectedSegment},
-            onSelectionChanged: (selection) =>
-                onSegmentChanged(selection.first),
-            style: appSegmentedButtonStyle(context),
+          // Left cluster (list selector + register-type switch) shrinks to fit;
+          // the dropdown ellipsizes so the Read button stays fully visible on
+          // narrow screens / large system font scales.
+          Flexible(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (leading != null) ...[
+                  Flexible(child: leading!),
+                  const SizedBox(width: 8),
+                ],
+                SegmentedButton<String>(
+                  segments: segments,
+                  selected: {selectedSegment},
+                  onSelectionChanged: (selection) =>
+                      onSegmentChanged(selection.first),
+                  style: appSegmentedButtonStyle(context),
+                ),
+              ],
+            ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
           ElevatedButton.icon(
             icon: readInProgress
                 ? const SizedBox.square(

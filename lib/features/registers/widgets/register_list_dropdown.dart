@@ -34,11 +34,18 @@ class RegisterListDropdown extends StatelessWidget {
               child: DropdownButton<int>(
                 value: activeIndex,
                 isDense: true,
+                isExpanded: true,
                 dropdownColor: cs.surfaceContainerHighest,
                 style: tt.bodyMedium!.copyWith(color: cs.onSurface),
                 items: [
                   for (var i = 0; i < names.length; i++)
-                    DropdownMenuItem(value: i, child: Text(names[i])),
+                    DropdownMenuItem(
+                      value: i,
+                      child: Text(
+                        names[i],
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   DropdownMenuItem(
                     value: -1,
                     child: Row(
