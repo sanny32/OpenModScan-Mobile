@@ -141,10 +141,28 @@ class _AboutScreenState extends State<AboutScreen> {
             ),
           ),
           const SizedBox(height: 24),
+
+          // Copyright footer
+          Center(child: _copyrightValue(context)),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
+
+  Widget _copyrightValue(BuildContext context) => FutureBuilder<DateTime?>(
+    future: _packageBuildDate,
+    builder: (context, snapshot) {
+      final year = (snapshot.data ?? DateTime.now()).year;
+      return Text(
+        context.l10n.aboutCopyright(year),
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      );
+    },
+  );
 
   Widget _buildDateValue(BuildContext context) => FutureBuilder<DateTime?>(
     future: _packageBuildDate,

@@ -820,8 +820,12 @@
   "aboutReportIssue": "Report an issue",
   "@aboutReportIssue": {},
 
-  "aboutCopyright": "© 2025 OpenModScan\nAll rights reserved.",
-  "@aboutCopyright": {},
+  "aboutCopyright": "Copyright © {year} Alexandr Ananev",
+  "@aboutCopyright": {
+    "placeholders": {
+      "year": { "type": "int" }
+    }
+  },
 
   "aboutLicenseMit": "MIT License",
   "@aboutLicenseMit": {}

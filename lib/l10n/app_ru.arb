@@ -246,6 +246,6 @@
   "aboutEmail": "Email",
   "aboutDocumentation": "Документация",
   "aboutReportIssue": "Сообщить об ошибке",
-  "aboutCopyright": "© 2025 OpenModScan\nВсе права защищены.",
+  "aboutCopyright": "Copyright © {year} Alexandr Ananev",
   "aboutLicenseMit": "Лицензия MIT"
 }
