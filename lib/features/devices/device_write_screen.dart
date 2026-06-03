@@ -282,8 +282,6 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
     _addressCtrl.text = _minAddress.toString();
   }
 
-  // External field label sitting above the input, matching the Edit Device
-  // form (rather than a floating in-field label).
   Widget _fieldLabel(String text) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;

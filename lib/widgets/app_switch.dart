@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// A compact [Switch] with a single, app-wide size so every toggle looks the
-/// same (replacing the ad-hoc `Transform.scale`/`FittedBox` wrappers that used
-/// to differ per call site).
+/// A compact [Switch] with a single app-wide size.
 class AppSwitch extends StatelessWidget {
   final bool value;
   final ValueChanged<bool>? onChanged;

@@ -25,9 +25,7 @@ class AppRoutes {
   static const settings = '/settings';
 }
 
-/// Builds the app's [GoRouter] using a [StatefulShellRoute.indexedStack] so each
-/// tab keeps an independent navigation stack (the IndexedStack + per-tab
-/// Navigator behaviour the app shell used to manage by hand).
+/// Builds the app's [GoRouter] with an independent navigation stack per tab.
 GoRouter createAppRouter({
   required DevicesController devicesController,
   required RegistersController registersController,

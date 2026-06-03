@@ -33,9 +33,6 @@ class DiscoveredDevicesPreview extends StatelessWidget {
 
     int visibleCount;
     if (availableHeight != null) {
-      // Measure a DiscoveredDeviceRow from the active theme/text scale instead
-      // of hardcoding 63pt, so the row count stays correct at any font size.
-      // Row = 24pt padding + title line + 2pt gap + subtitle line + 1pt divider.
       final tt = Theme.of(context).textTheme;
       final scaler = MediaQuery.textScalerOf(context);
       final rowHeight =
@@ -44,11 +41,9 @@ class DiscoveredDevicesPreview extends StatelessWidget {
           2 +
           measuredLineHeight(tt.bodySmall, scaler) +
           1;
-      // Footer is a fixed 52pt box + 8pt gap; bottom padding is 12pt.
       const footerWithGap = 60.0;
       const bottomPad = 12.0;
       final space = availableHeight! - bottomPad;
-      // Can all devices fit without a footer?
       final countWithoutFooter = ((space + 1) / rowHeight).floor();
       if (countWithoutFooter >= discoveredDevices.length) {
         visibleCount = discoveredDevices.length;
@@ -197,9 +192,6 @@ class _ScanSheetState extends State<ScanSheet> {
       maxChildSize: 0.95,
       builder: (_, scrollController) => LayoutBuilder(
         builder: (context, innerConstraints) {
-          // innerConstraints.maxHeight is the actual current height of the sheet,
-          // and updates as the user drags it. Reserve 68pt for the action button
-          // pinned below the list (top padding 8 + button 44 + bottom padding 16).
           const buttonAreaHeight = 68.0;
           const headerActionWidth = 104.0;
           final headerActionStyle = TextButton.styleFrom(
@@ -528,14 +520,10 @@ class _ScanningCard extends StatelessWidget {
         : completed
         ? 1.0
         : progress.clamp(0.0, 0.99).toDouble();
-    // The success check pops in liveColor on completion; everything structural
-    // (progress bar, percentage) stays in the primary green so the card reads
-    // as one coherent palette rather than two competing greens.
     final accent = completed
         ? (appColors?.liveColor ?? Colors.green)
         : cs.primary;
     final protocolName = _protocolLabel(l10n, protocol);
-    // Whether an action button (stop or restart) renders inside this card.
     final hasActionButton =
         (!completed && onStop != null) || (completed && onRestart != null);
     // Fixed overhead: sheet header (71) + list padding (32) + card padding (26) +
@@ -745,11 +733,7 @@ class DiscoveredDeviceRow extends StatelessWidget {
   final DiscoveredDevice device;
   final void Function(DiscoveredDevice) onConnect;
   final bool showBottomDivider;
-  // Horizontal inset of the row content. Defaults to 16 for standalone use
-  // (inside an unpadded Card); set to 0 when the host already pads the row.
   final double horizontalPadding;
-  // Left inset of the bottom divider. Defaults to 58 so it aligns under the
-  // text (Material style); set to 0 to span the full width to the left edge.
   final double dividerIndent;
 
   const DiscoveredDeviceRow({

@@ -12,7 +12,7 @@ class AppSettings {
 
   AppSettings._() : _store = SharedPreferencesSettingsStore();
 
-  /// Test seam: build a settings instance over an injected [SettingsStore].
+  /// Builds a settings instance over an injected [SettingsStore].
   @visibleForTesting
   AppSettings.withStore(this._store);
 

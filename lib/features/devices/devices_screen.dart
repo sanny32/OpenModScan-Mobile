@@ -185,9 +185,6 @@ class _DevicesScreenState extends State<DevicesScreen> {
     final hasSavedDevices = widget.controller.devices.isNotEmpty;
     final useSplitLayout = hasDiscoveredDevices && hasSavedDevices;
 
-    // Row/header heights are measured from the actual theme text styles and the
-    // current text scale, so the "how many fit" math stays correct for any font
-    // size (accessibility scaling), theme, or locale — not just one screen.
     final textScaler = MediaQuery.textScalerOf(context);
     final savedCardHeight = _measuredSavedCardHeight(tt, textScaler);
     final savedHeaderHeight = _measuredSavedHeaderHeight(tt, textScaler);
@@ -216,10 +213,6 @@ class _DevicesScreenState extends State<DevicesScreen> {
       ),
     );
 
-    // Reordering lives on the dedicated full-screen list (opened by the header
-    // action), where the whole list is visible and indices map 1:1 to storage.
-    // The home preview is only a height-constrained prefix, so it stays a plain
-    // list to avoid nesting a reorderable scrollable inside the split layout.
     final savedHeaderAction = !hasSavedDevices
         ? null
         : IconButton(
@@ -231,9 +224,6 @@ class _DevicesScreenState extends State<DevicesScreen> {
             onPressed: _openSavedDevices,
           );
 
-    // Builds the saved-devices section showing the first [limit] devices (a
-    // prefix of the stored order) plus a "show all" footer when some are
-    // hidden. Used by both layouts; each passes the limit that fits its space.
     List<Widget> buildSavedChildren(int limit) {
       final total = widget.controller.devices.length;
       final visible = widget.controller.visibleHomeDevices(limit);
@@ -241,9 +231,6 @@ class _DevicesScreenState extends State<DevicesScreen> {
       return [
         DevicesSectionHeader(
           title: l10n.devicesSavedConnections,
-          // Offer the reorder shortcut only when no "show all" footer is shown
-          // (the footer already opens the same full list), so there are never
-          // two entries to it at once.
           trailing: hidden > 0 ? null : savedHeaderAction,
         ),
         ...visible.map(buildDismissible),
@@ -320,9 +307,6 @@ class _DevicesScreenState extends State<DevicesScreen> {
                     ? LayoutBuilder(
                         builder: (context, constraints) {
                           final maxSavedHeight = constraints.maxHeight * 2 / 3;
-                          // Show only as many cards as fit (with the footer) in
-                          // the saved section's share, so the footer is never
-                          // clipped into the discovered section below.
                           final savedLimit = _savedFitCount(
                             available: maxSavedHeight,
                             headerHeight: savedHeaderHeight,
@@ -361,9 +345,6 @@ class _DevicesScreenState extends State<DevicesScreen> {
                         },
                       )
                     : hasDiscoveredDevices
-                    // Discovered-only (no saved devices): give the preview the
-                    // free height so it fills the screen with as many rows as
-                    // fit, instead of the fixed 1–2 row home prefix.
                     ? Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -394,9 +375,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                           );
                           return ListView(
                             padding: const EdgeInsets.only(bottom: 8),
-                            children: [
-                              ...buildSavedChildren(savedLimit),
-                            ],
+                            children: [...buildSavedChildren(savedLimit)],
                           );
                         },
                       ),
@@ -418,8 +397,6 @@ class _DevicesScreenState extends State<DevicesScreen> {
   }
 }
 
-/// Full height of a [DeviceCard]: 8pt vertical margin + 28pt content padding +
-/// the three stacked text lines (title, address, protocol) with a 2pt gap.
 double _measuredSavedCardHeight(TextTheme tt, TextScaler scaler) {
   return 8 +
       28 +
@@ -430,14 +407,10 @@ double _measuredSavedCardHeight(TextTheme tt, TextScaler scaler) {
       2; // sub-pixel rounding buffer so we never under-count and clip a card
 }
 
-/// Full height of a [DevicesSectionHeader]: 22pt vertical padding + one line.
 double _measuredSavedHeaderHeight(TextTheme tt, TextScaler scaler) {
   return 22 + measuredLineHeight(tt.labelLarge, scaler);
 }
 
-/// How many saved-device cards fit in [available] height under the section
-/// header, reserving room for the "show all" footer ([footerHeight]) whenever
-/// not all [count] devices fit. Returns at least 1 when any device matches.
 int _savedFitCount({
   required double available,
   required double headerHeight,

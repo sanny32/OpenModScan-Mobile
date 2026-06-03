@@ -36,7 +36,6 @@ class _AboutScreenState extends State<AboutScreen> {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 24),
         children: [
-          // App icon + name
           Center(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
@@ -75,7 +74,6 @@ class _AboutScreenState extends State<AboutScreen> {
           ),
           const SizedBox(height: 28),
 
-          // Info card
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
@@ -112,7 +110,6 @@ class _AboutScreenState extends State<AboutScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Links card
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
@@ -142,7 +139,6 @@ class _AboutScreenState extends State<AboutScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Copyright footer
           Center(child: _copyrightValue(context)),
           const SizedBox(height: 16),
         ],

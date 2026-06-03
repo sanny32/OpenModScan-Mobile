@@ -19,7 +19,7 @@ class TrafficLog extends ChangeNotifier implements TrafficLogSource {
   static final TrafficLog instance = TrafficLog._();
   TrafficLog._();
 
-  /// Test seam: build an isolated instance instead of the singleton.
+  /// Builds an isolated instance for tests.
   @visibleForTesting
   TrafficLog.forTesting();
 
@@ -38,7 +38,7 @@ class TrafficLog extends ChangeNotifier implements TrafficLogSource {
     modbus.ModbusAppLogger(Level.ALL, onLog);
   }
 
-  /// Test seam: override the file writer (e.g. with a fake or `null`).
+  /// Overrides the file writer for tests.
   @visibleForTesting
   void attachFileWriter(TrafficFileWriter? writer) => _fileWriter = writer;
 

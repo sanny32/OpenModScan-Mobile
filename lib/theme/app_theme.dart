@@ -159,9 +159,6 @@ class AppColors extends ThemeExtension<AppColors> {
 }
 
 class AppTheme {
-  // Brand green, sampled from the logo's dark-green tile. A deeper tone than
-  // the semantic "connected/good" green so chrome (app bar, tabs, switches)
-  // stays distinct from status indicators.
   static const _primary = Color(0xFF1E8E3E);
 
   static const TextTheme textTheme = TextTheme(
@@ -176,8 +173,6 @@ class AppTheme {
     labelSmall: TextStyle(fontSize: 11),
   );
 
-  // Single filled-input look shared by every TextField/Dropdown: no resting
-  // border, primary focus ring, error ring. Per-theme colours are passed in.
   static InputDecorationTheme _inputDecorationTheme({
     required Color fillColor,
     required Color hintColor,
@@ -228,7 +223,6 @@ class AppTheme {
       outline: Color(0xFF3A3A3A),
     ),
     cardTheme: CardThemeData(
-      // Matches OutlinedCard: surface fill, hairline border, faint shadow, r12.
       color: const Color(0xFF1E1E1E),
       elevation: 1,
       shadowColor: Colors.black.withValues(alpha: 0.16),
@@ -286,7 +280,6 @@ class AppTheme {
       outline: Color(0xFFE0E0E0),
     ),
     cardTheme: CardThemeData(
-      // Matches OutlinedCard: surface fill, hairline border, faint shadow, r12.
       color: Colors.white,
       elevation: 1,
       shadowColor: Colors.black.withValues(alpha: 0.03),
@@ -333,8 +326,6 @@ class AppTheme {
       error: const Color(0xFFD32F2F),
     ),
     switchTheme: _switchTheme,
-    // Light theme snackbar has a dark background, so use white for the action
-    // (the brand green is too dim on black).
     snackBarTheme: const SnackBarThemeData(actionTextColor: Colors.white),
     extensions: const [AppColors.light],
   );
