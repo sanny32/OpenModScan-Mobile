@@ -278,6 +278,7 @@ class _RegistersTabState extends State<_RegistersTab> {
           : widget.valueState;
       return RegisterEntry(
         address: addr,
+        displayAddress: addressType.toReferenceDisplay(addr),
         value: rawStr,
         displayValue: computeDisplayValue(addr, typeName, rawInts),
         previousValue: runtime?.previous ?? mock?.previousValue,

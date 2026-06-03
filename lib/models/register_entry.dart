@@ -29,7 +29,8 @@ int registerWordCount(String typeName) {
 enum RegisterValueState { received, unavailable, exception }
 
 class RegisterEntry {
-  final int address;
+  final int address; // linear display address, used as the lookup/matching key
+  final int? displayAddress; // type-formatted reference shown to the user
   final String value; // raw uint16 as decimal string
   final String? displayValue; // type-formatted value for display in list
   final String? previousValue;
@@ -46,6 +47,7 @@ class RegisterEntry {
 
   const RegisterEntry({
     required this.address,
+    this.displayAddress,
     required this.value,
     this.displayValue,
     this.previousValue,
@@ -60,6 +62,7 @@ class RegisterEntry {
 
   RegisterEntry copyWith({
     int? address,
+    int? displayAddress,
     String? value,
     String? displayValue,
     String? previousValue,
@@ -72,6 +75,7 @@ class RegisterEntry {
     Map<int, int>? previousRawWords,
   }) => RegisterEntry(
     address: address ?? this.address,
+    displayAddress: displayAddress ?? this.displayAddress,
     value: value ?? this.value,
     displayValue: displayValue ?? this.displayValue,
     previousValue: previousValue ?? this.previousValue,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../models/register_address_type.dart';
 import '../../../models/register_entry.dart';
 import '../../../models/status_entry.dart';
 import '../../../theme/app_theme.dart';
@@ -9,7 +8,6 @@ import '../status_detail_screen.dart';
 
 class StatusRow extends StatelessWidget {
   final StatusEntry entry;
-  final RegisterAddressType addressType;
   final RegisterValueState valueState;
   final bool canWrite;
   final ValueChanged<bool>? onChanged;
@@ -19,7 +17,6 @@ class StatusRow extends StatelessWidget {
   const StatusRow({
     super.key,
     required this.entry,
-    required this.addressType,
     required this.valueState,
     required this.canWrite,
     required this.onChanged,
@@ -34,7 +31,7 @@ class StatusRow extends StatelessWidget {
     final appColors = Theme.of(context).extension<AppColors>()!;
     final exceptionColor = appColors.exceptionValueColor;
     final isException = valueState == RegisterValueState.exception;
-    final referenceAddress = addressType.toReferenceDisplay(entry.address);
+    final referenceAddress = entry.displayAddress ?? entry.address;
 
     void openDetail() {
       Navigator.push(

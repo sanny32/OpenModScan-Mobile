@@ -48,7 +48,7 @@ class RegisterRow extends StatelessWidget {
     final valueColor = _valueColor(context, entry.valueState);
     final isGroup = groupWordCount > 1 && onGroupExpansionToggled != null;
     final effectiveCanWrite = canWrite && AppSettings.instance.writeEnabled;
-    final referenceAddress = addressType.toReferenceDisplay(entry.address);
+    final referenceAddress = entry.displayAddress ?? entry.address;
 
     void openDetail() {
       Navigator.push(
@@ -56,7 +56,6 @@ class RegisterRow extends StatelessWidget {
         MaterialPageRoute(
           builder: (_) => RegisterDetailScreen(
             entry: entry,
-            addressType: addressType,
             canWrite: effectiveCanWrite,
             onSaved: onEntryChanged != null
                 ? (type, comment) =>

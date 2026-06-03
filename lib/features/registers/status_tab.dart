@@ -254,6 +254,7 @@ class _StatusTabState extends State<_StatusTab> {
       final value = runtime?.value ?? reference?.value ?? false;
       return StatusEntry(
         address: address,
+        displayAddress: _addressType.toReferenceDisplay(address),
         value: value,
         previousValue: runtime?.previous ?? reference?.previousValue,
         comment: configByAddress[address]?.comment ?? reference?.comment ?? '',
@@ -329,7 +330,6 @@ class _StatusTabState extends State<_StatusTab> {
             separatorBuilder: (_, _) => Divider(height: 1, color: dividerColor),
             itemBuilder: (context, i) => StatusRow(
               entry: visibleStatuses[i],
-              addressType: _addressType,
               valueState: widget.valueState,
               canWrite: canWriteStatus,
               onEntryChanged: widget.onEntryChanged,
