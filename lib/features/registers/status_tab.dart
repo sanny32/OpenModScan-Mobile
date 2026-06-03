@@ -161,7 +161,10 @@ class _StatusTabState extends State<_StatusTab> {
     final rawStart = parsedStart < minStart ? minStart : parsedStart;
     final startAddress = _addressType.displayOffset + rawStart;
     final rawCount = int.tryParse(widget.countCtrl.text);
-    final count = rawCount == null || rawCount < 1 ? 20 : rawCount;
+    final count = (rawCount == null || rawCount < 1 ? 20 : rawCount).clamp(
+      1,
+      maxReadCountFor(rawStart - minStart, protocolLimit: kMaxBitsPerRead),
+    );
 
     _reading = true;
     if (showProgress) {
@@ -215,8 +218,15 @@ class _StatusTabState extends State<_StatusTab> {
     final parsedStart = int.tryParse(widget.startAddrCtrl.text) ?? minStart;
     final rawStart = parsedStart < minStart ? minStart : parsedStart;
     final startAddress = _addressType.displayOffset + rawStart;
+    final maxCount = maxReadCountFor(
+      rawStart - minStart,
+      protocolLimit: kMaxBitsPerRead,
+    );
     final rawCount = int.tryParse(widget.countCtrl.text);
-    final count = rawCount == null || rawCount < 1 ? 20 : rawCount;
+    final count = (rawCount == null || rawCount < 1 ? 20 : rawCount).clamp(
+      1,
+      maxCount,
+    );
     final endAddress = startAddress + count - 1;
     final canWriteStatus =
         _canWrite &&
@@ -274,8 +284,9 @@ class _StatusTabState extends State<_StatusTab> {
         RegistersRangeControls(
           startAddrCtrl: widget.startAddrCtrl,
           countCtrl: widget.countCtrl,
-          maxCount: 2000,
-          minStartAddress: AppSettings.instance.addressBaseStart,
+          maxCount: maxCount,
+          minStartAddress: minStart,
+          maxStartAddress: kMaxModbusAddress + minStart,
           autoRefresh: widget.autoRefresh,
           onAutoRefreshChanged: widget.onAutoRefreshChanged,
           refreshIntervalCtrl: widget.refreshIntervalCtrl,
@@ -318,6 +329,7 @@ class _StatusTabState extends State<_StatusTab> {
             separatorBuilder: (_, _) => Divider(height: 1, color: dividerColor),
             itemBuilder: (context, i) => StatusRow(
               entry: visibleStatuses[i],
+              addressType: _addressType,
               valueState: widget.valueState,
               canWrite: canWriteStatus,
               onEntryChanged: widget.onEntryChanged,
@@ -339,7 +351,11 @@ class _StatusTabState extends State<_StatusTab> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                _bitRangeLabel(l10n, startAddress, endAddress),
+                _bitRangeLabel(
+                  l10n,
+                  _addressType.toReferenceDisplay(startAddress),
+                  _addressType.toReferenceDisplay(endAddress),
+                ),
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
               Text(

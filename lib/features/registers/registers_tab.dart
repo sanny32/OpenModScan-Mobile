@@ -165,7 +165,10 @@ class _RegistersTabState extends State<_RegistersTab> {
     final parsedStart = int.tryParse(widget.startAddrCtrl.text) ?? minStart;
     final rawStart = parsedStart < minStart ? minStart : parsedStart;
     final rawCount = int.tryParse(widget.countCtrl.text);
-    final count = (rawCount == null || rawCount < 1) ? 20 : rawCount;
+    final count = ((rawCount == null || rawCount < 1) ? 20 : rawCount).clamp(
+      1,
+      maxReadCountFor(rawStart - minStart, protocolLimit: kMaxRegistersPerRead),
+    );
 
     _reading = true;
     if (showProgress) {
@@ -223,8 +226,15 @@ class _RegistersTabState extends State<_RegistersTab> {
     final parsedStart = int.tryParse(widget.startAddrCtrl.text) ?? minStart;
     final rawStart = parsedStart < minStart ? minStart : parsedStart;
     final startAddr = offset + rawStart;
+    final maxCount = maxReadCountFor(
+      rawStart - minStart,
+      protocolLimit: kMaxRegistersPerRead,
+    );
     final rawCount = int.tryParse(widget.countCtrl.text);
-    final count = (rawCount == null || rawCount < 1) ? 20 : rawCount;
+    final count = ((rawCount == null || rawCount < 1) ? 20 : rawCount).clamp(
+      1,
+      maxCount,
+    );
     final endAddr = startAddr + count - 1;
     final mockByAddress = {
       for (final e in widget.referenceRegisters(startAddr, count + 3))
@@ -341,8 +351,9 @@ class _RegistersTabState extends State<_RegistersTab> {
         RegistersRangeControls(
           startAddrCtrl: widget.startAddrCtrl,
           countCtrl: widget.countCtrl,
-          maxCount: 125,
-          minStartAddress: AppSettings.instance.addressBaseStart,
+          maxCount: maxCount,
+          minStartAddress: minStart,
+          maxStartAddress: kMaxModbusAddress + minStart,
           autoRefresh: widget.autoRefresh,
           onAutoRefreshChanged: widget.onAutoRefreshChanged,
           refreshIntervalCtrl: widget.refreshIntervalCtrl,
@@ -392,6 +403,7 @@ class _RegistersTabState extends State<_RegistersTab> {
                 final item = displayItems[i];
                 return RegisterRow(
                   entry: item.entry,
+                  addressType: addressType,
                   canWrite: addressType.canWrite,
                   groupWordCount: item.wordCount,
                   groupExpanded: _expandedRegisterGroups.contains(
@@ -423,7 +435,10 @@ class _RegistersTabState extends State<_RegistersTab> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                l10n.registersShowing(startAddr, endAddr),
+                l10n.registersShowing(
+                  addressType.toReferenceDisplay(startAddr),
+                  addressType.toReferenceDisplay(endAddr),
+                ),
                 style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
               ),
               Text(

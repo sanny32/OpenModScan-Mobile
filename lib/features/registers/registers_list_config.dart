@@ -72,6 +72,13 @@ class _ListConfig {
       final value = int.tryParse(startAddrCtrl.text) ?? minStart;
       final displayStart = value < minStart ? minStart : value;
       data.startAddress = displayStart - minStart;
+      _clampCountToAddressSpace(
+        countCtrl,
+        () => data.count,
+        (v) => data.count = v,
+        data.startAddress,
+        kMaxRegistersPerRead,
+      );
       onChanged?.call(data);
     });
     countCtrl.addListener(() {
@@ -94,6 +101,13 @@ class _ListConfig {
       final value = int.tryParse(coilStartAddrCtrl.text) ?? minStart;
       final displayStart = value < minStart ? minStart : value;
       data.coilStartAddress = displayStart - minStart;
+      _clampCountToAddressSpace(
+        coilCountCtrl,
+        () => data.coilCount,
+        (v) => data.coilCount = v,
+        data.coilStartAddress,
+        kMaxBitsPerRead,
+      );
       onChanged?.call(data);
     });
     coilCountCtrl.addListener(() {
@@ -111,6 +125,28 @@ class _ListConfig {
       data.coilRefreshIntervalMs = value;
       onChanged?.call(data);
     });
+  }
+
+  /// Shrinks an already-entered count when the start address moved so that
+  /// `start + count - 1` stays within the Modbus address space. Never grows
+  /// the count, so a user who lowers the start keeps their chosen length.
+  void _clampCountToAddressSpace(
+    TextEditingController countCtrl,
+    int Function() getCount,
+    void Function(int) setCount,
+    int modbusStartAddress,
+    int protocolLimit,
+  ) {
+    final maxCount = maxReadCountFor(
+      modbusStartAddress,
+      protocolLimit: protocolLimit,
+    );
+    if (getCount() > maxCount) {
+      setCount(maxCount);
+      if (int.tryParse(countCtrl.text) != maxCount) {
+        countCtrl.text = maxCount.toString();
+      }
+    }
   }
 
   void commitRefreshInterval() {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../l10n/l10n.dart';
 import '../../models/app_settings.dart';
+import '../../models/register_address_type.dart';
 import '../../models/register_entry.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_theme.dart';
@@ -47,6 +48,7 @@ String _displayTimestamp(String timestamp) {
 
 class RegisterDetailScreen extends StatefulWidget {
   final RegisterEntry entry;
+  final RegisterAddressType addressType;
   final bool canWrite;
   final void Function(String typeName, String? comment)? onSaved;
   final Future<String?> Function(String newValue, String typeName)?
@@ -57,6 +59,7 @@ class RegisterDetailScreen extends StatefulWidget {
   const RegisterDetailScreen({
     super.key,
     required this.entry,
+    this.addressType = RegisterAddressType.holdingRegisters,
     this.canWrite = true,
     this.onSaved,
     this.onValueWritten,
@@ -229,7 +232,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
                     style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
                   ),
                   Text(
-                    '${_entry.address}',
+                    '${widget.addressType.toReferenceDisplay(_entry.address)}',
                     style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -408,7 +411,7 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
       appBar: AppBar(
         toolbarHeight: 56,
         title: Text(
-          '${entry.address}',
+          '${widget.addressType.toReferenceDisplay(entry.address)}',
           style: tt.titleLarge?.copyWith(
             color: cs.onSurface,
             fontWeight: FontWeight.w800,

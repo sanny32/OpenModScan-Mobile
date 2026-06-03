@@ -75,6 +75,23 @@ const kMaxRegisterRefreshIntervalMs = 60000;
 const kDefaultRegisterRefreshIntervalMs = 1000;
 const kStatusAddressModeDisplay = 'display';
 
+/// Highest addressable Modbus register/bit (0-based, 16-bit address space).
+const kMaxModbusAddress = 0xFFFF; // 65535
+/// Size of the Modbus 16-bit address space (last valid address + 1).
+const kModbusAddressSpace = 0x10000; // 65536
+/// Maximum registers returned by a single Modbus read request.
+const kMaxRegistersPerRead = 125;
+/// Maximum bits (coils / discrete inputs) returned by a single Modbus read.
+const kMaxBitsPerRead = 2000;
+
+/// Largest read count that keeps `start + count - 1` within the address space,
+/// capped by the per-request protocol limit.
+int maxReadCountFor(int modbusStartAddress, {required int protocolLimit}) {
+  final remaining = kModbusAddressSpace - modbusStartAddress;
+  if (remaining < 1) return 1;
+  return remaining < protocolLimit ? remaining : protocolLimit;
+}
+
 class RegisterList {
   String id;
   String name;

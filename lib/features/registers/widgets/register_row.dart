@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../../models/app_settings.dart';
+import '../../../models/register_address_type.dart';
 import '../../../models/register_entry.dart';
 import '../../../theme/app_theme.dart';
 import '../../../utils/modbus_format.dart';
@@ -13,6 +14,7 @@ import '../register_runtime_value.dart';
 
 class RegisterRow extends StatelessWidget {
   final RegisterEntry entry;
+  final RegisterAddressType addressType;
   final bool canWrite;
   final int groupWordCount;
   final bool groupExpanded;
@@ -27,6 +29,7 @@ class RegisterRow extends StatelessWidget {
   const RegisterRow({
     super.key,
     required this.entry,
+    required this.addressType,
     required this.canWrite,
     this.groupWordCount = 1,
     this.groupExpanded = false,
@@ -45,6 +48,7 @@ class RegisterRow extends StatelessWidget {
     final valueColor = _valueColor(context, entry.valueState);
     final isGroup = groupWordCount > 1 && onGroupExpansionToggled != null;
     final effectiveCanWrite = canWrite && AppSettings.instance.writeEnabled;
+    final referenceAddress = addressType.toReferenceDisplay(entry.address);
 
     void openDetail() {
       Navigator.push(
@@ -52,6 +56,7 @@ class RegisterRow extends StatelessWidget {
         MaterialPageRoute(
           builder: (_) => RegisterDetailScreen(
             entry: entry,
+            addressType: addressType,
             canWrite: effectiveCanWrite,
             onSaved: onEntryChanged != null
                 ? (type, comment) =>
@@ -68,7 +73,7 @@ class RegisterRow extends StatelessWidget {
     }
 
     void showWriteDialog() {
-      _showWriteRegisterDialog(context, entry, onValueWritten);
+      _showWriteRegisterDialog(context, entry, referenceAddress, onValueWritten);
     }
 
     return Column(
@@ -83,8 +88,8 @@ class RegisterRow extends StatelessWidget {
                 if (isGroup)
                   Tooltip(
                     message: groupExpanded
-                        ? 'Hide raw words for ${entry.address}'
-                        : 'Show raw words for ${entry.address}',
+                        ? 'Hide raw words for $referenceAddress'
+                        : 'Show raw words for $referenceAddress',
                     child: SizedBox(
                       width: 28,
                       height: 32,
@@ -107,7 +112,7 @@ class RegisterRow extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('${entry.address}', style: tt.bodyLarge),
+                      Text('$referenceAddress', style: tt.bodyLarge),
                       ValueListenableBuilder<bool>(
                         valueListenable:
                             AppSettings.instance.showTypeBadgesNotifier,
@@ -180,7 +185,7 @@ class RegisterRow extends StatelessWidget {
         if (isGroup && groupExpanded)
           for (var i = 0; i < groupWordCount; i++)
             _RawRegisterWordRow(
-              address: entry.address + i,
+              address: addressType.toReferenceDisplay(entry.address + i),
               value: entry.rawWords[entry.address + i] ?? 0,
             ),
       ],
@@ -229,6 +234,7 @@ class _RawRegisterWordRow extends StatelessWidget {
 Future<void> _showWriteRegisterDialog(
   BuildContext context,
   RegisterEntry entry,
+  int referenceAddress,
   Future<String?> Function(int address, String value, String typeName)?
   onValueWritten,
 ) async {
@@ -279,7 +285,7 @@ Future<void> _showWriteRegisterDialog(
                   style: tt.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
                 ),
                 Text(
-                  '${entry.address}',
+                  '$referenceAddress',
                   style: tt.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
