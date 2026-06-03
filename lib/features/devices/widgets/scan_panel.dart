@@ -671,7 +671,12 @@ class _ScanningCard extends StatelessWidget {
               const SizedBox(height: 12),
               Divider(height: 1, color: Theme.of(context).dividerTheme.color),
               for (final device in visibleDiscoveredDevices)
-                DiscoveredDeviceRow(device: device, onConnect: onConnect),
+                DiscoveredDeviceRow(
+                  device: device,
+                  onConnect: onConnect,
+                  horizontalPadding: 0,
+                  dividerIndent: 0,
+                ),
               if (hiddenDiscoveredCount > 0)
                 _DiscoveredDevicesFooter(
                   hiddenCount: hiddenDiscoveredCount,
@@ -740,12 +745,20 @@ class DiscoveredDeviceRow extends StatelessWidget {
   final DiscoveredDevice device;
   final void Function(DiscoveredDevice) onConnect;
   final bool showBottomDivider;
+  // Horizontal inset of the row content. Defaults to 16 for standalone use
+  // (inside an unpadded Card); set to 0 when the host already pads the row.
+  final double horizontalPadding;
+  // Left inset of the bottom divider. Defaults to 58 so it aligns under the
+  // text (Material style); set to 0 to span the full width to the left edge.
+  final double dividerIndent;
 
   const DiscoveredDeviceRow({
     super.key,
     required this.device,
     required this.onConnect,
     this.showBottomDivider = true,
+    this.horizontalPadding = 16,
+    this.dividerIndent = 58,
   });
 
   @override
@@ -756,7 +769,10 @@ class DiscoveredDeviceRow extends StatelessWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: 12,
+          ),
           child: Row(
             children: [
               Icon(Icons.wifi, color: cs.primary, size: 28),
@@ -765,10 +781,21 @@ class DiscoveredDeviceRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      device.address,
-                      style: tt.titleSmall!.copyWith(
-                        fontWeight: FontWeight.w700,
+                    // The address is a single unbreakable token; scale it down
+                    // to stay on one line instead of wrapping mid-token (and
+                    // losing the port to an ellipsis) on narrow rows.
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          device.address,
+                          maxLines: 1,
+                          style: tt.titleSmall!.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -803,7 +830,7 @@ class DiscoveredDeviceRow extends StatelessWidget {
         ),
         if (showBottomDivider)
           Padding(
-            padding: const EdgeInsets.only(left: 58),
+            padding: EdgeInsets.only(left: dividerIndent),
             child: Divider(
               height: 1,
               color: Theme.of(context).dividerTheme.color,
