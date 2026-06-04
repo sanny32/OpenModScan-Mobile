@@ -18,8 +18,41 @@ env:
   RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag_name || github.ref_name }}
 
 jobs:
+  version:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.resolve.outputs.release_tag }}
+      app_version: ${{ steps.resolve.outputs.app_version }}
+      app_build_number: ${{ steps.resolve.outputs.app_build_number }}
+      artifact_name: ${{ steps.resolve.outputs.artifact_name }}
+
+    steps:
+      - name: Resolve version from release tag
+        id: resolve
+        run: |
+          version="${RELEASE_TAG#v}"
+          build_number="${version#*+}"
+
+          if [ "$build_number" = "$version" ]; then
+            build_number="${GITHUB_RUN_NUMBER}"
+          fi
+
+          version="${version%%+*}"
+
+          # Sanitize "+" so it is safe in file names and download URLs
+          artifact_name="${RELEASE_TAG//+/-}"
+
+          {
+            echo "release_tag=$RELEASE_TAG"
+            echo "app_version=$version"
+            echo "app_build_number=$build_number"
+            echo "artifact_name=$artifact_name"
+          } >> "$GITHUB_OUTPUT"
+
   build-android:
     name: Build Android
+    needs: version
     runs-on: ubuntu-latest
 
     steps:
@@ -42,16 +75,16 @@ jobs:
         run: flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --build-name "${{ needs.version.outputs.app_version }}" --build-number "${{ needs.version.outputs.app_build_number }}"
 
       - name: Build App Bundle
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --build-name "${{ needs.version.outputs.app_version }}" --build-number "${{ needs.version.outputs.app_build_number }}"
 
       - name: Rename Android artifacts
         run: |
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk "dist/OpenModScan-${RELEASE_TAG}.apk"
-          cp build/app/outputs/bundle/release/app-release.aab "dist/OpenModScan-${RELEASE_TAG}.aab"
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/OpenModScan-${{ needs.version.outputs.artifact_name }}.apk"
+          cp build/app/outputs/bundle/release/app-release.aab "dist/OpenModScan-${{ needs.version.outputs.artifact_name }}.aab"
 
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
@@ -61,6 +94,7 @@ jobs:
 
   build-ios:
     name: Build iOS
+    needs: version
     runs-on: macos-latest
 
     steps:
@@ -77,24 +111,24 @@ jobs:
         run: flutter pub get
 
       - name: Build iOS (no code signing)
-        run: flutter build ios --release --no-codesign
+        run: flutter build ios --release --no-codesign --build-name "${{ needs.version.outputs.app_version }}" --build-number "${{ needs.version.outputs.app_build_number }}"
 
       - name: Package unsigned IPA
         run: |
           cd build/ios/iphoneos
           mkdir -p Payload
           cp -R Runner.app Payload/
-          zip -r "OpenModScan-${RELEASE_TAG}.ipa" Payload
+          zip -r "OpenModScan-${{ needs.version.outputs.artifact_name }}.ipa" Payload
 
       - name: Upload iOS artifact
         uses: actions/upload-artifact@v4
         with:
           name: ios
-          path: build/ios/iphoneos/OpenModScan-${{ env.RELEASE_TAG }}.ipa
+          path: build/ios/iphoneos/OpenModScan-${{ needs.version.outputs.artifact_name }}.ipa
 
   release:
     name: Create GitHub Release
-    needs: [build-android, build-ios]
+    needs: [version, build-android, build-ios]
     runs-on: ubuntu-latest
 
     steps:
@@ -113,7 +147,7 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
+          tag_name: ${{ needs.version.outputs.release_tag }}
           draft: true
           generate_release_notes: true
           files: artifacts/*
