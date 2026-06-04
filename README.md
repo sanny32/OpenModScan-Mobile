@@ -4,7 +4,7 @@ Mobile version of the OpenModScan Modbus master/client utility.
 
 ## Screenshots
 
-<img src=".github/assets/screen_devices_light.png" alt="Devices screen, light theme" width="240"> <img src=".github/assets/screen_registers_light.png" alt="Registers screen, dark theme" width="240"> <img src=".github/assets/screen_devices_dark.png" alt="Devices screen, light theme" width="240"> 
+<img src=".github/assets/screen_devices_light.png" alt="Devices screen, light theme" width="240"> <img src=".github/assets/screen_registers_light.png" alt="Registers screen, light theme" width="240"> <img src=".github/assets/screen_devices_dark.png" alt="Devices screen, dark theme" width="240"> 
 
 ## Features
 
@@ -26,7 +26,7 @@ Mobile version of the OpenModScan Modbus master/client utility.
 
 ## Getting Started
 
-[Install Flutter](https://docs.flutter.dev/get-started/install), then fetch dependencies:
+[Install Flutter](https://docs.flutter.dev/get-started/install) (Dart SDK `^3.12.0`), then fetch dependencies:
 
 ```sh
 flutter pub get
@@ -110,3 +110,7 @@ the script sets this for you. The seeded scenarios (`device_crud_test.dart`,
   a device rejects function code 16 with an illegal-function exception.
 - Traffic file logging writes `modbus-traffic.log` in the app documents
   directory when enabled.
+
+## License
+
+Released under the [MIT License](LICENSE).
