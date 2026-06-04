@@ -19,7 +19,10 @@ Mobile version of the OpenModScan Modbus master/client utility.
 
 ## Protocol Support
 
-- Supported: Modbus TCP, Modbus RTU/IP
+| Protocol | Notes |
+| --- | --- |
+| Modbus TCP | Standard Modbus master/client connections over TCP. |
+| Modbus RTU/IP | RTU-style Modbus frames transported over TCP/IP. |
 
 ## Getting Started
 
