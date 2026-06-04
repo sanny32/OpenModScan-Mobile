@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/l10n.dart';
 import '../../models/app_settings.dart';
 import '../../models/device_info.dart';
+import '../../widgets/app_test_keys.dart';
 import '../../widgets/keyboard_done_bar.dart';
 import 'device_marker_color_palette.dart';
 
@@ -164,7 +165,11 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                     ),
                   ),
                   if (!_isEdit)
-                    TextButton(onPressed: _submit, child: Text(l10n.save))
+                    TextButton(
+                      key: AppTestKeys.deviceFormSaveButton,
+                      onPressed: _submit,
+                      child: Text(l10n.save),
+                    )
                   else
                     const SizedBox(width: 72),
                 ],
@@ -212,6 +217,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                   const SizedBox(height: 6),
                   _field(
                     _nameCtrl,
+                    key: AppTestKeys.deviceFormNameField,
                     label: l10n.labelName,
                     errorText: _nameError,
                     onChanged: (_) {
@@ -358,6 +364,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
 
   Widget _field(
     TextEditingController c, {
+    Key? key,
     required String label,
     TextInputType? type,
     String? errorText,
@@ -365,6 +372,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
   }) => KeyboardDoneField(
     label: label,
     builder: (focusNode) => TextField(
+      key: key,
       controller: c,
       focusNode: focusNode,
       keyboardType: type,

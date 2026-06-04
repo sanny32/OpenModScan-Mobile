@@ -24,9 +24,14 @@ import 'package:omodscan_mobile/services/discovered_device_list.dart';
 import 'package:omodscan_mobile/services/device_repository.dart';
 import 'package:omodscan_mobile/theme/app_theme.dart';
 import 'package:omodscan_mobile/utils/modbus_traffic_format.dart';
+import 'package:omodscan_mobile/widgets/app_test_keys.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers.dart';
+
+DeviceInfo get _firstDemoDevice => demoDevices.first;
+String get _firstDemoDeviceName => _firstDemoDevice.name;
+String get _newDemoDeviceName => 'Device #${demoDevices.length + 1}';
 
 void main() {
   setUp(() async {
@@ -47,7 +52,7 @@ void main() {
     await tester.pumpWidget(const OModScanApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('PLC #1').first);
+    await tester.tap(find.text(_firstDemoDeviceName).first);
     await tester.pumpAndSettle();
     expect(find.byType(DeviceScreen), findsOneWidget);
 
@@ -65,7 +70,7 @@ void main() {
     await tester.pumpWidget(const OModScanApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('PLC #1').first);
+    await tester.tap(find.text(_firstDemoDeviceName).first);
     await tester.pumpAndSettle();
     expect(find.byType(DeviceScreen), findsOneWidget);
 
@@ -73,7 +78,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(DeviceScreen), findsNothing);
-    expect(find.text('PLC #1'), findsOneWidget);
+    expect(find.text(_firstDemoDeviceName), findsOneWidget);
   });
 
   testWidgets('Tapping active Registers tab returns from register detail', (
@@ -157,13 +162,13 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.settings_outlined));
     await tester.pumpAndSettle();
-    expect(find.text('PLC #1'), findsNothing);
+    expect(find.text(_firstDemoDeviceName), findsNothing);
 
     // Android system back should land back on the devices branch.
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
-    expect(find.text('PLC #1'), findsOneWidget);
+    expect(find.text(_firstDemoDeviceName), findsOneWidget);
   });
 
   testWidgets('Deleted device snackbar disappears after timeout', (
@@ -172,7 +177,10 @@ void main() {
     await tester.pumpWidget(const OModScanApp());
     await tester.pumpAndSettle();
 
-    await tester.drag(find.text('PLC #1'), const Offset(-500, 0));
+    await tester.drag(
+      find.byKey(ValueKey(_firstDemoDevice.id)),
+      const Offset(-500, 0),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Device deleted'), findsOneWidget);
@@ -255,13 +263,15 @@ void main() {
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
 
-    final nameField = find.byWidgetPredicate(
-      (widget) => widget is TextField && widget.controller?.text == 'Device #6',
-    );
+    final nameField = find.byKey(AppTestKeys.deviceFormNameField);
     expect(nameField, findsOneWidget);
+    expect(
+      tester.widget<TextField>(nameField).controller?.text,
+      _newDemoDeviceName,
+    );
 
     await tester.enterText(nameField, '');
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.byKey(AppTestKeys.deviceFormSaveButton));
     await tester.pumpAndSettle();
 
     expect(find.text('Name is required'), findsOneWidget);
@@ -276,11 +286,9 @@ void main() {
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
 
-    final nameField = find.byWidgetPredicate(
-      (widget) => widget is TextField && widget.controller?.text == 'Device #6',
-    );
-    await tester.enterText(nameField, 'PLC #1');
-    await tester.tap(find.text('Save'));
+    final nameField = find.byKey(AppTestKeys.deviceFormNameField);
+    await tester.enterText(nameField, _firstDemoDeviceName);
+    await tester.tap(find.byKey(AppTestKeys.deviceFormSaveButton));
     await tester.pumpAndSettle();
 
     expect(find.text('Name already exists'), findsOneWidget);

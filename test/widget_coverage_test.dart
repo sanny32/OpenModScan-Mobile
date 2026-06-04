@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omodscan_mobile/features/settings/about_screen.dart';
 import 'package:omodscan_mobile/l10n/l10n.dart';
@@ -12,17 +13,44 @@ import 'package:omodscan_mobile/widgets/type_badge.dart';
 import 'helpers.dart';
 
 void main() {
+  const buildInfoChannel = MethodChannel(
+    'io.github.sanny32.omodscan_mobile/build_info',
+  );
+
   setUp(resetAppTestState);
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(buildInfoChannel, null);
+  });
 
   testWidgets('About screen renders app metadata and support links', (
     tester,
   ) async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(buildInfoChannel, (call) async {
+          return switch (call.method) {
+            'getAppName' => 'OpenModScan Mobile',
+            'getPackageVersion' => {'name': '1.0.0', 'code': 1},
+            'getPackageBuildDate' => '2026-05-24T12:30:00.000Z',
+            _ => null,
+          };
+        });
+
     await tester.pumpWidget(_host(const AboutScreen()));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('About'), findsOneWidget);
     expect(find.text('Application'), findsOneWidget);
-    expect(find.text('OpenModScan Mobile'), findsAtLeastNWidgets(1));
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is RichText &&
+            widget.text.toPlainText() == 'OpenModScan Mobile',
+      ),
+      findsAtLeastNWidgets(1),
+    );
+    expect(find.text('OpenModScan Mobile'), findsOneWidget);
     expect(find.text('Version'), findsWidgets);
     expect(find.text('Build date'), findsOneWidget);
     expect(find.text('MIT License'), findsOneWidget);
@@ -31,71 +59,75 @@ void main() {
     expect(find.text('Report an issue'), findsOneWidget);
   });
 
-  testWidgets('Device select sheet sorts connected devices first and returns id',
-      (tester) async {
-    final devices = [
-      DeviceInfo(
-        id: 'z',
-        name: 'Zulu',
-        host: '10.0.0.3',
-        port: 502,
-        protocol: ProtocolType.modbusTcp,
-        unitId: 1,
-      ),
-      DeviceInfo(
-        id: 'a',
-        name: 'Alpha',
-        host: '10.0.0.1',
-        port: 502,
-        protocol: ProtocolType.modbusTcp,
-        unitId: 1,
-      ),
-      DeviceInfo(
-        id: 'b',
-        name: 'Bravo',
-        host: '10.0.0.2',
-        port: 502,
-        protocol: ProtocolType.modbusTcp,
-        unitId: 1,
-      ),
-    ];
-    String? selectedId;
+  testWidgets(
+    'Device select sheet sorts connected devices first and returns id',
+    (tester) async {
+      final devices = [
+        DeviceInfo(
+          id: 'z',
+          name: 'Zulu',
+          host: '10.0.0.3',
+          port: 502,
+          protocol: ProtocolType.modbusTcp,
+          unitId: 1,
+        ),
+        DeviceInfo(
+          id: 'a',
+          name: 'Alpha',
+          host: '10.0.0.1',
+          port: 502,
+          protocol: ProtocolType.modbusTcp,
+          unitId: 1,
+        ),
+        DeviceInfo(
+          id: 'b',
+          name: 'Bravo',
+          host: '10.0.0.2',
+          port: 502,
+          protocol: ProtocolType.modbusTcp,
+          unitId: 1,
+        ),
+      ];
+      String? selectedId;
 
-    await tester.pumpWidget(
-      _host(
-        Scaffold(
-          body: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () async {
-                selectedId = await showDeviceSelectSheet(
-                  context,
-                  devices: devices,
-                  selectedId: 'b',
-                  isConnected: (device) => device.id == 'z',
-                );
-              },
-              child: const Text('Open'),
+      await tester.pumpWidget(
+        _host(
+          Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () async {
+                  selectedId = await showDeviceSelectSheet(
+                    context,
+                    devices: devices,
+                    selectedId: 'b',
+                    isConnected: (device) => device.id == 'z',
+                  );
+                },
+                child: const Text('Open'),
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Select Device'), findsOneWidget);
-    expect(find.text('Connected'), findsOneWidget);
-    expect(find.text('Disconnected'), findsNWidgets(2));
-    expect(tester.getTopLeft(find.text('Zulu')).dy,
-        lessThan(tester.getTopLeft(find.text('Alpha')).dy));
-    expect(find.byIcon(Icons.check), findsOneWidget);
+      expect(find.text('Select Device'), findsOneWidget);
+      expect(find.text('Connected'), findsOneWidget);
+      expect(find.text('Disconnected'), findsNWidgets(2));
+      expect(
+        tester.getTopLeft(find.text('Zulu')).dy,
+        lessThan(tester.getTopLeft(find.text('Alpha')).dy),
+      );
+      expect(find.byIcon(Icons.check), findsOneWidget);
 
-    await tester.tap(find.text('Alpha'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Alpha'));
+      await tester.pumpAndSettle();
 
-    expect(selectedId, 'a');
-  });
+      expect(selectedId, 'a');
+    },
+  );
 
   testWidgets('Data layout chip opens sheet and reports selections', (
     tester,

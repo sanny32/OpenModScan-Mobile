@@ -6,9 +6,9 @@ class AppTestKeys {
 
   static const scanNetworkButton = ValueKey('scan.network.button');
   static const scanSheetActionButton = ValueKey('scan.sheet.action.button');
-  static const deviceWriteSubmitButton = ValueKey(
-    'device.write.submit.button',
-  );
+  static const deviceFormNameField = ValueKey('device.form.name.field');
+  static const deviceFormSaveButton = ValueKey('device.form.save.button');
+  static const deviceWriteSubmitButton = ValueKey('device.write.submit.button');
   static const deviceWriteConfirmButton = ValueKey(
     'device.write.confirm.button',
   );

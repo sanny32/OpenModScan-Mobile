@@ -71,7 +71,10 @@ void main() {
 
     expect(find.text('Modbus TCP · Auto (Wi-Fi) · port 502'), findsOneWidget);
     expect(find.text('0-based · MSRF · Direct'), findsOneWidget);
-    expect(find.text('1000 entries'), findsOneWidget);
+    expect(
+      find.text('${AppSettings.instance.maxLogEntries} entries'),
+      findsOneWidget,
+    );
     expect(find.text('Backup & Restore'), findsOneWidget);
     expect(find.text('Reset to defaults'), findsOneWidget);
     expect(find.text('About'), findsOneWidget);
