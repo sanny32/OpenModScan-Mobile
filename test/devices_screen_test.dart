@@ -65,8 +65,6 @@ void main() {
     expect(find.text('Discovered devices'), findsOneWidget);
     expect(find.text('Scanning...'), findsOneWidget);
     expect(find.text('Network scanner'), findsNothing);
-    // With no saved devices the discovered preview fills the available height,
-    // so both results fit on the home screen and no "show all" footer appears.
     expect(find.text('192.168.88.104:502'), findsOneWidget);
     expect(find.text('192.168.88.105:502'), findsOneWidget);
     expect(find.text('+ 1 more'), findsNothing);
@@ -83,8 +81,6 @@ void main() {
     expect(find.textContaining('Elapsed:'), findsOneWidget);
     expect(find.text('Found: 2'), findsOneWidget);
     expect(find.text('Clear'), findsNothing);
-    // The scan sheet lists the discovered devices on top of the home preview,
-    // which now also shows both, so each result appears in both layers.
     expect(find.text('192.168.88.104:502'), findsWidgets);
     expect(find.text('192.168.88.105:502'), findsWidgets);
     expect(find.text('Modbus TCP • ID: 1'), findsWidgets);
@@ -107,8 +103,6 @@ void main() {
   testWidgets('discovered show all opens full-screen results list only', (
     tester,
   ) async {
-    // Enough discovered devices to overflow the home preview height, so the
-    // "show all" footer is rendered (the preview keeps the first two at the top).
     final discovered = <DiscoveredDevice>[
       const DiscoveredDevice(
         host: '192.168.88.104',
@@ -130,7 +124,10 @@ void main() {
           protocol: ProtocolType.modbusTcp,
         ),
     ];
-    final scanner = _ScanPort(ScannerStateView.scanning, discovered: discovered);
+    final scanner = _ScanPort(
+      ScannerStateView.scanning,
+      discovered: discovered,
+    );
     final controller = DevicesController(
       DeviceRepository.instance,
       PollingConnectionRuntime(),
@@ -169,9 +166,6 @@ void main() {
   testWidgets(
     'discovered preview fills available height when no saved devices',
     (tester) async {
-      // Regression: with no saved devices the preview used to show a fixed
-      // 1–2 row prefix regardless of free space. It must now fill the height
-      // and render every result that fits (here all five), with no footer.
       tester.view.physicalSize = const Size(393, 852);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -352,10 +346,8 @@ void main() {
       ),
     );
 
-    // Not all 7 fit, so a footer must offer the rest instead of clipping a card.
     expect(find.text('Show all (7)'), findsOneWidget);
 
-    // No rendered device card may extend below the scan dock (no clipping).
     final scanDockTop = tester
         .getTopLeft(find.byKey(AppTestKeys.scanNetworkButton))
         .dy;
@@ -409,7 +401,6 @@ void main() {
     await tester.pumpWidget(appAtScale(1.0));
     final cardsAtNormal = find.byType(DeviceCard).evaluate().length;
 
-    // Larger font ⇒ taller cards ⇒ the measured-from-theme math fits fewer.
     await tester.pumpWidget(appAtScale(1.8));
     final cardsAtLarge = find.byType(DeviceCard).evaluate().length;
 
@@ -454,7 +445,6 @@ void main() {
 
     expect(find.text('First'), findsOneWidget);
     expect(find.text('Second'), findsOneWidget);
-    // Home preview mirrors the stored order: 'First' was inserted before 'Second'.
     expect(
       tester.getTopLeft(find.text('First')).dy,
       lessThan(tester.getTopLeft(find.text('Second')).dy),
@@ -651,13 +641,10 @@ void main() {
     await tester.tap(find.text('Show all (4)'));
     await tester.pumpAndSettle();
 
-    // The list follows the persisted manual (storage) order: 'Created New' was
-    // inserted before 'Recently Connected'.
     expect(
       tester.getTopLeft(find.text('Created New')).dy,
       lessThan(tester.getTopLeft(find.text('Recently Connected')).dy),
     );
-    // Drag handles are offered for manual reordering.
     expect(find.byIcon(Icons.drag_handle), findsWidgets);
 
     await tester.enterText(find.byType(TextField).last, '10.0.0');
@@ -665,7 +652,6 @@ void main() {
 
     expect(find.text('Created Old'), findsOneWidget);
     expect(find.text('Created New'), findsNothing);
-    // Reordering is suppressed while a search filter is active.
     expect(find.byIcon(Icons.drag_handle), findsNothing);
 
     await tester.enterText(find.byType(TextField).last, '');
@@ -845,14 +831,12 @@ void main() {
     );
     addTearDown(controller.dispose);
 
-    // The saved list mirrors the stored repository order verbatim.
     expect(controller.savedDevicesForSearch('').map((device) => device.name), [
       'A',
       'B',
       'C',
     ]);
 
-    // Move A (index 0) to the end; onReorderItem reports the post-removal index.
     await controller.reorderSavedDevices(0, 2);
     expect(controller.savedDevicesForSearch('').map((device) => device.name), [
       'B',
@@ -860,7 +844,6 @@ void main() {
       'A',
     ]);
 
-    // The new order is persisted and survives a reload from the store.
     final reloaded = await DeviceRepository.instance.load();
     expect(reloaded.map((device) => device.name), ['B', 'C', 'A']);
   });
@@ -887,7 +870,6 @@ void main() {
     );
     addTearDown(controller.dispose);
 
-    // The preview is the storage order, not a created/connection sort.
     expect(controller.visibleHomeDevices(3).map((device) => device.name), [
       'A',
       'B',
@@ -902,7 +884,6 @@ void main() {
   testWidgets('scan sheet action button stays visible with many devices', (
     tester,
   ) async {
-    // Width > 420 avoids overflow in _ScanTimeLabels (Row vs Column layout threshold).
     tester.view.physicalSize = const Size(500, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -996,14 +977,9 @@ void main() {
     expect(find.text('Network scanner'), findsOneWidget);
     expect(find.text('Scan completed'), findsOneWidget);
 
-    // Not all 10 devices fit — later entries are hidden.
-    expect(
-      find.text('192.168.0.101:502'),
-      findsWidgets,
-    ); // first device visible
-    expect(find.text('192.168.0.110:502'), findsNothing); // last device hidden
+    expect(find.text('192.168.0.101:502'), findsWidgets);
+    expect(find.text('192.168.0.110:502'), findsNothing);
 
-    // Action button is rendered within the visible screen area.
     final actionButton = find.byKey(AppTestKeys.scanSheetActionButton).last;
     final buttonBottom = tester.getRect(actionButton).bottom;
     final screenHeight =
@@ -1106,69 +1082,61 @@ void main() {
 
     expect(find.text('Network scanner'), findsOneWidget);
 
-    // Footer is visible because not all devices fit.
-    // Use .last because the home screen's DiscoveredDevicesPreview also has a
-    // "Show all" footer behind the modal.
-    // ensureVisible scrolls the sheet's ListView so the footer is in the viewport
-    // (not hidden behind the pinned action button).
     final showAllFinder = find.textContaining('Show all').last;
     await tester.ensureVisible(showAllFinder);
     await tester.pumpAndSettle();
     await tester.tap(showAllFinder);
     await tester.pumpAndSettle();
 
-    // Sheet is gone, DiscoveredDevicesScreen is shown with all devices.
     expect(find.text('Network scanner'), findsNothing);
     expect(find.text('Discovered devices'), findsOneWidget);
     expect(find.text('192.168.0.110:502'), findsOneWidget);
   });
 
-  testWidgets('clear button in completed scan sheet clears results and closes', (
-    tester,
-  ) async {
-    final scanner = _ScanPort(
-      ScannerStateView.done,
-      discovered: const [
-        DiscoveredDevice(
-          host: '192.168.88.104',
-          port: 502,
-          unitId: 1,
-          protocol: ProtocolType.modbusTcp,
+  testWidgets(
+    'clear button in completed scan sheet clears results and closes',
+    (tester) async {
+      final scanner = _ScanPort(
+        ScannerStateView.done,
+        discovered: const [
+          DiscoveredDevice(
+            host: '192.168.88.104',
+            port: 502,
+            unitId: 1,
+            protocol: ProtocolType.modbusTcp,
+          ),
+        ],
+      );
+      final controller = DevicesController(
+        DeviceRepository.instance,
+        PollingConnectionRuntime(),
+        scanner,
+        AppSettings.instance,
+      );
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: DevicesScreen(controller: controller, onOpenDevice: (_) {}),
         ),
-      ],
-    );
-    final controller = DevicesController(
-      DeviceRepository.instance,
-      PollingConnectionRuntime(),
-      scanner,
-      AppSettings.instance,
-    );
-    addTearDown(controller.dispose);
+      );
 
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: DevicesScreen(controller: controller, onOpenDevice: (_) {}),
-      ),
-    );
+      await tester.tap(find.byKey(AppTestKeys.scanNetworkButton));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(AppTestKeys.scanNetworkButton));
-    await tester.pumpAndSettle();
+      expect(find.text('Network scanner'), findsOneWidget);
+      final clearInSheet = find.text('Clear').last;
+      expect(clearInSheet, findsOneWidget);
 
-    expect(find.text('Network scanner'), findsOneWidget);
-    // Two "Clear" buttons exist: one in DevicesScreen header, one in scan sheet header.
-    // Use .last since the modal sheet renders on top (later in widget tree).
-    final clearInSheet = find.text('Clear').last;
-    expect(clearInSheet, findsOneWidget);
+      await tester.tap(clearInSheet);
+      await tester.pumpAndSettle();
 
-    await tester.tap(clearInSheet);
-    await tester.pumpAndSettle();
-
-    // Sheet is closed and results are gone.
-    expect(find.text('Network scanner'), findsNothing);
-    expect(find.text('192.168.88.104:502'), findsNothing);
-  });
+      expect(find.text('Network scanner'), findsNothing);
+      expect(find.text('192.168.88.104:502'), findsNothing);
+    },
+  );
 
   testWidgets('clearing discovered devices resets scan panel', (tester) async {
     final scanner = _ScanPort(

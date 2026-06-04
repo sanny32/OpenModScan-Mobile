@@ -8,7 +8,6 @@ class ConnectionManager implements ConnectionRuntime {
   static final ConnectionManager instance = ConnectionManager._();
   ConnectionManager._();
 
-  // keyed by stable device id
   final ValueNotifier<Map<String, ModbusClient>> clients = ValueNotifier(
     const {},
   );
@@ -159,9 +158,7 @@ Future<T> runReadWithRetry<T>({
       await Future<void>.delayed(reconnectDelay);
       try {
         await reconnect();
-      } catch (_) {
-        // Reconnect failed; the next attempt will retry or rethrow.
-      }
+      } catch (_) {}
     }
   }
 }

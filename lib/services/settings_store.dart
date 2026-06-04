@@ -21,7 +21,6 @@ abstract interface class SettingsStore {
 }
 
 class SharedPreferencesSettingsStore implements SettingsStore {
-  // Snapshot used by the synchronous getters; refreshed on every [load].
   SharedPreferences? _prefs;
 
   SharedPreferences get _require {
@@ -37,7 +36,6 @@ class SharedPreferencesSettingsStore implements SettingsStore {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  // Guards against keys that were previously stored as a different type.
   @override
   String? getString(String key) {
     final value = _require.get(key);
@@ -50,8 +48,6 @@ class SharedPreferencesSettingsStore implements SettingsStore {
   @override
   bool? getBool(String key) => _require.getBool(key);
 
-  // Writes always resolve the current instance so they stay correct even when
-  // [load] was never called (e.g. setters invoked before startup hydration).
   @override
   Future<void> setString(String key, String value) async =>
       (await SharedPreferences.getInstance()).setString(key, value);

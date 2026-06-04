@@ -54,9 +54,6 @@ class SocketModbusDiscoveryProbe implements ModbusDiscoveryProbe {
     final ids = unitIds.toList(growable: false);
     if (ids.isEmpty) return Future.value(const []);
 
-    // Modbus TCP multiplexes with the MBAP transaction id, so requests can be
-    // pipelined. RTU framing has no transaction id, so it must stay strictly
-    // request/response.
     return protocol == ProtocolType.modbusTcp
         ? _probeTcpPipelined(
             host: host,
@@ -98,16 +95,15 @@ class SocketModbusDiscoveryProbe implements ModbusDiscoveryProbe {
   }) async {
     final found = <int>[];
     final pending = ids.toSet();
-    // Bounds reconnect rounds against a peer that closes after each response.
     var rounds = ids.length;
 
     while (pending.isNotEmpty && rounds-- > 0) {
       if (isCancelled?.call() ?? false) break;
 
       final socket = await _connect(host, port, connectTimeout);
-      if (socket == null) break; // dead endpoint, or cannot reconnect
+      if (socket == null) break;
 
-      final completer = Completer<bool>(); // true => peer closed the socket
+      final completer = Completer<bool>();
       final buffer = <int>[];
       var gotResponseThisRound = false;
       Timer? idle;
@@ -128,7 +124,6 @@ class SocketModbusDiscoveryProbe implements ModbusDiscoveryProbe {
 
       void onData(Uint8List data) {
         buffer.addAll(data);
-        // Parse as many complete MBAP frames as the buffer holds.
         while (buffer.length >= 7) {
           final length = (buffer[4] << 8) | buffer[5];
           final total = 6 + length;
@@ -177,9 +172,6 @@ class SocketModbusDiscoveryProbe implements ModbusDiscoveryProbe {
       await sub.cancel();
       socket.destroy();
 
-      // Reconnect only when the peer closed mid-round after answering at least
-      // once (a serial gateway). If the idle timer fired instead, the remaining
-      // units simply aren't there — stop rather than retry them forever.
       if (!(closed && gotResponseThisRound)) break;
     }
 
@@ -227,11 +219,9 @@ class SocketModbusDiscoveryProbe implements ModbusDiscoveryProbe {
             timeout: responseTimeout,
           );
         } on TimeoutException {
-          // Unit didn't answer; the socket is still healthy, just move on.
           i++;
           continue;
         } catch (_) {
-          // Socket error / closed by peer: reconnect and retry this same unit.
           reader.dispose();
           reader = null;
           if (reconnectBudget-- <= 0) break;
@@ -404,10 +394,13 @@ class _SocketReader {
     socket.add(frame);
     unawaited(socket.flush());
 
-    return completer.future.timeout(timeout, onTimeout: () {
-      _pending = null;
-      throw TimeoutException('Modbus response');
-    });
+    return completer.future.timeout(
+      timeout,
+      onTimeout: () {
+        _pending = null;
+        throw TimeoutException('Modbus response');
+      },
+    );
   }
 
   void _onData(Uint8List data) {

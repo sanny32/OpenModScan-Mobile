@@ -11,13 +11,24 @@ TrafficField _field(ModbusFrameInfo info, String label) =>
     info.fields.firstWhere((f) => f.label == label);
 
 void main() {
-  // The formatter reads the global address base; keep tests deterministic.
-  setUp(() => AppSettings.instance.addressBase = AppSettings.addressBases.first);
+  setUp(
+    () => AppSettings.instance.addressBase = AppSettings.addressBases.first,
+  );
 
   group('buildTrafficLogEntry', () {
     final readReq = _frame([
-      0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01,
-      0x03, 0x00, 0x00, 0x00, 0x02,
+      0x00,
+      0x01,
+      0x00,
+      0x00,
+      0x00,
+      0x06,
+      0x01,
+      0x03,
+      0x00,
+      0x00,
+      0x00,
+      0x02,
     ]);
 
     test('row data is hex-only and keeps the raw frame', () {
@@ -50,8 +61,18 @@ void main() {
     test('decodes MBAP + read request fields', () {
       final info = describeModbusFrame(
         _frame([
-          0x00, 0x07, 0x00, 0x00, 0x00, 0x06, 0x01,
-          0x03, 0x00, 0x00, 0x00, 0x14,
+          0x00,
+          0x07,
+          0x00,
+          0x00,
+          0x00,
+          0x06,
+          0x01,
+          0x03,
+          0x00,
+          0x00,
+          0x00,
+          0x14,
         ]),
         LogDirection.tx,
       );
@@ -70,8 +91,19 @@ void main() {
     test('decodes read response values', () {
       final info = describeModbusFrame(
         _frame([
-          0x00, 0x01, 0x00, 0x00, 0x00, 0x07, 0x01,
-          0x03, 0x04, 0x00, 0x7B, 0x00, 0x2D, // 123, 45
+          0x00,
+          0x01,
+          0x00,
+          0x00,
+          0x00,
+          0x07,
+          0x01,
+          0x03,
+          0x04,
+          0x00,
+          0x7B,
+          0x00,
+          0x2D,
         ]),
         LogDirection.rx,
       );
@@ -82,8 +114,18 @@ void main() {
     test('decodes write single register', () {
       final info = describeModbusFrame(
         _frame([
-          0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01,
-          0x06, 0x00, 0x09, 0x00, 0x7B,
+          0x00,
+          0x01,
+          0x00,
+          0x00,
+          0x00,
+          0x06,
+          0x01,
+          0x06,
+          0x00,
+          0x09,
+          0x00,
+          0x7B,
         ]),
         LogDirection.tx,
       );
@@ -95,8 +137,18 @@ void main() {
     test('decodes write single coil ON/OFF', () {
       final info = describeModbusFrame(
         _frame([
-          0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01,
-          0x05, 0x00, 0x02, 0xFF, 0x00,
+          0x00,
+          0x01,
+          0x00,
+          0x00,
+          0x00,
+          0x06,
+          0x01,
+          0x05,
+          0x00,
+          0x02,
+          0xFF,
+          0x00,
         ]),
         LogDirection.tx,
       );
@@ -123,8 +175,18 @@ void main() {
 
       final info = describeModbusFrame(
         _frame([
-          0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01,
-          0x03, 0x00, 0x00, 0x00, 0x02,
+          0x00,
+          0x01,
+          0x00,
+          0x00,
+          0x00,
+          0x06,
+          0x01,
+          0x03,
+          0x00,
+          0x00,
+          0x00,
+          0x02,
         ]),
         LogDirection.tx,
       );

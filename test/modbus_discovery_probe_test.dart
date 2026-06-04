@@ -28,77 +28,83 @@ void main() {
     expect(server.acceptedConnections, 1);
   });
 
-  test('unreachable port returns empty quickly without per-unit waits', () async {
-    // Bind then immediately release the port so nothing is listening on it.
-    final probeSocket = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
-    final deadPort = probeSocket.port;
-    await probeSocket.close();
+  test(
+    'unreachable port returns empty quickly without per-unit waits',
+    () async {
+      final probeSocket = await ServerSocket.bind(
+        InternetAddress.loopbackIPv4,
+        0,
+      );
+      final deadPort = probeSocket.port;
+      await probeSocket.close();
 
-    final stopwatch = Stopwatch()..start();
-    final found = await probe.probeEndpoint(
-      host: InternetAddress.loopbackIPv4.address,
-      port: deadPort,
-      protocol: ProtocolType.modbusTcp,
-      unitIds: const [1, 2, 3, 4, 5],
-      requestType: ModbusScanRequestType.holdingRegisters,
-      requestAddress: 0,
-      connectTimeout: const Duration(milliseconds: 300),
-      responseTimeout: const Duration(seconds: 5),
-    );
-    stopwatch.stop();
+      final stopwatch = Stopwatch()..start();
+      final found = await probe.probeEndpoint(
+        host: InternetAddress.loopbackIPv4.address,
+        port: deadPort,
+        protocol: ProtocolType.modbusTcp,
+        unitIds: const [1, 2, 3, 4, 5],
+        requestType: ModbusScanRequestType.holdingRegisters,
+        requestAddress: 0,
+        connectTimeout: const Duration(milliseconds: 300),
+        responseTimeout: const Duration(seconds: 5),
+      );
+      stopwatch.stop();
 
-    expect(found, isEmpty);
-    // A single connect attempt, not connectTimeout * unitIds, and never the
-    // long responseTimeout.
-    expect(stopwatch.elapsed, lessThan(const Duration(seconds: 2)));
-  });
+      expect(found, isEmpty);
+      expect(stopwatch.elapsed, lessThan(const Duration(seconds: 2)));
+    },
+  );
 
-  test('reconnects to finish the range when peer closes after each response',
-      () async {
-    final server = await _ModbusTestServer.start(closeAfterEachResponse: true);
-    addTearDown(server.close);
+  test(
+    'reconnects to finish the range when peer closes after each response',
+    () async {
+      final server = await _ModbusTestServer.start(
+        closeAfterEachResponse: true,
+      );
+      addTearDown(server.close);
 
-    final found = await probe.probeEndpoint(
-      host: server.host,
-      port: server.port,
-      protocol: ProtocolType.modbusTcp,
-      unitIds: const [1, 2, 3],
-      requestType: ModbusScanRequestType.holdingRegisters,
-      requestAddress: 0,
-      connectTimeout: const Duration(seconds: 1),
-      responseTimeout: const Duration(seconds: 1),
-    );
+      final found = await probe.probeEndpoint(
+        host: server.host,
+        port: server.port,
+        protocol: ProtocolType.modbusTcp,
+        unitIds: const [1, 2, 3],
+        requestType: ModbusScanRequestType.holdingRegisters,
+        requestAddress: 0,
+        connectTimeout: const Duration(seconds: 1),
+        responseTimeout: const Duration(seconds: 1),
+      );
 
-    expect(found, [1, 2, 3]);
-    expect(server.acceptedConnections, greaterThan(1));
-  });
+      expect(found, [1, 2, 3]);
+      expect(server.acceptedConnections, greaterThan(1));
+    },
+  );
 
-  test('absent unit ids share one idle wait instead of one timeout each',
-      () async {
-    // Server only answers units 2 and 5 out of a 1..8 scan.
-    final server = await _ModbusTestServer.start(respondOnlyTo: {2, 5});
-    addTearDown(server.close);
+  test(
+    'absent unit ids share one idle wait instead of one timeout each',
+    () async {
+      final server = await _ModbusTestServer.start(respondOnlyTo: {2, 5});
+      addTearDown(server.close);
 
-    const responseTimeout = Duration(milliseconds: 400);
-    final stopwatch = Stopwatch()..start();
-    final found = await probe.probeEndpoint(
-      host: server.host,
-      port: server.port,
-      protocol: ProtocolType.modbusTcp,
-      unitIds: const [1, 2, 3, 4, 5, 6, 7, 8],
-      requestType: ModbusScanRequestType.holdingRegisters,
-      requestAddress: 0,
-      connectTimeout: const Duration(seconds: 1),
-      responseTimeout: responseTimeout,
-    );
-    stopwatch.stop();
+      const responseTimeout = Duration(milliseconds: 400);
+      final stopwatch = Stopwatch()..start();
+      final found = await probe.probeEndpoint(
+        host: server.host,
+        port: server.port,
+        protocol: ProtocolType.modbusTcp,
+        unitIds: const [1, 2, 3, 4, 5, 6, 7, 8],
+        requestType: ModbusScanRequestType.holdingRegisters,
+        requestAddress: 0,
+        connectTimeout: const Duration(seconds: 1),
+        responseTimeout: responseTimeout,
+      );
+      stopwatch.stop();
 
-    expect(found, [2, 5]);
-    expect(server.acceptedConnections, 1);
-    // Six absent units must not cost 6 * responseTimeout; the pipelined drain
-    // waits out a single shared idle window.
-    expect(stopwatch.elapsed, lessThan(responseTimeout * 3));
-  });
+      expect(found, [2, 5]);
+      expect(server.acceptedConnections, 1);
+      expect(stopwatch.elapsed, lessThan(responseTimeout * 3));
+    },
+  );
 
   test('reassembles a response delivered in multiple chunks', () async {
     final server = await _ModbusTestServer.start(splitResponse: true);
@@ -181,8 +187,6 @@ class _ModbusTestServer {
     final buffer = <int>[];
     socket.listen((data) {
       buffer.addAll(data);
-      // Parse every complete MBAP request frame the buffer holds, echoing the
-      // request's transaction id so pipelined responses can be routed.
       while (buffer.length >= 7) {
         final length = (buffer[4] << 8) | buffer[5];
         final total = 6 + length;
@@ -192,8 +196,6 @@ class _ModbusTestServer {
         final txn = (request[0] << 8) | request[1];
         final unitId = request[6];
 
-        // Emulate a device that hosts only a subset of unit ids: stay silent
-        // for the rest so the probe must time out on them.
         if (respondOnlyTo != null && !respondOnlyTo!.contains(unitId)) {
           continue;
         }
@@ -201,8 +203,6 @@ class _ModbusTestServer {
         if (replyWithGarbage) {
           socket.add(Uint8List.fromList([0, 0, 0, 0, 0, 1, 0xff]));
         } else if (splitResponse) {
-          // Deliver the MBAP header and the PDU in separate writes so the probe
-          // must reassemble them across two data events.
           final full = _validResponse(txn, unitId);
           socket.add(full.sublist(0, 7));
           socket.flush().then((_) {
@@ -215,7 +215,6 @@ class _ModbusTestServer {
         }
 
         if (closeAfterEachResponse) {
-          // Answer only the first request on this connection, then drop it.
           socket.flush().then((_) => socket.destroy());
           return;
         }
@@ -226,13 +225,17 @@ class _ModbusTestServer {
   /// MBAP (echoed txn, proto=0, len=5, unit) + PDU (fc=3, byteCount=2, value=0).
   Uint8List _validResponse(int txn, int unitId) {
     return Uint8List.fromList([
-      (txn >> 8) & 0xff, txn & 0xff, // transaction id
-      0x00, 0x00, // protocol id
-      0x00, 0x05, // length: unit id + 4-byte pdu
+      (txn >> 8) & 0xff,
+      txn & 0xff,
+      0x00,
+      0x00,
+      0x00,
+      0x05,
       unitId,
-      0x03, // function code: read holding registers
-      0x02, // byte count
-      0x00, 0x00, // register value
+      0x03,
+      0x02,
+      0x00,
+      0x00,
     ]);
   }
 

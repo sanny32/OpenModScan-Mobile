@@ -279,10 +279,6 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                     type: TextInputType.number,
                   ),
                   const SizedBox(height: 16),
-                  // Labels and fields live in separate rows so the two inputs
-                  // stay aligned even when a label wraps to a different number
-                  // of lines (e.g. "Задержка переподключения"). Bottom-aligning
-                  // the labels keeps a short one sitting right above its field.
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [

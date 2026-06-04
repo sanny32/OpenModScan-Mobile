@@ -188,9 +188,7 @@ class DevicesController extends ChangeNotifier {
       if (readBack.length == words.length) {
         readBackWords = readBack;
       }
-    } catch (_) {
-      // The write succeeded; keep the written words if read-back fails.
-    }
+    } catch (_) {}
 
     final rawMap = {
       for (var i = 0; i < readBackWords.length; i++)
@@ -241,9 +239,7 @@ class DevicesController extends ChangeNotifier {
         count: 1,
       );
       if (readBack.isNotEmpty) readBackValue = readBack.first;
-    } catch (_) {
-      // The write succeeded; keep the written value if read-back fails.
-    }
+    } catch (_) {}
     return CoilWriteResult(address: address, value: readBackValue);
   }
 

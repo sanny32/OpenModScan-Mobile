@@ -253,8 +253,6 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Shares the single OutlinedCard surface style; keeps the tighter vertical
-    // padding the info rows were laid out around.
     return OutlinedCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: child,

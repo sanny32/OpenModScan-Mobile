@@ -31,9 +31,7 @@ class _FakePathProvider extends PathProviderPlatform {
 LogRecord _record(String message, [Level level = Level.FINEST]) =>
     LogRecord(level, message, 'ModbusAppLogger');
 
-// A read-holding-registers request frame (transaction id 0x0001).
 const _txReadReq = 'Sent data: 00 01 00 00 00 06 01 03 00 00 00 02';
-// Its response (same transaction id 0x0001).
 const _rxReadResp = 'Incoming data: 00 01 00 00 00 07 01 03 04 00 7B 00 2D';
 
 void main() {
@@ -52,7 +50,7 @@ void main() {
     expect(entries.single.direction, LogDirection.tx);
     expect(entries.single.function, '03 Read Holding Registers');
     expect(entries.single.frame, isNotNull);
-    expect(entries.single.frame!.first, 0x00); // raw frame retained
+    expect(entries.single.frame!.first, 0x00);
     expect(log.entriesFor('dev-b'), isEmpty);
   });
 
@@ -60,21 +58,19 @@ void main() {
     final log = TrafficLog.forTesting();
     log.setActiveDevice('dev-a');
     log.onLog(_record(_txReadReq));
-    // Active device cleared before the async response arrives.
     log.setActiveDevice(null);
     log.onLog(_record(_rxReadResp));
 
     final entries = log.entriesFor('dev-a');
     expect(entries, hasLength(2));
     expect(entries[1].direction, LogDirection.rx);
-    // Row data is hex-only now; decoded values live in the frame.
     expect(entries[1].data, '00 01 00 00 00 07 01 03 04 00 7B 00 2D');
     expect(entries[1].frame, isNotNull);
   });
 
   test('drops frames with no attributable device', () {
     final log = TrafficLog.forTesting();
-    log.onLog(_record(_rxReadResp)); // no active device, unknown transaction
+    log.onLog(_record(_rxReadResp));
     expect(log.entriesFor('dev-a'), isEmpty);
   });
 
@@ -122,7 +118,7 @@ void main() {
     log.setActiveDevice('dev-a');
 
     log.onLog(_record(_txReadReq));
-    expect(writer.written, isEmpty); // disabled by default
+    expect(writer.written, isEmpty);
 
     AppSettings.instance.saveLogToFile = true;
     log.onLog(_record(_txReadReq));
@@ -143,7 +139,10 @@ void main() {
     );
 
     expect(line, isNot(contains('\n')));
-    expect(line, startsWith('10:42:31.234 [dev-a] TX 03 Read Holding Registers'));
+    expect(
+      line,
+      startsWith('10:42:31.234 [dev-a] TX 03 Read Holding Registers'),
+    );
     expect(line, contains('00 01 00 00 00 06 01 03 00 00 00 02'));
   });
 
@@ -156,8 +155,18 @@ void main() {
         function: '03 Read Holding Registers',
         data: '00 01 00 00 00 06 01 03 00 00 00 02',
         frame: Uint8List.fromList(const [
-          0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01,
-          0x03, 0x00, 0x00, 0x00, 0x02,
+          0x00,
+          0x01,
+          0x00,
+          0x00,
+          0x00,
+          0x06,
+          0x01,
+          0x03,
+          0x00,
+          0x00,
+          0x00,
+          0x02,
         ]),
       ),
     );
@@ -168,46 +177,48 @@ void main() {
     expect(line, contains('Quantity: 2'));
   });
 
-  test('FileTrafficWriter appends entries and flushes pending writes on close',
-      () async {
-    final previousPathProvider = PathProviderPlatform.instance;
-    final tempDir = await Directory.systemTemp.createTemp(
-      'omodscan_traffic_writer_test',
-    );
-    PathProviderPlatform.instance = _FakePathProvider(tempDir.path);
-    addTearDown(() async {
-      PathProviderPlatform.instance = previousPathProvider;
-      if (await tempDir.exists()) {
-        await tempDir.delete(recursive: true);
-      }
-    });
+  test(
+    'FileTrafficWriter appends entries and flushes pending writes on close',
+    () async {
+      final previousPathProvider = PathProviderPlatform.instance;
+      final tempDir = await Directory.systemTemp.createTemp(
+        'omodscan_traffic_writer_test',
+      );
+      PathProviderPlatform.instance = _FakePathProvider(tempDir.path);
+      addTearDown(() async {
+        PathProviderPlatform.instance = previousPathProvider;
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      });
 
-    final writer = FileTrafficWriter();
-    writer.write(
-      'dev-a',
-      const LogEntry(
-        time: '10:42:31.234',
-        direction: LogDirection.tx,
-        function: 'Function',
-        data: 'line 1\nline 2',
-      ),
-    );
-    await writer.close();
-    writer.write(
-      'dev-a',
-      const LogEntry(
-        time: '10:42:32.000',
-        direction: LogDirection.rx,
-        function: 'Function',
-        data: 'response',
-      ),
-    );
-    await writer.close();
+      final writer = FileTrafficWriter();
+      writer.write(
+        'dev-a',
+        const LogEntry(
+          time: '10:42:31.234',
+          direction: LogDirection.tx,
+          function: 'Function',
+          data: 'line 1\nline 2',
+        ),
+      );
+      await writer.close();
+      writer.write(
+        'dev-a',
+        const LogEntry(
+          time: '10:42:32.000',
+          direction: LogDirection.rx,
+          function: 'Function',
+          data: 'response',
+        ),
+      );
+      await writer.close();
 
-    final file = File('${tempDir.path}/${FileTrafficWriter.fileName}');
-    final content = await file.readAsString();
-    expect(content, contains('10:42:31.234 [dev-a] TX Function'));
-    expect(content, contains('line 1 | line 2'));
-    expect(content, contains('10:42:32.000 [dev-a] RX Function'));
-  });
+      final file = File('${tempDir.path}/${FileTrafficWriter.fileName}');
+      final content = await file.readAsString();
+      expect(content, contains('10:42:31.234 [dev-a] TX Function'));
+      expect(content, contains('line 1 | line 2'));
+      expect(content, contains('10:42:32.000 [dev-a] RX Function'));
+    },
+  );
 }

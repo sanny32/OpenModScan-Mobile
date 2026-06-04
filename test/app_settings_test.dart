@@ -90,8 +90,8 @@ void main() {
     await settings.setScanUnitIdRange(12, 3);
     await settings.setScanRequestType(ModbusScanRequestType.inputRegisters);
     await settings.setScanRequestAddress(42);
-    await settings.setScanConnectTimeout(20); // below min → clamped to 50
-    await settings.setScanConcurrency(999); // above max → clamped to 256
+    await settings.setScanConnectTimeout(20);
+    await settings.setScanConcurrency(999);
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('scanProtocol'), 'modbusRtuIp');
@@ -134,10 +134,10 @@ void main() {
     await settings.resetToDefaults();
 
     await settings.setConnectionType(ProtocolType.modbusRtuIp);
-    await settings.setTimeout(50); // below min → clamped to 100
-    await settings.setReconnectDelay(99999); // above max → clamped to 60000
-    await settings.setDefaultUnitId(500); // above max → clamped to 247
-    await settings.setDefaultReadQty(0); // below min → clamped to 1
+    await settings.setTimeout(50);
+    await settings.setReconnectDelay(99999);
+    await settings.setDefaultUnitId(500);
+    await settings.setDefaultReadQty(0);
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('connectionType'), 'modbusRtuIp');
@@ -165,10 +165,10 @@ void main() {
     final settings = AppSettings.instance;
     await settings.resetToDefaults();
 
-    await settings.setMaxLogEntries(10); // below min → clamped to 50
+    await settings.setMaxLogEntries(10);
     expect(settings.maxLogEntries, 50);
 
-    await settings.setMaxLogEntries(500000); // above max → clamped to 100000
+    await settings.setMaxLogEntries(500000);
     final prefs = await SharedPreferences.getInstance();
     expect(settings.maxLogEntries, 100000);
     expect(prefs.getInt('maxLogEntries'), 100000);
@@ -243,13 +243,11 @@ void main() {
     await settings.setScanSubnetPrefix(20);
     await settings.setByteOrder('Swapped');
 
-    // Values land in the store, not in SharedPreferences.
     expect(store.values['writeEnabled'], isFalse);
     expect(store.values['scanSubnetCidr'], '192.168.1.0/24');
     expect(store.values['scanSubnetPrefix'], 20);
     expect(store.values['byteOrder'], 'Swapped');
 
-    // load() hydrates the model straight from the store.
     final reloaded = AppSettings.withStore(store);
     await reloaded.load();
     expect(store.loaded, isTrue);

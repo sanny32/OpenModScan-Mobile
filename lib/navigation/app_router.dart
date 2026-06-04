@@ -161,15 +161,12 @@ class _ShellScaffold extends StatelessWidget {
 
   void _onTap(int index) {
     final isActiveTab = index == navigationShell.currentIndex;
-    // Clear the "return to device" affordance whenever the user picks a tab
-    // manually; cross-tab flows set it again as needed.
     registersReturnDeviceId.value = null;
     if (isActiveTab) {
       branchNavigatorKeys[index].currentState?.popUntil(
         (route) => route.isFirst,
       );
     }
-    // Re-tapping the active tab pops that branch back to its root.
     navigationShell.goBranch(index, initialLocation: isActiveTab);
   }
 
@@ -179,7 +176,6 @@ class _ShellScaffold extends StatelessWidget {
     if (await navigator?.maybePop() ?? false) return;
     if (navigationShell.currentIndex == 1 &&
         registersReturnDeviceId.value != null) {
-      // Mirror the registers "return to device" gesture.
       registersReturnDeviceId.value = null;
       navigationShell.goBranch(0);
     } else if (navigationShell.currentIndex != 0) {

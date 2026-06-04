@@ -16,9 +16,6 @@ void main() {
   });
 
   test('controller operates over an arbitrary DeviceRepositoryPort', () async {
-    // Build a controller backed by an in-memory port (not DeviceRepository),
-    // proving the controllers depend on the abstraction rather than the
-    // concrete SharedPreferences-backed implementation.
     final repository = FakeDeviceRepository([
       DeviceInfo(
         id: 'device-port',

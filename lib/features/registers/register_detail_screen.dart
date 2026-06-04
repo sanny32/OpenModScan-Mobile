@@ -366,8 +366,6 @@ class _RegisterDetailScreenState extends State<RegisterDetailScreen> {
         ctrl.text,
         _selectedType,
       );
-      // Always reflect the value read back after the write (the live listener,
-      // if any, applies the same value idempotently).
       if (newValue != null && mounted) {
         setState(() => _applyWrittenValue(newValue));
       }

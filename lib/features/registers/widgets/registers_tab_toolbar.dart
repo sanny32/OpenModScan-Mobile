@@ -42,9 +42,6 @@ class RegistersTabToolbar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
       child: Row(
         children: [
-          // The list selector stretches to absorb the free space so the
-          // register-type switch and Read button are justified to the edges.
-          // Without a selector, a Spacer keeps the Read button pinned right.
           if (leading != null) ...[
             Expanded(child: leading!),
             const SizedBox(width: 8),

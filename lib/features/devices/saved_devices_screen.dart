@@ -137,8 +137,6 @@ class _SavedDevicesScreenState extends State<SavedDevicesScreen> {
               ),
             ),
             Expanded(
-              // Drag-to-reorder maps on-screen indices 1:1 to storage order, so
-              // it is only offered when no search filter narrows the list.
               child: _search.isEmpty
                   ? ReorderableListView.builder(
                       padding: const EdgeInsets.only(bottom: 12),

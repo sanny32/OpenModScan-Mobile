@@ -20,25 +20,27 @@ void main() {
     expect(reconnects, 0);
   });
 
-  test('retries with reconnect and succeeds before exhausting attempts', () async {
-    var reads = 0;
-    var reconnects = 0;
-    final result = await runReadWithRetry<int>(
-      attempts: 3,
-      reconnectDelay: Duration.zero,
-      read: () async {
-        reads++;
-        if (reads < 3) throw StateError('drop');
-        return 42;
-      },
-      reconnect: () async => reconnects++,
-    );
+  test(
+    'retries with reconnect and succeeds before exhausting attempts',
+    () async {
+      var reads = 0;
+      var reconnects = 0;
+      final result = await runReadWithRetry<int>(
+        attempts: 3,
+        reconnectDelay: Duration.zero,
+        read: () async {
+          reads++;
+          if (reads < 3) throw StateError('drop');
+          return 42;
+        },
+        reconnect: () async => reconnects++,
+      );
 
-    expect(result, 42);
-    expect(reads, 3);
-    // Reconnect runs between each failed attempt (after attempts 1 and 2).
-    expect(reconnects, 2);
-  });
+      expect(result, 42);
+      expect(reads, 3);
+      expect(reconnects, 2);
+    },
+  );
 
   test('rethrows after exhausting all attempts', () async {
     var reads = 0;

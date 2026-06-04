@@ -131,8 +131,6 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
     notifyListeners();
 
     var next = 0;
-    // Each job is one endpoint (host, port): a single connection probes every
-    // unit id, so dead addresses cost one connect instead of one per unit id.
     final jobs = [
       for (final host in hosts)
         for (final port in ports) _ScanJob(host: host, port: port),
@@ -165,8 +163,6 @@ class DeviceScanner extends ChangeNotifier implements DeviceScannerPort {
             );
           }
         }
-        // The whole endpoint is accounted for at once: its unit ids were either
-        // probed or skipped because the endpoint was unreachable.
         _scanned += unitIds.length;
         _notifyThrottled();
       }

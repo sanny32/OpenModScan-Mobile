@@ -405,7 +405,7 @@ double _measuredSavedCardHeight(TextTheme tt, TextScaler scaler) {
       2 +
       measuredLineHeight(tt.bodyMedium, scaler) +
       measuredLineHeight(tt.bodySmall, scaler) +
-      2; // sub-pixel rounding buffer so we never under-count and clip a card
+      2;
 }
 
 double _measuredSavedHeaderHeight(TextTheme tt, TextScaler scaler) {

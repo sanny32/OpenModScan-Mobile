@@ -110,16 +110,10 @@ class _DeviceWriteScreenState extends State<DeviceWriteScreen> {
       ? RegisterAddressType.holdingRegisters
       : RegisterAddressType.coils;
 
-  // The user enters the bare address (no table prefix), starting at the
-  // configured Address Base. The prefix is applied before calling the
-  // controller, which expects a display address including the table offset.
   int get _minAddress => AppSettings.instance.addressBaseStart;
 
   int get _maxAddress => AppSettings.instance.addressBaseStart + 0xffff;
 
-  // Picks the keyboard for the value field based on the selected data type:
-  // Hex needs letters, floats need a decimal point and sign, signed integers
-  // need a sign, everything else is digits only.
   TextInputType get _valueKeyboardType {
     switch (_typeName) {
       case 'Hex':

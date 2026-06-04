@@ -675,11 +675,9 @@ void main() {
       ),
     );
 
-    // 0-based (default): display 40001 maps to modbus offset 1.
     await controller.writeValue(40001, '7', 'UInt16');
     expect(connections.lastWriteHoldingAddress, 1);
 
-    // 1-based: the injected setting shifts the same display address to 0.
     await AppSettings.instance.setAddressBase(AppSettings.addressBases[1]);
     await controller.writeValue(40001, '7', 'UInt16');
     expect(connections.lastWriteHoldingAddress, 0);

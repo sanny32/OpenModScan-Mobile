@@ -178,8 +178,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 : Text(_connected ? l10n.disconnect : l10n.connect),
           ),
           const SizedBox(height: 16),
-          // IntrinsicHeight + stretch keeps both cards the same height even when
-          // their subtitles wrap to a different number of lines.
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,

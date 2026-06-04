@@ -250,7 +250,6 @@ class _RegistersTabState extends State<_RegistersTab> {
         configByAddress[displayAddress] = entry;
       }
     }
-    // Build raw uint16 map for visible + 3 extra addresses (needed for 64-bit types).
     final rawInts = <int, int>{};
     final previousRawInts = <int, int>{};
     for (var i = 0; i < count + 3; i++) {

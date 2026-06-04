@@ -1,6 +1,6 @@
 class StatusEntry {
-  final int address; // linear display address, used as the lookup/matching key
-  final int? displayAddress; // type-formatted reference shown to the user
+  final int address;
+  final int? displayAddress;
   final bool value;
   final bool? previousValue;
   final String comment;

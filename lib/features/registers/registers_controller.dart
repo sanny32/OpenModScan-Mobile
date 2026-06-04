@@ -258,8 +258,6 @@ class RegistersController extends ChangeNotifier {
         values: words,
       );
     }
-    // Read the value back from the device so the UI reflects its actual state
-    // after the write, regardless of the auto-refresh setting.
     var readBackWords = words;
     try {
       final readBack = await _connectionRuntime.readHoldingRegisters(
@@ -270,9 +268,7 @@ class RegistersController extends ChangeNotifier {
       if (readBack.length == words.length) {
         readBackWords = readBack;
       }
-    } catch (_) {
-      // The write succeeded; keep the written words if the read-back fails.
-    }
+    } catch (_) {}
     final rawMap = {
       for (var i = 0; i < readBackWords.length; i++)
         address + i: readBackWords[i],
@@ -326,8 +322,6 @@ class RegistersController extends ChangeNotifier {
       address: modbusAddress,
       value: value,
     );
-    // Read the value back from the device so the UI reflects its actual state
-    // after the write, regardless of the auto-refresh setting.
     var newValue = value;
     try {
       final readBack = await _connectionRuntime.readCoils(
@@ -336,9 +330,7 @@ class RegistersController extends ChangeNotifier {
         count: 1,
       );
       if (readBack.isNotEmpty) newValue = readBack.first;
-    } catch (_) {
-      // The write succeeded; keep the written value if the read-back fails.
-    }
+    } catch (_) {}
     _runtimeStatusValues[key] = (
       value: newValue,
       previous: previous,

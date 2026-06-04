@@ -26,10 +26,6 @@ class TrafficScreen extends StatefulWidget {
 }
 
 class _TrafficScreenState extends State<TrafficScreen> {
-  // Coalesce bursty traffic notifications (a request/response pair arrives
-  // ~1ms apart) into a single rebuild per window, so both are printed together
-  // and the list scrolls in one steady step per batch instead of stuttering on
-  // every individual frame. Mirrors OpenModSim's buffered log-flush timer.
   static const _refreshWindow = Duration(milliseconds: 30);
 
   bool _connectionBusy = false;
@@ -86,8 +82,6 @@ class _TrafficScreenState extends State<TrafficScreen> {
 
   void _onChanged() {
     if (!mounted || _refreshTimer != null) return;
-    // First change in this window triggers a rebuild after a short delay;
-    // any further changes that arrive meanwhile are folded into it.
     _refreshTimer = Timer(_refreshWindow, _refresh);
   }
 
@@ -100,10 +94,6 @@ class _TrafficScreenState extends State<TrafficScreen> {
     }
   }
 
-  // Pins the view to the newest entry after a batch is appended. The list is
-  // lazy, so a freshly appended row's height is only an estimate on the first
-  // frame; we re-pin over a couple of frames until maxScrollExtent settles,
-  // which keeps variable-height rows from visibly jumping into place.
   void _scrollToBottom([int remainingPasses = 3]) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) return;
@@ -300,8 +290,6 @@ class _TrafficScreenState extends State<TrafficScreen> {
                     Divider(height: 1, color: dividerColor),
                 itemBuilder: (context, i) {
                   final entry = entries[i];
-                  // Entries without a decodable frame (e.g. errors) have no
-                  // breakdown to show, so they are not tappable.
                   if (frameForEntry(entry).isEmpty) {
                     return _LogRow(entry: entry);
                   }

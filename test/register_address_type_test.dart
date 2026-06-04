@@ -109,23 +109,50 @@ void main() {
     );
   });
 
-  test('formats display addresses as 5-digit Modicon while the offset fits', () {
-    // Offsets 0..9999 keep the classic 5-digit reference unchanged.
-    expect(RegisterAddressType.holdingRegisters.toReferenceDisplay(40000), 40000);
-    expect(RegisterAddressType.holdingRegisters.toReferenceDisplay(49999), 49999);
-    expect(RegisterAddressType.inputRegisters.toReferenceDisplay(30000), 30000);
-    expect(RegisterAddressType.discreteInputs.toReferenceDisplay(19999), 19999);
-    expect(RegisterAddressType.coils.toReferenceDisplay(9999), 9999);
-  });
+  test(
+    'formats display addresses as 5-digit Modicon while the offset fits',
+    () {
+      expect(
+        RegisterAddressType.holdingRegisters.toReferenceDisplay(40000),
+        40000,
+      );
+      expect(
+        RegisterAddressType.holdingRegisters.toReferenceDisplay(49999),
+        49999,
+      );
+      expect(
+        RegisterAddressType.inputRegisters.toReferenceDisplay(30000),
+        30000,
+      );
+      expect(
+        RegisterAddressType.discreteInputs.toReferenceDisplay(19999),
+        19999,
+      );
+      expect(RegisterAddressType.coils.toReferenceDisplay(9999), 9999);
+    },
+  );
 
   test('switches to 6-digit reference past the 9999 offset boundary', () {
-    // The boundary: offset 9999 stays 5-digit, offset 10000 becomes 6-digit.
-    expect(RegisterAddressType.holdingRegisters.toReferenceDisplay(50000), 410000);
-    expect(RegisterAddressType.holdingRegisters.toReferenceDisplay(105000), 465000);
-    expect(RegisterAddressType.holdingRegisters.toReferenceDisplay(105535), 465535);
-    expect(RegisterAddressType.inputRegisters.toReferenceDisplay(95000), 365000);
-    expect(RegisterAddressType.discreteInputs.toReferenceDisplay(25000), 115000);
-    // Coils have no leading prefix, so the address part is shown as-is.
+    expect(
+      RegisterAddressType.holdingRegisters.toReferenceDisplay(50000),
+      410000,
+    );
+    expect(
+      RegisterAddressType.holdingRegisters.toReferenceDisplay(105000),
+      465000,
+    );
+    expect(
+      RegisterAddressType.holdingRegisters.toReferenceDisplay(105535),
+      465535,
+    );
+    expect(
+      RegisterAddressType.inputRegisters.toReferenceDisplay(95000),
+      365000,
+    );
+    expect(
+      RegisterAddressType.discreteInputs.toReferenceDisplay(25000),
+      115000,
+    );
     expect(RegisterAddressType.coils.toReferenceDisplay(15000), 15000);
   });
 

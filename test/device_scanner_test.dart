@@ -196,7 +196,6 @@ void main() {
       const DeviceScanRequest(unitIdStart: 1, unitIdEnd: 10, concurrency: 1),
     );
 
-    // One endpoint => one probeEndpoint call covering all 10 unit ids.
     expect(probe.endpointCalls, hasLength(1));
     expect(probe.endpointCalls.single.unitIds, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     expect(scanner.discoveredDevices.devices.map((d) => d.unitId), [5]);
@@ -214,7 +213,6 @@ void main() {
       const DeviceScanRequest(unitIdStart: 1, unitIdEnd: 50, concurrency: 1),
     );
 
-    // Dead host pays for a single endpoint probe, not one per unit id.
     expect(probe.endpointCalls, hasLength(1));
     expect(scanner.discoveredDevices.devices, isEmpty);
     expect(scanner.scannedCount, scanner.totalCount);
@@ -292,7 +290,6 @@ void main() {
 
     expect(scanner.state, ScannerStateView.idle);
     expect(scanner.discoveredDevices.devices, isEmpty);
-    // One endpoint (host) accounts for its whole unit id range at once.
     expect(scanner.scannedCount, 2);
   });
 

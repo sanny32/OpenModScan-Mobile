@@ -164,7 +164,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(_firstDemoDeviceName), findsNothing);
 
-    // Android system back should land back on the devices branch.
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 

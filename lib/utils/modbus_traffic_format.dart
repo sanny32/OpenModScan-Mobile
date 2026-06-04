@@ -211,7 +211,6 @@ List<TrafficField> _decodeFields(
   final fc = pdu.getUint8(0);
   final fields = <TrafficField>[];
 
-  // Exception response: function code + 0x80, then exception code.
   if ((fc & 0x80) != 0) {
     if (pdu.lengthInBytes < 2) return fields;
     final code = pdu.getUint8(1);
@@ -233,7 +232,6 @@ List<TrafficField> _decodeFields(
           : _readResponseFields(pdu, isBits: fc == 0x01 || fc == 0x02),
     0x05 => _writeSingleCoilFields(pdu),
     0x06 => _writeSingleRegisterFields(pdu),
-    // Write multiple req/resp both start with start-address + quantity.
     0x0F || 0x10 => _addressQuantityFields(pdu),
     _ => const [],
   });

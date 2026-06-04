@@ -27,8 +27,6 @@ KeyboardActionsConfig buildKeyboardDoneConfig(
 ) {
   final cs = Theme.of(context).colorScheme;
   final isDark = Theme.of(context).brightness == Brightness.dark;
-  // White/surface bar: the page background shows through the iOS keyboard's
-  // rounded top corners, so a light bar hides those corner notches best.
   return KeyboardActionsConfig(
     keyboardActionsPlatform: KeyboardActionsPlatform.ALL,
     keyboardBarColor: cs.surface,

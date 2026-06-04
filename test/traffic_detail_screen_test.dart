@@ -18,8 +18,19 @@ import 'helpers.dart';
 
 LogEntry _readResponse() => buildTrafficLogEntry(
   frame: Uint8List.fromList(const [
-    0x00, 0x07, 0x00, 0x00, 0x00, 0x07, 0x01,
-    0x03, 0x04, 0x00, 0x7B, 0x00, 0x2D, // values 123, 45
+    0x00,
+    0x07,
+    0x00,
+    0x00,
+    0x00,
+    0x07,
+    0x01,
+    0x03,
+    0x04,
+    0x00,
+    0x7B,
+    0x00,
+    0x2D,
   ]),
   direction: LogDirection.rx,
   time: DateTime(2026, 5, 30, 7, 11, 19, 868),
@@ -85,8 +96,6 @@ class _FakeConnections implements ConnectionRuntime {
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  // A tall viewport so the lazy ListView builds every card (incl. off-screen
-  // decoded rows and the raw hex dump) within the test.
   void useTallScreen(WidgetTester tester) {
     tester.view.physicalSize = const Size(1200, 3000);
     tester.view.devicePixelRatio = 1.0;
@@ -100,11 +109,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Transaction ID'), findsOneWidget);
-    expect(find.text('0x0007'), findsOneWidget); // transaction id value
+    expect(find.text('0x0007'), findsOneWidget);
     expect(find.text('Unit ID'), findsOneWidget);
     expect(find.text('Values'), findsOneWidget);
     expect(find.text('123, 45'), findsOneWidget);
-    // Raw hex dump present.
     expect(
       find.textContaining('00 07 00 00 00 07 01 03 04 00 7B 00 2D'),
       findsOneWidget,

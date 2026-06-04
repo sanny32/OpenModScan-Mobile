@@ -16,7 +16,6 @@ class DiscoveredDevicesPreview extends StatelessWidget {
   final List<DiscoveredDevice> discoveredDevices;
   final void Function(DiscoveredDevice) onConnect;
   final VoidCallback onShowAll;
-  // When provided, fills available space with as many rows as fit.
   final double? availableHeight;
 
   const DiscoveredDevicesPreview({
@@ -506,8 +505,6 @@ class _ScanningCard extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final appColors = Theme.of(context).extension<AppColors>();
     final l10n = context.l10n;
-    // While scanning, never round up to a full 100%: a single slow endpoint
-    // can hold the count at 99.x% for seconds, and showing 100% looks finished.
     final pct = total == 0
         ? 0
         : completed
@@ -526,12 +523,6 @@ class _ScanningCard extends StatelessWidget {
     final protocolName = _protocolLabel(l10n, protocol);
     final hasActionButton =
         (!completed && onStop != null) || (completed && onRestart != null);
-    // Fixed overhead: sheet header (71) + list padding (32) + card padding (26) +
-    // icon row (44) + spacers (38) + progress (16) + subnet/time (20) +
-    // divider+spacer before devices (13) + action button+spacer (56, when present).
-    // When the button is pinned outside the card (hasActionButton == false), the
-    // caller subtracts the external button area from availableSheetHeight so the
-    // reduced overhead (260) still gives the correct available space.
     final fixedOverhead = hasActionButton ? 316.0 : 260.0;
     const deviceRowHeight = 62.0;
     const footerHeight = 52.0;
@@ -765,9 +756,6 @@ class DiscoveredDeviceRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // The address is a single unbreakable token; scale it down
-                    // to stay on one line instead of wrapping mid-token (and
-                    // losing the port to an ellipsis) on narrow rows.
                     Align(
                       alignment: Alignment.centerLeft,
                       child: FittedBox(

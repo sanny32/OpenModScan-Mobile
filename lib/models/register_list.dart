@@ -76,11 +76,14 @@ const kDefaultRegisterRefreshIntervalMs = 1000;
 const kStatusAddressModeDisplay = 'display';
 
 /// Highest addressable Modbus register/bit (0-based, 16-bit address space).
-const kMaxModbusAddress = 0xFFFF; // 65535
+const kMaxModbusAddress = 0xFFFF;
+
 /// Size of the Modbus 16-bit address space (last valid address + 1).
-const kModbusAddressSpace = 0x10000; // 65536
+const kModbusAddressSpace = 0x10000;
+
 /// Maximum registers returned by a single Modbus read request.
 const kMaxRegistersPerRead = 125;
+
 /// Maximum bits (coils / discrete inputs) returned by a single Modbus read.
 const kMaxBitsPerRead = 2000;
 

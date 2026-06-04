@@ -15,7 +15,6 @@ void main() {
     await store.setInt('count', 7);
     await store.setBool('flag', true);
 
-    // A fresh store reads back the persisted values.
     final reopened = SharedPreferencesSettingsStore();
     await reopened.load();
     expect(reopened.getString('name'), 'PLC');
@@ -37,7 +36,6 @@ void main() {
     final store = SharedPreferencesSettingsStore();
     await store.load();
 
-    // Legacy key stored as int must not throw, just degrade to null.
     expect(store.getString('addressBase'), isNull);
   });
 

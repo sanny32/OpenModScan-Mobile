@@ -192,14 +192,12 @@ void main() {
 
     expect(connections.holdingReadCount, greaterThan(1));
 
-    // Polling keeps running over time — there is no screen-visibility gate.
     final beforeWait = connections.holdingReadCount;
     await tester.pump(const Duration(milliseconds: 200));
     await tester.pump();
 
     expect(connections.holdingReadCount, greaterThan(beforeWait));
 
-    // Switching to the Status sub-tab still stops register polling.
     await tester.tap(find.text('Status'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
@@ -359,13 +357,11 @@ void main() {
     );
     await tester.pump();
 
-    // Select UInt32 via the interpretations list row.
     await tester.tap(find.text('UInt32 (32 bit)'));
     await tester.pumpAndSettle();
 
     expect(savedType, 'UInt32');
 
-    // Open comment editor by tapping the comment card.
     await tester.tap(find.text('Add a comment'));
     await tester.pumpAndSettle();
     await tester.enterText(
@@ -1656,8 +1652,6 @@ void main() {
   testWidgets('Register detail shows correct Int32 value from two words', (
     WidgetTester tester,
   ) async {
-    // Default register order is MSRF: hi = rawWords[addr], lo = rawWords[addr+1]
-    // combined = (1 << 16) | 34964 = 100500
     const entry = RegisterEntry(
       address: 40007,
       value: '1',
@@ -1681,7 +1675,6 @@ void main() {
   testWidgets(
     'Register detail interpretations use rawWords for multi-word types',
     (WidgetTester tester) async {
-      // MSRF: hi = rawWords[addr]=1, lo = rawWords[addr+1]=2 → UInt32 = (1<<16)|2 = 65538
       const entry = RegisterEntry(
         address: 40001,
         value: '1',
@@ -1699,7 +1692,6 @@ void main() {
       );
       await tester.pump();
 
-      // UInt32 row in interpretations list and header both show 65538
       expect(find.text('65538'), findsWidgets);
     },
   );
@@ -1707,7 +1699,6 @@ void main() {
   testWidgets('Register detail shows previous value in selected type', (
     WidgetTester tester,
   ) async {
-    // previousValue '258' raw uint16: UInt16 → 258, Hex → 0x0102
     await AppSettings.instance.resetToDefaults();
     AppSettings.instance.showLastValuesNotifier.value = true;
     const entry = RegisterEntry(
@@ -1728,10 +1719,8 @@ void main() {
     );
     await tester.pump();
 
-    // UInt16: 258 → '258'
     expect(find.text('258'), findsWidgets);
 
-    // Switch to Hex via interpretations list — scroll down to find it, tap last occurrence
     await tester.scrollUntilVisible(find.text('Hex').last, 100);
     await tester.tap(find.text('Hex').last);
     await tester.pumpAndSettle();
