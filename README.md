@@ -26,7 +26,7 @@ Mobile version of the OpenModScan Modbus master/client utility.
 
 ## Getting Started
 
-Install Flutter, then fetch dependencies:
+[Install Flutter](https://docs.flutter.dev/get-started/install), then fetch dependencies:
 
 ```sh
 flutter pub get
