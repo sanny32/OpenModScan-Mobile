@@ -43,10 +43,9 @@ jobs:
 
   integration:
     runs-on: ubuntu-latest
-    # Kept independent of the unit-test job and non-blocking for now: the
-    # Android emulator is comparatively slow and flaky in CI. Flip
-    # continue-on-error to false once it proves stable.
-    continue-on-error: true
+    # The Android emulator is comparatively slow in CI, so this job is kept
+    # independent of the unit-test job. A failure here now fails the workflow.
+    continue-on-error: false
 
     strategy:
       matrix:

@@ -54,17 +54,35 @@ void main() {
     // Edit Alpha via its detail screen.
     await tester.tap(find.byKey(ValueKey(alpha.id)));
     await tester.pumpAndSettle();
-    // The AppBar edit action is the first edit icon in the tree (the notes
-    // section has its own, tapped via the whole tile rather than the icon).
-    await tester.tap(find.byIcon(Icons.edit_outlined).first);
+    // Open the device form via the AppBar edit action. (Targeting it by key:
+    // the notes section also renders an edit_outlined icon, and the Scaffold
+    // builds the body before the appBar, so find.byIcon(...).first would hit
+    // the notes icon and open the notes sheet instead.)
+    await tester.tap(find.byKey(AppTestKeys.deviceEditButton));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(AppTestKeys.deviceFormNameField),
       'CRUD Alpha Edited',
     );
-    await tester.tap(find.byKey(AppTestKeys.deviceFormSaveButton));
+    // In edit mode the only save control is the button at the bottom of the
+    // form's scrollable list, so scroll it into view before tapping.
+    final saveButton = find.byKey(AppTestKeys.deviceFormSaveButton);
+    await tester.scrollUntilVisible(
+      saveButton,
+      200,
+      // The form's own list scrollable — `.first` skips the inner scrollables
+      // each TextField builds for its editable content.
+      scrollable: find
+          .descendant(
+            of: find.byKey(AppTestKeys.deviceFormScrollable),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.tap(saveButton);
     await tester.pumpAndSettle();
-    await tester.pageBack();
+    // Custom back IconButton (no 'Back' tooltip) — pageBack() can't find it.
+    await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
     expect(find.text('CRUD Alpha Edited'), findsOneWidget);
