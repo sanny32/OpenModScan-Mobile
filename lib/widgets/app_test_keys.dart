@@ -4,6 +4,10 @@ import 'package:flutter/widgets.dart';
 class AppTestKeys {
   const AppTestKeys._();
 
+  static const navDevicesTab = ValueKey('nav.tab.devices');
+  static const navRegistersTab = ValueKey('nav.tab.registers');
+  static const navLogTab = ValueKey('nav.tab.log');
+  static const navSettingsTab = ValueKey('nav.tab.settings');
   static const scanNetworkButton = ValueKey('scan.network.button');
   static const scanSheetActionButton = ValueKey('scan.sheet.action.button');
   static const deviceAddButton = ValueKey('device.add.button');

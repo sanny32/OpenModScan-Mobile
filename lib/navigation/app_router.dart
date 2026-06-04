@@ -12,6 +12,7 @@ import '../features/settings/settings_screen.dart';
 import '../features/traffic/traffic_controller.dart';
 import '../features/traffic/traffic_screen.dart';
 import '../l10n/l10n.dart';
+import '../widgets/app_test_keys.dart';
 import 'navigation_targets.dart';
 
 /// Route locations for the four bottom-navigation branches plus the device
@@ -198,23 +199,47 @@ class _ShellScaffold extends StatelessWidget {
           onTap: _onTap,
           items: [
             BottomNavigationBarItem(
-              icon: const Icon(Icons.devices_outlined),
-              activeIcon: const Icon(Icons.devices),
+              icon: const Icon(
+                Icons.devices_outlined,
+                key: AppTestKeys.navDevicesTab,
+              ),
+              activeIcon: const Icon(
+                Icons.devices,
+                key: AppTestKeys.navDevicesTab,
+              ),
               label: l10n.navDevices,
             ),
             BottomNavigationBarItem(
-              icon: const Icon(Icons.grid_on_outlined),
-              activeIcon: const Icon(Icons.grid_on),
+              icon: const Icon(
+                Icons.grid_on_outlined,
+                key: AppTestKeys.navRegistersTab,
+              ),
+              activeIcon: const Icon(
+                Icons.grid_on,
+                key: AppTestKeys.navRegistersTab,
+              ),
               label: l10n.navRegisters,
             ),
             BottomNavigationBarItem(
-              icon: const Icon(Icons.list_alt_outlined),
-              activeIcon: const Icon(Icons.list_alt),
+              icon: const Icon(
+                Icons.list_alt_outlined,
+                key: AppTestKeys.navLogTab,
+              ),
+              activeIcon: const Icon(
+                Icons.list_alt,
+                key: AppTestKeys.navLogTab,
+              ),
               label: l10n.navLog,
             ),
             BottomNavigationBarItem(
-              icon: const Icon(Icons.settings_outlined),
-              activeIcon: const Icon(Icons.settings),
+              icon: const Icon(
+                Icons.settings_outlined,
+                key: AppTestKeys.navSettingsTab,
+              ),
+              activeIcon: const Icon(
+                Icons.settings,
+                key: AppTestKeys.navSettingsTab,
+              ),
               label: l10n.settingsTitle,
             ),
           ],

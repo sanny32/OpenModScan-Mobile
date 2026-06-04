@@ -63,6 +63,22 @@ flutter test --coverage
 The CI workflow enforces at least 80% line coverage from `coverage/lcov.info`.
 Coverage output is a local artifact and is ignored by git.
 
+Run integration tests (requires a connected device or running emulator):
+
+```sh
+scripts/integration_test.sh          # macOS / Linux
+```
+
+```powershell
+.\scripts\integration_test.ps1        # Windows (PowerShell)
+scripts\integration_test.bat          # Windows (cmd.exe)
+```
+
+The demo scenarios (`app_smoke_test.dart`, `register_write_test.dart`) need the
+demo fixtures, so they must run with `--dart-define=OMODSCAN_DEMO_DATA=true` —
+the script sets this for you. The seeded scenarios (`device_crud_test.dart`,
+`settings_test.dart`) own their state and pass with or without the flag.
+
 ## Notes
 
 - Writes can be disabled in Settings.

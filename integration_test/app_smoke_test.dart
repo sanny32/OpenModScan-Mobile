@@ -1,45 +1,49 @@
+// Demo smoke flow. REQUIRES the demo fixtures, so it must be launched with
+// `--dart-define=OMODSCAN_DEMO_DATA=true` (see scripts/integration_test.sh).
+// Without the flag the repository starts empty and the demo assertions fail.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:omodscan_mobile/main.dart' as app;
 import 'package:omodscan_mobile/runtime/fakes/demo_fixtures.dart';
 import 'package:omodscan_mobile/services/device_repository.dart';
 import 'package:omodscan_mobile/widgets/app_test_keys.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/integration_helpers.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('demo app smoke flow', (tester) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    await prefs.setString('locale', 'en');
-
-    await app.main();
-    await tester.pumpAndSettle();
+    await launchDemoApp(tester);
 
     final firstDevice = demoDevices.first;
     expect(find.byType(BottomNavigationBar), findsOneWidget);
     expect(find.text(firstDevice.name), findsOneWidget);
 
+    // Open the first device's detail screen.
     await tester.tap(find.byKey(ValueKey(firstDevice.id)));
     await tester.pumpAndSettle();
     expect(find.text(firstDevice.name), findsOneWidget);
 
-    await _goToTab(tester, 1);
+    // Real taps on the bottom navigation (not a direct onTap call).
+    await goToTab(tester, AppTestKeys.navRegistersTab);
     expect(find.text('40000'), findsWidgets);
     expect(find.text('Operating mode'), findsWidgets);
 
-    await _goToTab(tester, 2);
+    await goToTab(tester, AppTestKeys.navLogTab);
     expect(find.text('03 Read Holding Registers'), findsWidgets);
 
-    await _goToTab(tester, 3);
+    await goToTab(tester, AppTestKeys.navSettingsTab);
     expect(find.text('Settings'), findsWidgets);
     expect(find.text('Connection'), findsWidgets);
     expect(find.text('Appearance'), findsWidgets);
 
-    await _goToTab(tester, 0);
-    await _goToTab(tester, 0);
+    // Back to the devices branch (still showing the pushed detail), then pop
+    // the detail to reach the saved-devices list where the add button lives.
+    await goToTab(tester, AppTestKeys.navDevicesTab);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
     await tester.tap(find.byKey(AppTestKeys.deviceAddButton));
     await tester.pumpAndSettle();
 
@@ -51,6 +55,8 @@ void main() {
     await tester.tap(find.byKey(AppTestKeys.deviceFormSaveButton));
     await tester.pumpAndSettle();
 
+    // Verify both the UI list and the underlying repository.
+    expect(find.text(newDeviceName), findsOneWidget);
     expect(
       DeviceRepository.instance.snapshot.any(
         (device) => device.name == newDeviceName,
@@ -58,11 +64,4 @@ void main() {
       isTrue,
     );
   });
-}
-
-Future<void> _goToTab(WidgetTester tester, int index) async {
-  tester.widget<BottomNavigationBar>(find.byType(BottomNavigationBar)).onTap!(
-    index,
-  );
-  await tester.pumpAndSettle();
 }
