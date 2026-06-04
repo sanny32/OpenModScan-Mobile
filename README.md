@@ -38,14 +38,22 @@ Run the app:
 flutter run
 ```
 
-Build release artifacts:
+Build release artifacts for a target platform:
+
+<img src="https://cdn.simpleicons.org/android/3DDC84" alt="Android" width="16" height="16"> Android APK:
 
 ```sh
 flutter build apk
+```
+
+<img src="https://cdn.simpleicons.org/apple/666666" alt="Apple" width="16" height="16"> iOS:
+
+```sh
 flutter build ios
 ```
 
-The iOS build requires Xcode and a configured Apple signing environment.
+> [!NOTE]
+> iOS builds require Xcode and a configured Apple signing environment.
 
 ## Quality Checks
 
