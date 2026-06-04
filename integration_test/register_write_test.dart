@@ -1,12 +1,20 @@
-// Drives the write-value screen through the full app in demo mode. The demo
-// build wires the real ConnectionManager, so the demo device is not actually
-// connected — this verifies the value-composition UI and the connection gating
-// (submit stays disabled until connected) rather than a live socket write.
+// Drives the write-value screen through the full app in demo mode.
+//
+// The demo build wires the real ConnectionManager, and the Write Value entry on
+// the device screen is gated on an active connection. So the test first points
+// the demo device at a local loopback socket and connects it (ModbusClientTcp
+// only opens a TCP socket on connect — no handshake), which makes the Write
+// Value card reachable. It then verifies the value-composition UI and that the
+// submit button is enabled once connected.
 // REQUIRES --dart-define=OMODSCAN_DEMO_DATA=true (see scripts/integration_test.sh).
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:omodscan_mobile/runtime/fakes/demo_fixtures.dart';
+import 'package:omodscan_mobile/services/connection_manager.dart';
+import 'package:omodscan_mobile/services/device_repository.dart';
 import 'package:omodscan_mobile/widgets/app_test_keys.dart';
 
 import 'support/integration_helpers.dart';
@@ -14,13 +22,37 @@ import 'support/integration_helpers.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('write screen composes value and gates on connection', (
+  testWidgets('write screen composes value with an active connection', (
     tester,
   ) async {
     await launchDemoApp(tester);
 
-    // Open the first device, then its write screen.
-    await tester.tap(find.byKey(ValueKey(demoDevices.first.id)));
+    // Stand up a loopback TCP server and connect the first demo device to it so
+    // the connection-gated Write Value card becomes reachable.
+    final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    final accepted = <Socket>[];
+    server.listen((socket) {
+      accepted.add(socket);
+      socket.drain<void>();
+    });
+    addTearDown(() async {
+      for (final socket in accepted) {
+        socket.destroy();
+      }
+      await server.close();
+      await ConnectionManager.instance.resetForTesting();
+    });
+
+    final device = demoDevices.first.copyWith(
+      host: InternetAddress.loopbackIPv4.address,
+      port: server.port,
+    );
+    await DeviceRepository.instance.update(device);
+    await ConnectionManager.instance.connect(device);
+    await tester.pumpAndSettle();
+
+    // Open the device, then its (now enabled) write screen.
+    await tester.tap(find.byKey(ValueKey(device.id)));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Write Value'));
     await tester.pumpAndSettle();
@@ -40,10 +72,10 @@ void main() {
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
 
-    // Demo device is not connected, so writing must stay disabled.
+    // Connected with writing enabled, so the submit action is available.
     final submit = tester.widget<FilledButton>(
       find.byKey(AppTestKeys.deviceWriteSubmitButton),
     );
-    expect(submit.onPressed, isNull);
+    expect(submit.onPressed, isNotNull);
   });
 }

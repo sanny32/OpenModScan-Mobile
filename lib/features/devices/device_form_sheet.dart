@@ -178,6 +178,7 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
             const Divider(height: 1),
             Expanded(
               child: ListView(
+                key: AppTestKeys.deviceFormScrollable,
                 controller: scrollController,
                 padding: const EdgeInsets.all(16),
                 children: [
@@ -328,6 +329,9 @@ class _DeviceFormSheetState extends State<DeviceFormSheet> {
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
+                    // In edit mode the top save action is hidden, so this is the
+                    // only save control — expose the save key here for tests.
+                    key: _isEdit ? AppTestKeys.deviceFormSaveButton : null,
                     onPressed: () => _submit(connectAfterSave: !_isEdit),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: cs.primary,

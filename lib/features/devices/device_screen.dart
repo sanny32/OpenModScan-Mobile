@@ -7,6 +7,7 @@ import '../../models/register_address_type.dart';
 import '../../models/register_list.dart';
 import '../../navigation/navigation_targets.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_test_keys.dart';
 import '../../widgets/error_feedback.dart';
 import '../registers/register_list_dialogs.dart';
 import 'device_marker_color_palette.dart';
@@ -149,6 +150,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
         ),
         actions: [
           IconButton(
+            key: AppTestKeys.deviceEditButton,
             icon: const Icon(Icons.edit_outlined),
             onPressed: _editDevice,
           ),

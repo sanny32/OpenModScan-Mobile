@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:omodscan_mobile/features/devices/widgets/device_card.dart';
 import 'package:omodscan_mobile/runtime/fakes/demo_fixtures.dart';
 import 'package:omodscan_mobile/services/device_repository.dart';
 import 'package:omodscan_mobile/widgets/app_test_keys.dart';
@@ -41,7 +42,9 @@ void main() {
     // Back to the devices branch (still showing the pushed detail), then pop
     // the detail to reach the saved-devices list where the add button lives.
     await goToTab(tester, AppTestKeys.navDevicesTab);
-    await tester.pageBack();
+    // DeviceScreen uses a custom back IconButton (no 'Back' tooltip), so
+    // tester.pageBack() can't find it — tap the arrow directly instead.
+    await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(AppTestKeys.deviceAddButton));
@@ -55,8 +58,15 @@ void main() {
     await tester.tap(find.byKey(AppTestKeys.deviceFormSaveButton));
     await tester.pumpAndSettle();
 
-    // Verify both the UI list and the underlying repository.
-    expect(find.text(newDeviceName), findsOneWidget);
+    // The save appends the device after the demo fixtures; on shorter screens
+    // the home list collapses the overflow behind a "show all" footer, so
+    // filter the saved list down to the new device before asserting it shows.
+    await tester.enterText(find.byType(TextField), newDeviceName);
+    await tester.pumpAndSettle();
+
+    // Verify both the UI list and the underlying repository. The card finder is
+    // scoped so it does not also match the search field's own text.
+    expect(find.widgetWithText(DeviceCard, newDeviceName), findsOneWidget);
     expect(
       DeviceRepository.instance.snapshot.any(
         (device) => device.name == newDeviceName,
