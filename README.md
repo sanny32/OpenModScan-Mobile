@@ -2,6 +2,10 @@
 
 Mobile version of the OpenModScan Modbus master/client utility.
 
+## Screenshots
+
+<img src=".github/assets/screen_devices_light.png" alt="Devices screen, light theme" width="240"> <img src=".github/assets/screen_registers_dark.png" alt="Registers screen, dark theme" width="240"> 
+
 ## Features
 
 - Save Modbus devices and register lists.
