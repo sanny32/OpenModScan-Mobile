@@ -69,13 +69,22 @@ Coverage output is a local artifact and is ignored by git.
 
 Run integration tests (requires a connected device or running emulator):
 
+macOS / Linux:
+
 ```sh
-scripts/integration_test.sh          # macOS / Linux
+scripts/integration_test.sh
 ```
 
+Windows (PowerShell):
+
 ```powershell
-.\scripts\integration_test.ps1        # Windows (PowerShell)
-scripts\integration_test.bat          # Windows (cmd.exe)
+.\scripts\integration_test.ps1
+```
+
+Windows (cmd.exe):
+
+```bat
+scripts\integration_test.bat
 ```
 
 The demo scenarios (`app_smoke_test.dart`, `register_write_test.dart`) need the
