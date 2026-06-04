@@ -1,0 +1,418 @@
+part of 'registers_screen.dart';
+
+class _StatusTab extends StatefulWidget {
+  final String statusType;
+  final ValueChanged<String> onStatusTypeChanged;
+  final Widget listSelector;
+  final bool autoRefresh;
+  final bool isActive;
+  final ValueChanged<bool> onAutoRefreshChanged;
+  final int autoRefreshIntervalMs;
+  final TextEditingController refreshIntervalCtrl;
+  final VoidCallback onRefreshIntervalCommitted;
+  final TextEditingController startAddrCtrl;
+  final TextEditingController countCtrl;
+  final FocusNode startAddrFocus;
+  final FocusNode countFocus;
+  final FocusNode refreshIntervalFocus;
+  final RegisterList registerList;
+  final Map<(String, int), StatusRuntimeValue> runtimeValues;
+  final DateTime? lastReadAt;
+  final List<StatusEntry> Function(int startAddress, int count)
+  referenceStatuses;
+  final bool canRead;
+  final RegisterValueState valueState;
+  final void Function(
+    RegisterValueState state,
+    String? label, {
+    required bool shared,
+  })
+  onValueStateChanged;
+  final Future<void> Function({
+    required String statusType,
+    required int startAddress,
+    required int count,
+  })
+  onRead;
+  final void Function(int address, String? comment) onEntryChanged;
+  final Future<bool?> Function({
+    required String statusType,
+    required int address,
+    required bool value,
+  })
+  onValueWritten;
+
+  const _StatusTab({
+    required this.statusType,
+    required this.onStatusTypeChanged,
+    required this.listSelector,
+    required this.autoRefresh,
+    required this.isActive,
+    required this.onAutoRefreshChanged,
+    required this.autoRefreshIntervalMs,
+    required this.refreshIntervalCtrl,
+    required this.onRefreshIntervalCommitted,
+    required this.startAddrCtrl,
+    required this.countCtrl,
+    required this.startAddrFocus,
+    required this.countFocus,
+    required this.refreshIntervalFocus,
+    required this.registerList,
+    required this.runtimeValues,
+    required this.lastReadAt,
+    required this.referenceStatuses,
+    required this.canRead,
+    required this.valueState,
+    required this.onValueStateChanged,
+    required this.onRead,
+    required this.onEntryChanged,
+    required this.onValueWritten,
+  });
+
+  @override
+  State<_StatusTab> createState() => _StatusTabState();
+}
+
+class _StatusTabState extends State<_StatusTab> {
+  var _reading = false;
+  var _manualReadInProgress = false;
+  Timer? _autoRefreshTimer;
+
+  RegisterAddressType get _addressType => RegisterAddressType.fromCode(
+    widget.statusType,
+    fallback: RegisterAddressType.coils,
+  );
+
+  bool get _canWrite => _addressType.canWrite;
+
+  bool get _supportsStatusRead => _addressType.supportsStatusRead;
+
+  void _onCtrlChanged() => setState(() {});
+
+  @override
+  void initState() {
+    super.initState();
+    widget.startAddrCtrl.addListener(_onCtrlChanged);
+    widget.countCtrl.addListener(_onCtrlChanged);
+    _syncAutoRefresh(readImmediately: true);
+  }
+
+  @override
+  void didUpdateWidget(_StatusTab old) {
+    super.didUpdateWidget(old);
+    if (old.startAddrCtrl != widget.startAddrCtrl) {
+      old.startAddrCtrl.removeListener(_onCtrlChanged);
+      widget.startAddrCtrl.addListener(_onCtrlChanged);
+    }
+    if (old.countCtrl != widget.countCtrl) {
+      old.countCtrl.removeListener(_onCtrlChanged);
+      widget.countCtrl.addListener(_onCtrlChanged);
+    }
+    if (old.autoRefresh != widget.autoRefresh ||
+        old.isActive != widget.isActive ||
+        old.autoRefreshIntervalMs != widget.autoRefreshIntervalMs ||
+        old.canRead != widget.canRead ||
+        old.statusType != widget.statusType) {
+      _syncAutoRefresh(
+        readImmediately:
+            widget.autoRefresh &&
+            (!old.autoRefresh ||
+                !old.isActive && widget.isActive ||
+                !old.canRead && widget.canRead),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.startAddrCtrl.removeListener(_onCtrlChanged);
+    widget.countCtrl.removeListener(_onCtrlChanged);
+    _autoRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _syncAutoRefresh({bool readImmediately = false}) {
+    _autoRefreshTimer?.cancel();
+    if (!widget.autoRefresh || !widget.isActive) return;
+
+    _autoRefreshTimer = Timer.periodic(
+      Duration(milliseconds: widget.autoRefreshIntervalMs),
+      (_) => _read(showErrors: false, showProgress: false),
+    );
+    if (readImmediately) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && widget.autoRefresh && widget.isActive) {
+          _read(showErrors: false, showProgress: false);
+        }
+      });
+    }
+  }
+
+  Future<void> _read({bool showErrors = true, bool showProgress = true}) async {
+    if (_reading ||
+        !widget.isActive ||
+        !widget.canRead ||
+        !_supportsStatusRead) {
+      return;
+    }
+
+    final minStart = AppSettings.instance.addressBaseStart;
+    final parsedStart = int.tryParse(widget.startAddrCtrl.text) ?? minStart;
+    final rawStart = parsedStart < minStart ? minStart : parsedStart;
+    final startAddress = _addressType.displayOffset + rawStart;
+    final rawCount = int.tryParse(widget.countCtrl.text);
+    final count = (rawCount == null || rawCount < 1 ? 20 : rawCount).clamp(
+      1,
+      maxReadCountFor(rawStart - minStart, protocolLimit: kMaxBitsPerRead),
+    );
+
+    _reading = true;
+    if (showProgress) {
+      setState(() => _manualReadInProgress = true);
+    }
+    try {
+      await widget.onRead(
+        statusType: widget.statusType,
+        startAddress: startAddress,
+        count: count,
+      );
+      if (!mounted) return;
+      widget.onValueStateChanged(
+        RegisterValueState.received,
+        null,
+        shared: true,
+      );
+      widget.onValueStateChanged(
+        RegisterValueState.received,
+        null,
+        shared: false,
+      );
+    } catch (error) {
+      if (mounted) {
+        final valueState = _valueStateForReadError(error);
+        widget.onValueStateChanged(
+          valueState,
+          valueState == RegisterValueState.exception
+              ? _readErrorLabel(context, error)
+              : null,
+          shared: !_isModbusExceptionError(error),
+        );
+      }
+      if (!mounted || !showErrors) return;
+      showErrorSnackBar(context, error);
+    } finally {
+      _reading = false;
+      if (mounted && showProgress) {
+        setState(() => _manualReadInProgress = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final l10n = context.l10n;
+    final dividerColor = Theme.of(context).dividerTheme.color ?? cs.outline;
+    final minStart = AppSettings.instance.addressBaseStart;
+    final parsedStart = int.tryParse(widget.startAddrCtrl.text) ?? minStart;
+    final rawStart = parsedStart < minStart ? minStart : parsedStart;
+    final startAddress = _addressType.displayOffset + rawStart;
+    final maxCount = maxReadCountFor(
+      rawStart - minStart,
+      protocolLimit: kMaxBitsPerRead,
+    );
+    final rawCount = int.tryParse(widget.countCtrl.text);
+    final count = (rawCount == null || rawCount < 1 ? 20 : rawCount).clamp(
+      1,
+      maxCount,
+    );
+    final endAddress = startAddress + count - 1;
+    final canWriteStatus =
+        _canWrite &&
+        AppSettings.instance.writeEnabled &&
+        widget.valueState != RegisterValueState.exception;
+    final references = {
+      for (final e in widget.referenceStatuses(startAddress, count))
+        e.address: e,
+    };
+    final configByAddress = <int, StatusConfig>{};
+    for (final entry in widget.registerList.statusEntries) {
+      if (entry.statusType != widget.statusType) continue;
+      final displayAddress = _addressType.tryCanonicalAddressToDisplay(
+        entry.address,
+        addressBase: minStart,
+      );
+      if (displayAddress != null) {
+        configByAddress[displayAddress] = entry;
+      }
+    }
+    final visibleStatuses = List.generate(count, (i) {
+      final address = startAddress + i;
+      final reference = references[address];
+      final runtime = widget.runtimeValues[(widget.statusType, address)];
+      final value = runtime?.value ?? reference?.value ?? false;
+      return StatusEntry(
+        address: address,
+        displayAddress: _addressType.toReferenceDisplay(address),
+        value: value,
+        previousValue: runtime?.previous ?? reference?.previousValue,
+        comment: configByAddress[address]?.comment ?? reference?.comment ?? '',
+        timestamp: runtime?.readAt == null
+            ? reference?.timestamp
+            : _formatTimestamp(runtime!.readAt!),
+        date: runtime?.readAt == null
+            ? reference?.date
+            : _formatDate(runtime!.readAt!),
+      );
+    });
+
+    return Column(
+      children: [
+        RegistersTabToolbar(
+          leading: widget.listSelector,
+          segments: const [
+            ButtonSegment(value: '0xxxx', label: Text('0xxxx')),
+            ButtonSegment(value: '1xxxx', label: Text('1xxxx')),
+          ],
+          selectedSegment: widget.statusType,
+          onSegmentChanged: widget.onStatusTypeChanged,
+          canRead: widget.canRead,
+          supportsRead: _supportsStatusRead,
+          readInProgress: _manualReadInProgress,
+          onRead: _read,
+        ),
+        RegistersRangeControls(
+          startAddrCtrl: widget.startAddrCtrl,
+          countCtrl: widget.countCtrl,
+          maxCount: maxCount,
+          minStartAddress: minStart,
+          maxStartAddress: kMaxModbusAddress + minStart,
+          autoRefresh: widget.autoRefresh,
+          onAutoRefreshChanged: widget.onAutoRefreshChanged,
+          refreshIntervalCtrl: widget.refreshIntervalCtrl,
+          onRefreshIntervalCommitted: widget.onRefreshIntervalCommitted,
+          startAddrFocus: widget.startAddrFocus,
+          countFocus: widget.countFocus,
+          refreshIntervalFocus: widget.refreshIntervalFocus,
+        ),
+        Container(
+          color: cs.surfaceContainer,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 72,
+                child: Text(
+                  l10n.colAddress,
+                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  l10n.colComment,
+                  style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                l10n.colValue,
+                style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+              ),
+              const SizedBox(width: 24),
+            ],
+          ),
+        ),
+        Divider(height: 1, color: dividerColor),
+        Expanded(
+          child: ListView.separated(
+            itemCount: visibleStatuses.length,
+            separatorBuilder: (_, _) => Divider(height: 1, color: dividerColor),
+            itemBuilder: (context, i) => StatusRow(
+              entry: visibleStatuses[i],
+              valueState: widget.valueState,
+              canWrite: canWriteStatus,
+              onEntryChanged: widget.onEntryChanged,
+              onChanged: canWriteStatus
+                  ? (value) => _writeStatusValue(visibleStatuses[i], value)
+                  : null,
+              onDetailValueWritten: (value) => _writeStatusValue(
+                visibleStatuses[i],
+                value,
+                rethrowError: true,
+              ),
+            ),
+          ),
+        ),
+        Container(
+          color: cs.surfaceContainer,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _bitRangeLabel(
+                  l10n,
+                  _addressType.toReferenceDisplay(startAddress),
+                  _addressType.toReferenceDisplay(endAddress),
+                ),
+                style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+              ),
+              Text(
+                l10n.registersLastUpdate(
+                  widget.lastReadAt == null
+                      ? '--:--:--'
+                      : _formatTimestamp(widget.lastReadAt!),
+                ),
+                style: tt.bodySmall!.copyWith(color: cs.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<bool?> _writeStatusValue(
+    StatusEntry entry,
+    bool value, {
+    bool rethrowError = false,
+  }) async {
+    if (!_canWrite || !AppSettings.instance.writeEnabled) return null;
+
+    if (AppSettings.instance.confirmBeforeWrite) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(context.l10n.writeCoilTitle),
+          content: Text(
+            context.l10n.writeCoilConfirm(entry.address, value ? 'ON' : 'OFF'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(context.l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(context.l10n.btnWrite),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return null;
+    }
+
+    try {
+      return await widget.onValueWritten(
+        statusType: widget.statusType,
+        address: entry.address,
+        value: value,
+      );
+    } catch (error) {
+      if (rethrowError) rethrow;
+      if (mounted) showErrorSnackBar(context, error);
+      return null;
+    }
+  }
+}

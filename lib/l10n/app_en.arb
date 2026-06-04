@@ -1,0 +1,832 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "OpenModScan Mobile",
+  "@appTitle": {},
+
+  "navDevices": "Devices",
+  "@navDevices": {},
+
+  "navRegisters": "Registers",
+  "@navRegisters": {},
+
+  "navLog": "Traffic",
+  "@navLog": {},
+
+  "navMore": "More",
+  "@navMore": {},
+
+  "statusConnected": "Connected",
+  "@statusConnected": {},
+
+  "statusDisconnected": "Disconnected",
+  "@statusDisconnected": {},
+
+  "unitId": "ID: {id}",
+  "@unitId": {
+    "placeholders": {
+      "id": {"type": "int"}
+    }
+  },
+
+  "devicesSearch": "Search devices",
+  "@devicesSearch": {},
+
+  "devicesSavedConnections": "Saved connections",
+  "@devicesSavedConnections": {},
+
+  "devicesMoreCount": "+ {count} more",
+  "@devicesMoreCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "devicesReorder": "Reorder",
+  "@devicesReorder": {},
+
+  "devicesShowAllCount": "Show all ({count})",
+  "@devicesShowAllCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "devicesDiscoveredDevices": "Network scanner",
+  "@devicesDiscoveredDevices": {},
+
+  "devicesDiscoveredTitle": "Discovered devices",
+  "@devicesDiscoveredTitle": {},
+
+  "devicesClearDiscovered": "Clear",
+  "@devicesClearDiscovered": {},
+
+  "devicesScanStop": "Stop scanning",
+  "@devicesScanStop": {},
+
+  "devicesLastUsed": "Last used",
+  "@devicesLastUsed": {},
+
+  "devicesConnect": "Connect",
+  "@devicesConnect": {},
+
+  "devicesScanNetwork": "Scan network",
+  "@devicesScanNetwork": {},
+
+  "devicesStartScanning": "Start scanning",
+  "@devicesStartScanning": {},
+
+  "devicesNoScansYet": "No scans yet",
+  "@devicesNoScansYet": {},
+
+  "devicesNoScansYetSubtitle": "Scan the network to discover Modbus devices.",
+  "@devicesNoScansYetSubtitle": {},
+
+  "devicesScanningNetwork": "Scanning network",
+  "@devicesScanningNetwork": {},
+
+  "devicesScanCompleted": "Scan completed",
+  "@devicesScanCompleted": {},
+
+  "devicesScanCompletedTitle": "Scan completed",
+  "@devicesScanCompletedTitle": {},
+
+  "devicesScanningTitle": "Scanning...",
+  "@devicesScanningTitle": {},
+
+  "devicesScanningSubtitle": "Searching for devices",
+  "@devicesScanningSubtitle": {},
+
+  "devicesScanningProtocolSubtitle": "Searching for {protocol} devices",
+  "@devicesScanningProtocolSubtitle": {
+    "placeholders": {
+      "protocol": {"type": "String"}
+    }
+  },
+
+  "devicesFoundCount": "{count} devices found",
+  "@devicesFoundCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "devicesScanStart": "Start: {time}",
+  "@devicesScanStart": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+
+  "devicesScanElapsed": "Elapsed: {time}",
+  "@devicesScanElapsed": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+
+  "devicesScanDuration": "Duration: {time}",
+  "@devicesScanDuration": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+
+  "devicesScanSubnetUnavailable": "Subnet unavailable",
+  "@devicesScanSubnetUnavailable": {},
+
+  "devicesScanFound": "Found: {count}",
+  "@devicesScanFound": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "devicesScanProgress": "{scanned}/{total}",
+  "@devicesScanProgress": {
+    "placeholders": {
+      "scanned": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+
+  "protocolAndUnitId": "{protocol} • ID: {unitId}",
+  "@protocolAndUnitId": {
+    "placeholders": {
+      "protocol": {"type": "String"},
+      "unitId": {"type": "int"}
+    }
+  },
+
+  "appBarName": "OpenModScan",
+  "@appBarName": {},
+
+  "appBarNameSuffix": " Mobile",
+  "@appBarNameSuffix": {},
+
+  "disconnect": "Disconnect",
+  "@disconnect": {},
+
+  "readRegisters": "Read Registers",
+  "@readRegisters": {},
+
+  "readRegistersSubtitle": "Read holding/input\nregisters",
+  "@readRegistersSubtitle": {},
+
+  "writeValue": "Write Value",
+  "@writeValue": {},
+
+  "writeValueSubtitle": "Write register/coil",
+  "@writeValueSubtitle": {},
+
+  "lastValues": "Last Values",
+  "@lastValues": {},
+
+  "viewAll": "View All >",
+  "@viewAll": {},
+
+  "openLog": "Open Traffic",
+  "@openLog": {},
+
+  "openLogSubtitle": "View communication traffic",
+  "@openLogSubtitle": {},
+
+  "tabCoils": "Status",
+  "@tabCoils": {},
+
+  "colAddress": "Address",
+  "@colAddress": {},
+
+  "colValue": "Value",
+  "@colValue": {},
+
+  "colType": "Type",
+  "@colType": {},
+
+  "colComment": "Comment",
+  "@colComment": {},
+
+  "commentHint": "Add a comment",
+  "@commentHint": {},
+
+  "btnRead": "Read",
+  "@btnRead": {},
+
+  "labelStart": "Start",
+  "@labelStart": {},
+
+  "labelCount": "Count",
+  "@labelCount": {},
+
+  "labelAutoRefresh": "Auto refresh",
+  "@labelAutoRefresh": {},
+
+  "kbStartAddress": "Start address",
+  "@kbStartAddress": {},
+
+  "kbCount": "Count",
+  "@kbCount": {},
+
+  "kbInterval": "Refresh interval, ms",
+  "@kbInterval": {},
+
+  "kbSearch": "Search",
+  "@kbSearch": {},
+
+  "registersShowing": "Showing {start} – {end}",
+  "@registersShowing": {
+    "placeholders": {
+      "start": {"type": "int"},
+      "end": {"type": "int"}
+    }
+  },
+
+  "registersLastUpdate": "Last update: {time}",
+  "@registersLastUpdate": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+
+  "filterAll": "All",
+  "@filterAll": {},
+
+  "filterTx": "TX",
+  "@filterTx": {},
+
+  "filterRx": "RX",
+  "@filterRx": {},
+
+  "filterErrors": "Errors",
+  "@filterErrors": {},
+
+  "labelAutoScroll": "Auto scroll",
+  "@labelAutoScroll": {},
+
+  "colTime": "Time",
+  "@colTime": {},
+
+  "colDirection": "Direction",
+  "@colDirection": {},
+
+  "colFunction": "Function",
+  "@colFunction": {},
+
+  "logMessages": "Messages: {count}",
+  "@logMessages": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "logClearOnDisconnect": "Clear on disconnect",
+  "@logClearOnDisconnect": {},
+
+  "logClearTraffic": "Clear traffic",
+  "@logClearTraffic": {},
+
+  "trafficMbapHeader": "MBAP header",
+  "@trafficMbapHeader": {},
+
+  "trafficRtuHeader": "RTU Frame",
+  "@trafficRtuHeader": {},
+
+  "trafficCrc": "CRC",
+  "@trafficCrc": {},
+
+  "trafficCrcStatus": "CRC Status",
+  "@trafficCrcStatus": {},
+
+  "trafficCrcOk": "OK",
+  "@trafficCrcOk": {},
+
+  "trafficCrcInvalid": "Invalid",
+  "@trafficCrcInvalid": {},
+
+  "trafficPdu": "PDU",
+  "@trafficPdu": {},
+
+  "trafficDecoded": "Decoded",
+  "@trafficDecoded": {},
+
+  "trafficRawFrame": "Raw frame",
+  "@trafficRawFrame": {},
+
+  "trafficTransactionId": "Transaction ID",
+  "@trafficTransactionId": {},
+
+  "trafficProtocolId": "Protocol ID",
+  "@trafficProtocolId": {},
+
+  "trafficLength": "Length",
+  "@trafficLength": {},
+
+  "trafficUnitId": "Unit ID",
+  "@trafficUnitId": {},
+
+  "trafficFunctionCode": "Function code",
+  "@trafficFunctionCode": {},
+
+  "trafficCopyHex": "Copy hex",
+  "@trafficCopyHex": {},
+
+  "trafficHexCopied": "Frame copied to clipboard",
+  "@trafficHexCopied": {},
+
+  "trafficNoFrame": "No frame data available",
+  "@trafficNoFrame": {},
+
+  "editDevice": "Edit Device",
+  "@editDevice": {},
+
+  "addDevice": "Add Device",
+  "@addDevice": {},
+
+  "deviceDeleted": "Device deleted",
+  "@deviceDeleted": {},
+
+  "undo": "Undo",
+  "@undo": {},
+
+  "connectToDevice": "Connect to device",
+  "@connectToDevice": {},
+
+  "cancel": "Cancel",
+  "@cancel": {},
+
+  "save": "Save",
+  "@save": {},
+
+  "done": "Done",
+  "@done": {},
+
+  "connect": "Connect",
+  "@connect": {},
+
+  "errorConnectionTitle": "Connection failed",
+  "@errorConnectionTitle": {},
+
+  "errorConnectionBody": "Could not reach {address}. Check the IP address, port, and network availability.",
+  "@errorConnectionBody": {
+    "placeholders": {
+      "address": {"type": "String"}
+    }
+  },
+
+  "errorConnectionBodyUnknown": "Could not reach the device. Check the IP address, port, and network availability.",
+  "@errorConnectionBodyUnknown": {},
+
+  "errorTimeoutTitle": "Request timed out",
+  "@errorTimeoutTitle": {},
+
+  "errorTimeoutBody": "The device did not respond in time. Increase the timeout or check the network and device load.",
+  "@errorTimeoutBody": {},
+
+  "errorModbusTitle": "Device returned an error",
+  "@errorModbusTitle": {},
+
+  "errorModbusBody": "Modbus exception: {message}.",
+  "@errorModbusBody": {
+    "placeholders": {
+      "message": {"type": "String"}
+    }
+  },
+
+  "errorNotConnectedTitle": "Device is not connected",
+  "@errorNotConnectedTitle": {},
+
+  "errorNotConnectedBody": "Connect to the device and try again.",
+  "@errorNotConnectedBody": {},
+
+  "errorGenericTitle": "Something went wrong",
+  "@errorGenericTitle": {},
+
+  "connectionType": "Connection type",
+  "@connectionType": {},
+
+  "connectTypeTcp": "Modbus TCP",
+  "@connectTypeTcp": {},
+
+  "connectTypeTcpSub": "Standard Modbus TCP",
+  "@connectTypeTcpSub": {},
+
+  "connectTypeRtu": "RTU over TCP/IP",
+  "@connectTypeRtu": {},
+
+  "connectTypeRtuSub": "Modbus RTU over TCP",
+  "@connectTypeRtuSub": {},
+
+  "labelName": "Name",
+  "@labelName": {},
+
+  "deviceMarkerColor": "Marker color",
+  "@deviceMarkerColor": {},
+
+  "deviceMarkerColorBlue": "Blue",
+  "@deviceMarkerColorBlue": {},
+
+  "deviceMarkerColorGreen": "Green",
+  "@deviceMarkerColorGreen": {},
+
+  "deviceMarkerColorAmber": "Amber",
+  "@deviceMarkerColorAmber": {},
+
+  "deviceMarkerColorRed": "Red",
+  "@deviceMarkerColorRed": {},
+
+  "deviceMarkerColorPurple": "Purple",
+  "@deviceMarkerColorPurple": {},
+
+  "deviceMarkerColorTeal": "Teal",
+  "@deviceMarkerColorTeal": {},
+
+  "deviceMarkerColorGray": "Gray",
+  "@deviceMarkerColorGray": {},
+
+  "nameRequired": "Name is required",
+  "@nameRequired": {},
+
+  "nameAlreadyExists": "Name already exists",
+  "@nameAlreadyExists": {},
+
+  "labelHost": "Host / IP address",
+  "@labelHost": {},
+
+  "labelPort": "Port",
+  "@labelPort": {},
+
+  "labelUnitIdField": "Unit ID (Slave ID)",
+  "@labelUnitIdField": {},
+
+  "labelTimeout": "Timeout",
+  "@labelTimeout": {},
+
+  "labelReconnectDelay": "Reconnect delay",
+  "@labelReconnectDelay": {},
+
+  "labelNotes": "Notes (optional)",
+  "@labelNotes": {},
+
+  "notesHint": "Add any notes about this connection",
+  "@notesHint": {},
+
+  "labelPreviousValue": "Previous value",
+  "@labelPreviousValue": {},
+
+  "labelInterpretations": "Interpretations",
+  "@labelInterpretations": {},
+
+  "labelProperties": "Properties",
+  "@labelProperties": {},
+
+  "labelRegisterOrder": "Register Order",
+  "@labelRegisterOrder": {},
+
+  "labelByteOrder": "Byte Order",
+  "@labelByteOrder": {},
+
+  "writeRegisterTitle": "Write Register",
+  "@writeRegisterTitle": {},
+
+  "btnWrite": "Write",
+  "@btnWrite": {},
+
+  "labelNewValue": "New value",
+  "@labelNewValue": {},
+
+  "writeValueRange": "Value must be 0 – 65535",
+  "@writeValueRange": {},
+
+  "writeCoilTitle": "Write Coil",
+  "@writeCoilTitle": {},
+
+  "writeCoilConfirm": "Write coil {address} to {value}?",
+  "@writeCoilConfirm": {
+    "placeholders": {
+      "address": {"type": "int"},
+      "value": {"type": "String"}
+    }
+  },
+  "writeModeRegister": "Register",
+  "@writeModeRegister": {},
+  "writeModeCoil": "Coil",
+  "@writeModeCoil": {},
+  "writeDataType": "Data type",
+  "@writeDataType": {},
+  "writeRawWords": "Raw registers",
+  "@writeRawWords": {},
+
+  "writeValueHelper": "The value to write to the specified register.",
+  "@writeValueHelper": {},
+  "writeConfirmTitle": "Confirm write",
+  "@writeConfirmTitle": {},
+  "writeRegisterConfirm": "Write {type} at {address} to {value}?",
+  "@writeRegisterConfirm": {
+    "placeholders": {
+      "type": {},
+      "address": {"type": "int"},
+      "value": {}
+    }
+  },
+  "writeCoilConfirmDetailed": "Write Coil {address} to {value}?",
+  "@writeCoilConfirmDetailed": {
+    "placeholders": {
+      "address": {"type": "int"},
+      "value": {}
+    }
+  },
+  "writeSuccess": "Write complete",
+  "@writeSuccess": {},
+  "writeResult": "Result",
+  "@writeResult": {},
+  "writeActualValue": "Actual value",
+  "@writeActualValue": {},
+  "writeFallbackUsed": "Used FC06 fallback",
+  "@writeFallbackUsed": {},
+  "writeDisabled": "Writes are disabled in Settings",
+  "@writeDisabled": {},
+  "writeAddressRange": "Address is out of range",
+  "@writeAddressRange": {},
+  "writeInvalidValue": "Invalid value",
+  "@writeInvalidValue": {},
+  "writeOn": "ON",
+  "@writeOn": {},
+  "writeOff": "OFF",
+  "@writeOff": {},
+
+  "sectionRegisterLists": "Register Lists",
+  "@sectionRegisterLists": {},
+
+  "noRegisterLists": "No register lists configured",
+  "@noRegisterLists": {},
+
+  "menuSelectDevice": "Select Device",
+  "@menuSelectDevice": {},
+
+  "menuAddRegs": "New List",
+  "@menuAddRegs": {},
+
+  "menuSelectRegsList": "Switch List",
+  "@menuSelectRegsList": {},
+
+  "menuRemoveRegs": "Delete List",
+  "@menuRemoveRegs": {},
+
+  "dialogListNameHint": "List name",
+  "@dialogListNameHint": {},
+
+  "labelRegisterType": "Register type",
+  "@labelRegisterType": {},
+
+  "menuSetAllTypes": "Set type for all",
+  "@menuSetAllTypes": {},
+
+  "settingsTitle": "Settings",
+  "@settingsTitle": {},
+
+  "settingsSectionConnection": "Connection",
+  "@settingsSectionConnection": {},
+
+  "settingsDefaultConnectionType": "Default connection type",
+  "@settingsDefaultConnectionType": {},
+
+  "settingsDefaultTimeout": "Default timeout",
+  "@settingsDefaultTimeout": {},
+
+  "settingsReconnectDelay": "Reconnect delay",
+  "@settingsReconnectDelay": {},
+
+  "settingsDefaultUnitId": "Default Unit ID (Slave ID)",
+  "@settingsDefaultUnitId": {},
+
+  "settingsSectionNetworkScan": "Network scanner",
+  "@settingsSectionNetworkScan": {},
+
+  "settingsScanProtocol": "Scan Protocol",
+  "@settingsScanProtocol": {},
+
+  "settingsScanSubnetCidr": "Scan subnet",
+  "@settingsScanSubnetCidr": {},
+
+  "settingsScanSubnetAuto": "Auto (Wi-Fi)",
+  "@settingsScanSubnetAuto": {},
+
+  "settingsScanSubnetPrefix": "Current subnet mask",
+  "@settingsScanSubnetPrefix": {},
+
+  "settingsScanPortRange": "Port range",
+  "@settingsScanPortRange": {},
+
+  "settingsScanUnitIdRange": "Unit ID range",
+  "@settingsScanUnitIdRange": {},
+
+  "settingsScanRequestType": "Modbus request",
+  "@settingsScanRequestType": {},
+
+  "settingsScanRequestAddress": "Request address",
+  "@settingsScanRequestAddress": {},
+
+  "settingsScanRequestCoils": "Read Coils",
+  "@settingsScanRequestCoils": {},
+
+  "settingsScanRequestDiscreteInputs": "Read Discrete Inputs",
+  "@settingsScanRequestDiscreteInputs": {},
+
+  "settingsScanRequestHoldingRegisters": "Read Holding Registers",
+  "@settingsScanRequestHoldingRegisters": {},
+
+  "settingsScanRequestInputRegisters": "Read Input Registers",
+  "@settingsScanRequestInputRegisters": {},
+
+  "settingsScanConnectTimeout": "Connect timeout",
+  "@settingsScanConnectTimeout": {},
+
+  "settingsScanConcurrency": "Concurrent probes",
+  "@settingsScanConcurrency": {},
+
+  "settingsScanClearOnStart": "Clear results on new scan",
+  "@settingsScanClearOnStart": {},
+
+  "settingsRangeStart": "Start",
+  "@settingsRangeStart": {},
+
+  "settingsRangeEnd": "End",
+  "@settingsRangeEnd": {},
+
+  "settingsSectionReadWrite": "Registers",
+  "@settingsSectionReadWrite": {},
+
+  "settingsDefaultReadQty": "Default read quantity",
+  "@settingsDefaultReadQty": {},
+
+  "settingsWriteEnabled": "Allow writes",
+  "@settingsWriteEnabled": {},
+
+  "settingsConfirmBeforeCoilWrite": "Confirm coil writes",
+  "@settingsConfirmBeforeCoilWrite": {},
+
+  "settingsConfirmBeforeWrite": "Confirm coil writes",
+  "@settingsConfirmBeforeWrite": {},
+
+  "settingsShowLastValues": "Show last values after read",
+  "@settingsShowLastValues": {},
+
+  "settingsShowTypeBadges": "Show type badges",
+  "@settingsShowTypeBadges": {},
+
+  "settingsSectionLog": "Traffic",
+  "@settingsSectionLog": {},
+
+  "settingsSaveLogToFile": "Save traffic to file",
+  "@settingsSaveLogToFile": {},
+
+  "settingsClearLogOnDisconnect": "Clear traffic on disconnect",
+  "@settingsClearLogOnDisconnect": {},
+
+  "settingsMaxLogEntries": "Max traffic entries",
+  "@settingsMaxLogEntries": {},
+
+  "settingsSectionAppearance": "Appearance",
+  "@settingsSectionAppearance": {},
+
+  "settingsTheme": "Theme",
+  "@settingsTheme": {},
+
+  "settingsThemeSystem": "System",
+  "@settingsThemeSystem": {},
+
+  "settingsThemeLight": "Light",
+  "@settingsThemeLight": {},
+
+  "settingsThemeDark": "Dark",
+  "@settingsThemeDark": {},
+
+  "settingsLanguage": "Language",
+  "@settingsLanguage": {},
+
+  "settingsLanguageSystem": "System",
+  "@settingsLanguageSystem": {},
+
+  "settingsLanguageEnglish": "English",
+  "@settingsLanguageEnglish": {},
+
+  "settingsLanguageRussian": "Russian",
+  "@settingsLanguageRussian": {},
+
+  "settingsSectionOther": "Other",
+  "@settingsSectionOther": {},
+
+  "settingsBackupRestore": "Backup & Restore",
+  "@settingsBackupRestore": {},
+
+  "settingsBackupExport": "Export backup",
+  "@settingsBackupExport": {},
+
+  "settingsBackupImport": "Import backup",
+  "@settingsBackupImport": {},
+
+  "settingsBackupImportConfirmMessage": "Importing will replace your current settings and saved devices.",
+  "@settingsBackupImportConfirmMessage": {},
+
+  "settingsBackupExportSuccess": "Backup exported",
+  "@settingsBackupExportSuccess": {},
+
+  "settingsBackupImportSuccess": "Backup imported",
+  "@settingsBackupImportSuccess": {},
+
+  "settingsBackupFailure": "Backup operation failed",
+  "@settingsBackupFailure": {},
+
+  "settingsResetDefaults": "Reset to defaults",
+  "@settingsResetDefaults": {},
+
+  "settingsResetAction": "Reset",
+  "@settingsResetAction": {},
+
+  "settingsResetConfirmMessage": "All settings will be reset to their default values.",
+  "@settingsResetConfirmMessage": {},
+
+  "settingsSummaryPort": "port {value}",
+  "@settingsSummaryPort": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+
+  "settingsSummaryEntries": "{value} entries",
+  "@settingsSummaryEntries": {
+    "placeholders": {
+      "value": {"type": "int"}
+    }
+  },
+
+  "settingsSummaryAddressBase": "{value}",
+  "@settingsSummaryAddressBase": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+
+  "settingsSummaryResetAndAbout": "Reset & About",
+  "@settingsSummaryResetAndAbout": {},
+
+  "labelCurrentValue": "Current value",
+  "@labelCurrentValue": {},
+
+  "settingsReadFailureAttempts": "Read failure attempts",
+  "@settingsReadFailureAttempts": {},
+
+  "settingsAddressBase": "AddressBase",
+  "@settingsAddressBase": {},
+
+  "deviceNotConnected": "{name} is not connected.",
+  "@deviceNotConnected": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "settingsValueMs": "{value} ms",
+  "@settingsValueMs": {
+    "placeholders": {
+      "value": {"type": "int"}
+    }
+  },
+
+  "aboutTitle": "About",
+  "@aboutTitle": {},
+
+  "aboutApplication": "Application",
+  "@aboutApplication": {},
+
+  "aboutVersion": "Version",
+  "@aboutVersion": {},
+
+  "aboutBuildDate": "Build date",
+  "@aboutBuildDate": {},
+
+  "aboutLicense": "License",
+  "@aboutLicense": {},
+
+  "aboutWebsite": "Website",
+  "@aboutWebsite": {},
+
+  "aboutEmail": "Email",
+  "@aboutEmail": {},
+
+  "aboutDocumentation": "Documentation",
+  "@aboutDocumentation": {},
+
+  "aboutReportIssue": "Report an issue",
+  "@aboutReportIssue": {},
+
+  "aboutCopyright": "Copyright © {year} Alexandr Ananev",
+  "@aboutCopyright": {
+    "placeholders": {
+      "year": { "type": "int" }
+    }
+  },
+
+  "aboutLicenseMit": "MIT License",
+  "@aboutLicenseMit": {}
+}

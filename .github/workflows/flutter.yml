@@ -1,0 +1,81 @@
+name: Flutter
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test with coverage
+        run: flutter test --coverage
+
+      - name: Enforce coverage
+        run: |
+          awk '
+            /^LF:/ { sub("LF:", ""); total += $0 }
+            /^LH:/ { sub("LH:", ""); hit += $0 }
+            END {
+              coverage = total == 0 ? 0 : (hit / total) * 100
+              printf "Line coverage: %.1f%% (%d/%d)\n", coverage, hit, total
+              if (coverage < 80.0) exit 1
+            }
+          ' coverage/lcov.info
+
+  integration:
+    runs-on: ubuntu-latest
+    # Kept independent of the unit-test job and non-blocking for now: the
+    # Android emulator is comparatively slow and flaky in CI. Flip
+    # continue-on-error to false once it proves stable.
+    continue-on-error: true
+
+    strategy:
+      matrix:
+        api-level: [34]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run integration tests on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          arch: x86_64
+          profile: pixel_6
+          script: scripts/integration_test.sh
