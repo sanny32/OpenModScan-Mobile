@@ -272,6 +272,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                       child: Text(l10n.navDevices, style: tt.headlineMedium),
                     ),
                     IconButton(
+                      key: AppTestKeys.deviceAddButton,
                       icon: const Icon(Icons.add),
                       onPressed: _openConnect,
                     ),
