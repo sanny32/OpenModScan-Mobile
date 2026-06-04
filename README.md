@@ -18,7 +18,7 @@ Mobile version of the OpenModScan Modbus master/client utility.
 - Discover Modbus TCP and Modbus RTU/IP devices on the local network.
 - Inspect captured Modbus traffic with decoded frame details.
 - Export and import app settings and saved devices as a JSON backup.
-- Support English and Russian UI localization.
+- Supports English and Russian UI localization.
 
 ## Protocol Support
 
